@@ -2,30 +2,36 @@ use core::panic;
 
 use crate::{
     aabb::AABB,
-    bvh::Bvh,
+    bvh::BvhNode,
     hittable::Hittable,
     hittable::{HitPayload, RotateY, Translate},
     interval::Interval,
-    material::Material,
+    material::material::Material,
+    model::quad::Quad,
+    model::sphere::Sphere,
     moving_sphere::MovingSphere,
-    quad::Quad,
     ray::Ray,
-    sphere::Sphere,
     volume::ConstantMedium,
     world::World,
 };
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Model {
     Sphere(Sphere),
     MovingSphere(MovingSphere),
     Quad(Quad),
     ConstantMedium(ConstantMedium),
-    Bvh(Box<Bvh>),
-
+    Bvh(Box<BvhNode>),
+    //Bvh(Box<Bvh>),
     World(World),
     Translate(Translate),
     RotateY(RotateY),
+}
+
+impl Default for Model {
+    fn default() -> Self {
+        return Self::World(World::default());
+    }
 }
 
 impl Model {

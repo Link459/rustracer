@@ -4,7 +4,8 @@ use std::{
 };
 
 use crate::{
-    aabb::AABB, interval::Interval, material::Material, model::Model, ray::Ray, vec3::Vec3,
+    aabb::AABB, interval::Interval, material::material::Material, model::model::Model, ray::Ray,
+    vec3::Vec3,
 };
 
 #[derive(Default, Debug)]
@@ -55,7 +56,7 @@ pub trait Hittable: Send + Sync {
     fn bounding_box(&self) -> &AABB;
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Translate {
     model: Box<Model>,
     offset: Vec3,
@@ -67,7 +68,7 @@ impl Translate {
         Model::Translate(Self {
             offset,
             bbox: *model.bounding_box() + offset,
-            model: model,
+            model,
         })
     }
 }
@@ -89,7 +90,7 @@ impl Hittable for Translate {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone,Debug)]
 pub struct RotateY {
     model: Box<Model>,
     sin_theta: f64,
@@ -128,7 +129,7 @@ impl RotateY {
         }
 
         return Model::RotateY(Self {
-            model: model,
+            model,
             sin_theta,
             cos_theta,
             bbox: AABB::from((min, max)),

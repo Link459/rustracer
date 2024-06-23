@@ -2,7 +2,7 @@ use std::{cell::Ref, mem::swap, ops::Add};
 
 use crate::{interval::Interval, ray::Ray, vec3::Vec3};
 
-#[derive(Default, Clone, Copy)]
+#[derive(Default, Clone, Copy, Debug)]
 pub struct AABB {
     pub x: Interval,
     pub y: Interval,
@@ -77,7 +77,7 @@ impl AABB {
         return self.axis(axis).max;
     }
 
-    fn axis(&self, n: usize) -> Interval {
+    pub fn axis(&self, n: usize) -> Interval {
         return match n {
             1 => self.y,
             2 => self.z,

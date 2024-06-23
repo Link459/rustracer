@@ -5,12 +5,11 @@ use crate::{
     hittable::{RotateY, Translate},
     interval::Interval,
     material::{Dielectric, DiffuseLight, Lambertian, Material, Metal},
-    model::Model,
+    model::model::Model,
+    model::quad::Quad,
+    model::sphere::Sphere,
     moving_sphere::MovingSphere,
-    perlin::Perlin,
-    quad::Quad,
-    render::{skybox, RenderConfig},
-    sphere::Sphere,
+    render::{Background, RenderConfig},
     texture::{ChessTexture, ImageTexture, NoiseTexture, SolidColor},
     vec3::Vec3,
     volume::ConstantMedium,
@@ -93,7 +92,7 @@ pub fn random_world() -> (World, Camera) {
         Metal::new(Vec3::new(0.7, 0.6, 0.5), 0.0),
     ));
 
-    let config = RenderConfig::with_aspect_ratio(16.0 / 9.0, 400, 200, 50);
+    let config = RenderConfig::with_aspect_ratio(16.0 / 9.0, 400, 100, 50);
 
     return (world, Camera::default_with_config(config));
 }
@@ -191,7 +190,6 @@ pub fn quads() -> (World, Camera) {
     ));
 
     let aspect_ratio = 1.0;
-    let max_depth = 50.0;
 
     let vfov = 80.0;
     let lookfrom = Vec3::new(0.0, 0.0, 9.0);
@@ -245,7 +243,7 @@ pub fn simple_light() -> (World, Camera) {
     ));
 
     let mut config = RenderConfig::with_aspect_ratio(16.0 / 9.0, 400, 300, 50);
-    config.background = |_| Vec3::ZERO;
+    config.background = Background::Night;
     let cam = Camera::new(
         Vec3::new(26.0, 3.0, 6.0),
         Vec3::new(0.0, 2.0, 0.0),

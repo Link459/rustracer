@@ -1,4 +1,8 @@
-use anyhow::Result; use core::panic; use std::io::stdin; use crate::{bvh::Bvh, interval::Interval};
+#![allow(dead_code)]
+use crate::{bvh::BvhNode, interval::Interval};
+use anyhow::Result;
+use core::panic;
+use std::io::stdin;
 mod aabb;
 mod bvh;
 mod camera;
@@ -9,10 +13,8 @@ mod material;
 mod model;
 mod moving_sphere;
 mod perlin;
-mod quad;
 mod ray;
 mod render;
-mod sphere;
 mod texture;
 mod vec3;
 mod volume;
@@ -50,7 +52,10 @@ fn main() -> Result<()> {
         _ => panic!("{buf} was not a viable otption"),
     };
 
-    let world = Bvh::new(&mut world.entities, Interval::default());
+    let len = world.entities.len();
+    let world = BvhNode::new(&mut world.entities, 0, len);
+    //let world = Bvh::new(world, Interval::default())
+    //let world = dbg!(world);
     camera.render(world)?;
     return Ok(());
 }

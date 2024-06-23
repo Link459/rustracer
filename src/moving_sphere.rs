@@ -4,13 +4,13 @@ use crate::{
     aabb::AABB,
     hittable::{HitPayload, Hittable},
     interval::Interval,
-    material::Material,
+    material::material::Material,
+    model::sphere::Sphere,
     ray::Ray,
-    sphere::Sphere,
     vec3::Vec3,
 };
 
-#[derive(Clone)]
+#[derive(Clone,Debug)]
 pub struct MovingSphere {
     pub center0: Vec3,
     pub center1: Vec3,

@@ -1,7 +1,7 @@
 use crate::{perlin::Perlin, vec3::Vec3};
 use image::{open, GenericImageView};
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Texture {
     SolidColor(SolidColor),
     Chess(ChessTexture),
@@ -24,7 +24,7 @@ pub trait TextureValue {
     fn value(&self, u: f64, v: f64, p: &Vec3) -> Vec3;
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Debug, Copy)]
 pub struct SolidColor {
     pub color_value: Vec3,
 }
@@ -41,7 +41,7 @@ impl TextureValue for SolidColor {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct ChessTexture {
     pub odd: Box<Texture>,
     pub even: Box<Texture>,
@@ -64,7 +64,7 @@ impl TextureValue for ChessTexture {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct NoiseTexture {
     perlin: Perlin,
     scale: f64,
@@ -85,7 +85,7 @@ impl TextureValue for NoiseTexture {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone,Debug)]
 pub struct ImageTexture {
     buffer: Vec<u8>,
     nx: u32,

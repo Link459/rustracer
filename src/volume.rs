@@ -3,14 +3,14 @@ use rand::Rng;
 use crate::{
     aabb::AABB,
     hittable::{HitPayload, Hittable},
-    interval::{self, Interval},
+    interval::Interval,
     material::{Isotropic, Material},
     model::Model,
     ray::Ray,
     vec3::Vec3,
 };
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct ConstantMedium {
     boundary: Box<Model>,
     neg_inv_density: f64,

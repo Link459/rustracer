@@ -2,13 +2,13 @@ use crate::{
     aabb::AABB,
     hittable::{HitPayload, Hittable},
     interval::Interval,
-    material::Material,
-    model::Model,
+    material::material::Material,
+    model::model::Model,
     ray::Ray,
     vec3::Vec3,
 };
 
-#[derive(Clone)]
+#[derive(Clone,Debug)]
 pub struct Quad {
     q: Vec3,
     u: Vec3,

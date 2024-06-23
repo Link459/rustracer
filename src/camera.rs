@@ -81,13 +81,13 @@ impl Camera {
     pub fn render(self, world: impl Hittable) -> Result<()> {
         println!(
             "widht: {:?},\nheight: {:?},\nsamples: {:?},\ndepth: {:?}",
-            self.config.width, self.config.height, self.config.samples, self.config.max_depht
+            self.config.width, self.config.height, self.config.samples, self.config.max_depth
         );
 
         println!("starting the render");
         let render_time = Instant::now();
         let mut image = Image::from(self.config);
-        image.compute_parallel(|w, h| {
+        image.compute_parallel_buffer(|w, h| {
             let mut rng = rand::thread_rng();
             let mut color = Vec3::ZERO;
             for _ in 0..self.config.samples {
@@ -96,10 +96,12 @@ impl Camera {
                 let v =
                     (h as f64 + rng.gen_range(0.0..1.0) as f64) / (self.config.height - 1) as f64;
                 let r = self.get_ray(u, v);
-                color += self.ray_color(&r, &world, self.config.max_depht);
+                color += self.ray_color(&r, &world, self.config.max_depth);
             }
             return color;
         });
+
+        image.buffer = dbg!(image.buffer);
 
         let time_took = format!("rendering took: {:?}", render_time.elapsed());
         println!("{time_took}");
@@ -129,7 +131,7 @@ impl Camera {
             return color_from_emit;
         }
 
-        let bg = self.config.background;
+        let bg: fn(&Ray) -> Vec3 = self.config.background.into();
         return bg(ray);
     }
 }

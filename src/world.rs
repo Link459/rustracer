@@ -6,7 +6,7 @@ use crate::{
 };
 use crate::{material::Material, model::Model};
 
-#[derive(Clone, Default)]
+#[derive(Clone, Default, Debug)]
 pub struct World {
     pub entities: Vec<Model>,
     bbox: AABB,
