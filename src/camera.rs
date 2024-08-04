@@ -87,7 +87,7 @@ impl Camera {
         println!("starting the render");
         let render_time = Instant::now();
         let mut image = Image::from(self.config);
-        image.compute_parallel_buffer(|w, h| {
+        image.compute_parallel(|w, h| {
             let mut rng = rand::thread_rng();
             let mut color = Vec3::ZERO;
             for _ in 0..self.config.samples {
@@ -101,7 +101,7 @@ impl Camera {
             return color;
         });
 
-        image.buffer = dbg!(image.buffer);
+        //image.buffer = dbg!(image.buffer);
 
         let time_took = format!("rendering took: {:?}", render_time.elapsed());
         println!("{time_took}");

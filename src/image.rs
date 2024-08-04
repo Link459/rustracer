@@ -12,28 +12,29 @@ pub struct Image {
 
 impl Image {
     pub fn new(width: u32, height: u32, samples: f64) -> Self {
-        Self {
-            buffer: Vec::with_capacity(3 * (width * height) as usize),
+        let len = 3 * (width * height) as usize;
+        let mut img = Self {
+            buffer: Vec::with_capacity(len),
             width,
             height,
             samples,
-        }
+        };
+        unsafe { img.buffer.set_len(len) };
+        return img;
     }
 
     #[inline]
     pub fn compute<F>(&mut self, work_load: F) -> ()
     where
-        F: Fn(u32, u32) -> Vec3 + Copy,
+        F: Fn(u32, u32) -> Vec3,
     {
-        let p = (0..self.height)
-            .into_iter()
-            .rev()
-            .map(|h| (0..self.width).into_iter().map(move |w| work_load(h, w)))
-            .flatten()
-            .collect::<Vec<Vec3>>();
-        for i in p {
-            //self.write(i);
-        }
+        (0..self.height).into_iter().for_each(|h| {
+            (0..self.width).into_iter().for_each(|w| {
+                let color = work_load(w, h);
+                let index = self.buffer.len() - (3 * h * self.width + w * 3) as usize;
+                self.write(color, index as usize);
+            })
+        })
     }
 
     #[inline]
@@ -41,34 +42,10 @@ impl Image {
     where
         F: Fn(u32, u32) -> Vec3 + Send + Sync,
     {
-        //let buffer = Vec::<Vec3>::with_capacity((self.width * self.height) as usize);
-        let p = (0..self.height)
-            .into_par_iter()
-            .rev()
-            .map(|h| {
-                (0..self.width)
-                    .into_par_iter()
-                    .map(|w| work_load(w, h))
-                    .collect::<Vec<Vec3>>()
-            })
-            .flatten()
-            .collect::<Vec<Vec3>>();
-        for i in p {
-            //self.write(i);
-        }
-    }
-
-    #[inline]
-    pub fn compute_parallel_buffer<F>(&mut self, work_load: F) -> ()
-    where
-        F: Fn(u32, u32) -> Vec3 + Send + Sync,
-    {
-        //let buffer = Vec::<Vec3>::with_capacity((self.width * self.height) as usize);
-
-        (0..self.height).into_par_iter().rev().for_each(|h| {
+        (0..self.height).into_par_iter().for_each(|h| {
             (0..self.width).into_par_iter().for_each(|w| {
                 let color = work_load(w, h);
-                let index = h * self.width + w;
+                let index = self.buffer.len() - (3 * h * self.width + w * 3) as usize;
                 self.write(color, index as usize);
             })
         })
@@ -99,12 +76,7 @@ impl Image {
 }
 
 impl From<RenderConfig> for Image {
-    fn from(value: RenderConfig) -> Self {
-        Self {
-            buffer: Vec::with_capacity((value.width * value.height) as usize),
-            width: value.width,
-            height: value.height,
-            samples: value.samples as f64,
-        }
+    fn from(v: RenderConfig) -> Self {
+        return Self::new(v.width, v.height, v.samples.into());
     }
 }
