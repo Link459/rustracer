@@ -6,9 +6,9 @@ use crate::{
     vec3::Vec3,
 };
 
-use super::material::{Material, Scatter};
+use super::material::{Material, MaterialStorage};
 
-#[derive(Clone,Debug)]
+#[derive(Clone, Debug)]
 pub struct Lambertian {
     albedo: Texture,
 }
@@ -16,8 +16,8 @@ pub struct Lambertian {
 into_mat!(Lambertian);
 
 impl Lambertian {
-    pub fn new(albedo: Texture) -> Material {
-        return Material::Lambertian(Self { albedo });
+    pub fn new(albedo: Texture) -> MaterialStorage {
+        return MaterialStorage::Lambertian(Self { albedo });
     }
 }
 
@@ -29,7 +29,7 @@ impl From<Vec3> for Lambertian {
     }
 }
 
-impl Scatter for Lambertian {
+impl Material for Lambertian {
     #[inline]
     fn scatter(&self, ray: &Ray, payload: &HitPayload) -> Option<(Ray, Vec3)> {
         let mut scatter_direction = payload.normal + random_unit_vector();

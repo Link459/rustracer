@@ -3,6 +3,7 @@ use std::ptr;
 use crate::{render::RenderConfig, vec3::Vec3};
 use rayon::prelude::*;
 
+#[derive(Default)]
 pub struct Image {
     pub buffer: Vec<u8>,
     width: u32,
@@ -31,8 +32,8 @@ impl Image {
         (0..self.height).into_iter().for_each(|h| {
             (0..self.width).into_iter().for_each(|w| {
                 let color = work_load(w, h);
-                let index = self.buffer.len() - (3 * h * self.width + w * 3) as usize;
-                self.write(color, index as usize);
+                let index = self.index(h, w);
+                self.write(color, index);
             })
         })
     }
@@ -45,9 +46,31 @@ impl Image {
         (0..self.height).into_par_iter().for_each(|h| {
             (0..self.width).into_par_iter().for_each(|w| {
                 let color = work_load(w, h);
-                let index = self.buffer.len() - (3 * h * self.width + w * 3) as usize;
-                self.write(color, index as usize);
+                let index = self.index(h, w);
+                self.write(color, index);
             })
+        })
+    }
+
+    #[inline]
+    pub fn compute_parallel_present<F1, F2, T>(
+        &mut self,
+        data: &T,
+        work_load: F1,
+        present: F2,
+    ) -> ()
+    where
+        F1: Fn(u32, u32) -> Vec3 + Send + Sync,
+        F2: Fn(&T, u32, &[u8]) -> () + Sync,
+        T: Sync,
+    {
+        (0..self.height).into_par_iter().for_each(|h| {
+            (0..self.width).into_par_iter().for_each(|w| {
+                let color = work_load(w, h);
+                let index = self.index(h, w);
+                self.write(color, index);
+            });
+            present(data, h, &self.buffer[h as usize..self.width as usize]);
         })
     }
 
@@ -68,10 +91,15 @@ impl Image {
             ptr::write(ptr.add(index), (256.0 * r.clamp(0.0, 0.999)) as u8);
             ptr::write(ptr.add(index + 1), (256.0 * g.clamp(0.0, 0.999)) as u8);
             ptr::write(ptr.add(index + 2), (256.0 * b.clamp(0.0, 0.999)) as u8);
-            /*self.buffer.push((256.0 * r.clamp(0.0, 0.999)) as u8);
-            self.buffer.push((256.0 * g.clamp(0.0, 0.999)) as u8);
-            self.buffer.push((256.0 * b.clamp(0.0, 0.999)) as u8);*/
         }
+    }
+
+    pub fn into_image_buffer(self) -> image::ImageBuffer<image::Rgb<u8>, Vec<u8>> {
+        image::RgbImage::from_vec(self.width, self.height, self.buffer.clone()).unwrap()
+    }
+
+    fn index(&self, row: u32, column: u32) -> usize {
+        self.buffer.len() - 3 * (row * self.width + column) as usize
     }
 }
 

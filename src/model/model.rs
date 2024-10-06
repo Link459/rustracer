@@ -3,12 +3,10 @@ use core::panic;
 use crate::{
     aabb::AABB,
     bvh::BvhNode,
-    hittable::Hittable,
-    hittable::{HitPayload, RotateY, Translate},
+    hittable::{HitPayload, Hittable, RotateY, Translate},
     interval::Interval,
-    material::material::Material,
-    model::quad::Quad,
-    model::sphere::Sphere,
+    material::material::{ MaterialStorage},
+    model::{quad::Quad, sphere::Sphere},
     moving_sphere::MovingSphere,
     ray::Ray,
     volume::ConstantMedium,
@@ -21,7 +19,7 @@ pub enum Model {
     MovingSphere(MovingSphere),
     Quad(Quad),
     ConstantMedium(ConstantMedium),
-    Bvh(Box<BvhNode>),
+    //Bvh(Box<BvhNode>),
     //Bvh(Box<Bvh>),
     World(World),
     Translate(Translate),
@@ -55,12 +53,12 @@ impl Model {
 }
 
 impl Hittable for Model {
-    fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<(HitPayload, Material)> {
+    fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<(HitPayload, MaterialStorage)> {
         match self {
             Model::Sphere(ref m) => m.hit(ray, ray_t),
             Model::MovingSphere(ref m) => m.hit(ray, ray_t),
             Model::Quad(ref m) => m.hit(ray, ray_t),
-            Model::Bvh(ref m) => m.hit(ray, ray_t),
+            //Model::Bvh(ref m) => m.hit(ray, ray_t),
             Model::World(ref m) => m.hit(ray, ray_t),
             Model::Translate(ref m) => m.hit(ray, ray_t),
             Model::RotateY(ref m) => m.hit(ray, ray_t),
@@ -73,7 +71,7 @@ impl Hittable for Model {
             Model::Sphere(ref m) => m.bounding_box(),
             Model::MovingSphere(ref m) => m.bounding_box(),
             Model::Quad(ref m) => m.bounding_box(),
-            Model::Bvh(ref m) => m.bounding_box(),
+            //Model::Bvh(ref m) => m.bounding_box(),
             Model::World(ref m) => m.bounding_box(),
             Model::Translate(ref m) => m.bounding_box(),
             Model::RotateY(ref m) => m.bounding_box(),

@@ -1,11 +1,10 @@
 use anyhow::Result;
-use image::EncodableLayout;
 use rand::Rng;
-use std::{fs::File, io::Write, println, time::Instant};
+use std::{println, time::Instant};
 
 use crate::{
-    hittable::Hittable, image::Image, interval::Interval, ray::Ray, render::RenderConfig,
-    vec3::Vec3,
+    hittable::Hittable, image::Image, interval::Interval, material::Material, ray::Ray,
+    render::RenderConfig, vec3::Vec3,
 };
 
 #[derive(Clone, Copy)]
@@ -60,6 +59,10 @@ impl Camera {
         }
     }
 
+    pub fn get_config(&self) -> &RenderConfig {
+        &self.config
+    }
+
     pub fn default_with_config(config: RenderConfig) -> Self {
         let mut cam = Self::default();
         cam.config = config;
@@ -78,7 +81,7 @@ impl Camera {
         )
     }
 
-    pub fn render(self, world: impl Hittable) -> Result<()> {
+    pub fn render(self, world: impl Hittable) -> Result<Image> {
         println!(
             "widht: {:?},\nheight: {:?},\nsamples: {:?},\ndepth: {:?}",
             self.config.width, self.config.height, self.config.samples, self.config.max_depth
@@ -101,20 +104,10 @@ impl Camera {
             return color;
         });
 
-        //image.buffer = dbg!(image.buffer);
-
         let time_took = format!("rendering took: {:?}", render_time.elapsed());
         println!("{time_took}");
 
-        let mut file = File::create("out.ppm")?;
-        let ppm = format!(
-            "P6\n {:?} {:?}\n255\n",
-            self.config.width, self.config.height
-        );
-        file.write(ppm.as_bytes())?;
-        file.write(image.buffer.as_bytes())?;
-
-        Ok(())
+        Ok(image)
     }
 
     pub fn ray_color(&self, ray: &Ray, world: &impl Hittable, depth: u32) -> Vec3 {

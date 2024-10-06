@@ -4,20 +4,20 @@ use crate::{
     aabb::AABB,
     hittable::{HitPayload, Hittable},
     interval::Interval,
-    material::material::Material,
+    material::material::{Material, MaterialStorage},
     model::sphere::Sphere,
     ray::Ray,
     vec3::Vec3,
 };
 
-#[derive(Clone,Debug)]
+#[derive(Clone, Debug)]
 pub struct MovingSphere {
     pub center0: Vec3,
     pub center1: Vec3,
     pub time0: f64,
     pub time1: f64,
     pub radius: f64,
-    pub material: Material,
+    pub material: MaterialStorage,
     bounding_box: AABB,
 }
 
@@ -28,8 +28,12 @@ impl MovingSphere {
         time0: f64,
         time1: f64,
         radius: f64,
-        material: Material,
+        material: MaterialStorage,
     ) -> Self {
+        let rvec = Vec3::new(radius, radius, radius);
+        let box1 = AABB::from((center0.x - rvec, center0.x + rvec));
+        let box2 = AABB::from((center1.y - rvec, center1.y + rvec));
+
         return Self {
             center0,
             center1,
@@ -37,7 +41,7 @@ impl MovingSphere {
             time1,
             radius,
             material,
-            bounding_box: AABB::default(),
+            bounding_box: AABB::from((box1, box2)),
         };
     }
 
@@ -46,18 +50,11 @@ impl MovingSphere {
         return self.center0
             + ((time - self.time0) / (self.time1 - self.time0)) * (self.center1 - self.center0);
     }
-
-    fn mutate_bbox(&self, bbox: RefCell<AABB>) {
-        let rvec = Vec3::new(self.radius, self.radius, self.radius);
-        let box1 = AABB::from((self.center0 - rvec, self.center0 + rvec));
-        let box2 = AABB::from((self.center1 - rvec, self.center1 + rvec));
-        bbox.replace(AABB::from((box1, box2)));
-    }
 }
 
 impl Hittable for MovingSphere {
     #[inline]
-    fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<(HitPayload, Material)> {
+    fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<(HitPayload, MaterialStorage)> {
         let oc = ray.orig - self.center(ray.time);
         let a = ray.dir.length().powi(2);
         let half_b = oc.dot(&ray.dir);
@@ -96,7 +93,6 @@ impl Hittable for MovingSphere {
     }
 
     fn bounding_box(&self) -> &AABB {
-        self.mutate_bbox(self.bounding_box.into());
         return &self.bounding_box;
     }
 }

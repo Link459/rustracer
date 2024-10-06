@@ -4,22 +4,22 @@ use crate::{
     aabb::AABB,
     hittable::{HitPayload, Hittable},
     interval::Interval,
-    material::material::Material,
+    material::material::{Material, MaterialStorage},
     model::model::Model,
     ray::Ray,
     vec3::Vec3,
 };
 
-#[derive(Clone,Debug)]
+#[derive(Clone, Debug)]
 pub struct Sphere {
     pub center: Vec3,
     pub radius: f64,
-    pub material: Material,
+    pub material: MaterialStorage,
     bbox: AABB,
 }
 
 impl Sphere {
-    pub fn new(center: Vec3, radius: f64, material: Material) -> Model {
+    pub fn new(center: Vec3, radius: f64, material: MaterialStorage) -> Model {
         let rvec = Vec3::from(radius);
         return Model::Sphere(Self {
             center,
@@ -40,7 +40,7 @@ impl Sphere {
 
 impl Hittable for Sphere {
     #[inline]
-    fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<(HitPayload, Material)> {
+    fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<(HitPayload, MaterialStorage)> {
         let oc = ray.orig - self.center;
         let a = ray.dir.length().powi(2);
         let half_b = oc.dot(&ray.dir);

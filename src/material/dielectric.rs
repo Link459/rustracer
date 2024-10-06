@@ -2,10 +2,10 @@ use rand::Rng;
 
 use crate::{hittable::HitPayload, ray::Ray, vec3::Vec3};
 
-use super::material::{Material, Scatter};
+use super::material::{Material, MaterialStorage};
 use crate::into_mat;
 
-#[derive(Clone, Copy,Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct Dielectric {
     ir: f64,
 }
@@ -13,8 +13,8 @@ pub struct Dielectric {
 into_mat!(Dielectric);
 
 impl Dielectric {
-    pub fn new(ir: f64) -> Material {
-        return Material::Dielectric(Self { ir });
+    pub fn new(ir: f64) -> MaterialStorage {
+        return MaterialStorage::Dielectric(Self { ir });
     }
 
     fn reflectance(cosine: f64, ref_idx: f64) -> f64 {
@@ -24,7 +24,7 @@ impl Dielectric {
     }
 }
 
-impl Scatter for Dielectric {
+impl Material for Dielectric {
     #[inline]
     fn scatter(&self, ray: &Ray, payload: &HitPayload) -> Option<(Ray, Vec3)> {
         let refraction_ratio = if payload.front_face {

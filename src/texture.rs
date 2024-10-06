@@ -85,7 +85,7 @@ impl TextureValue for NoiseTexture {
     }
 }
 
-#[derive(Clone,Debug)]
+#[derive(Clone, Debug)]
 pub struct ImageTexture {
     buffer: Vec<u8>,
     nx: u32,
@@ -98,7 +98,6 @@ impl ImageTexture {
             open(file_path).expect(format!("failed to open image with path: {file_path}").as_str());
         let (nx, ny) = buffer.dimensions();
 
-        println!("nx: {nx},ny: {ny}");
         return Texture::Image(Self {
             nx,
             ny,

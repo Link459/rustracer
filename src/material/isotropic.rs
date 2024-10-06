@@ -8,7 +8,7 @@ use crate::{
 
 use super::{
     lambertian::random_unit_vector,
-    material::{Material, Scatter},
+    material::{Material, MaterialStorage},
 };
 
 #[derive(Clone, Debug)]
@@ -19,8 +19,8 @@ pub struct Isotropic {
 into_mat!(Isotropic);
 
 impl Isotropic {
-    pub fn new(texture: Texture) -> Material {
-        Material::Isotropic(Self { albedo: texture })
+    pub fn new(texture: Texture) -> MaterialStorage {
+        MaterialStorage::Isotropic(Self { albedo: texture })
     }
 }
 
@@ -32,7 +32,7 @@ impl From<Vec3> for Isotropic {
     }
 }
 
-impl Scatter for Isotropic {
+impl Material for Isotropic {
     fn scatter(&self, ray: &Ray, payload: &HitPayload) -> Option<(Ray, Vec3)> {
         let scattered = Ray::new(payload.p, random_unit_vector(), ray.time);
         let attenuation = self.albedo.value(payload.u, payload.v, &payload.p);

@@ -4,7 +4,11 @@ use std::{
 };
 
 use crate::{
-    aabb::AABB, interval::Interval, material::material::Material, model::model::Model, ray::Ray,
+    aabb::AABB,
+    interval::Interval,
+    material::material::{ MaterialStorage},
+    model::model::Model,
+    ray::Ray,
     vec3::Vec3,
 };
 
@@ -52,7 +56,7 @@ impl Display for HitPayload {
 }
 
 pub trait Hittable: Send + Sync {
-    fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<(HitPayload, Material)>;
+    fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<(HitPayload, MaterialStorage)>;
     fn bounding_box(&self) -> &AABB;
 }
 
@@ -74,7 +78,7 @@ impl Translate {
 }
 
 impl Hittable for Translate {
-    fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<(HitPayload, Material)> {
+    fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<(HitPayload, MaterialStorage)> {
         let offset_ray = Ray::new(ray.orig - self.offset, ray.dir, ray.time);
 
         if let Some((mut payload, material)) = self.model.hit(&offset_ray, ray_t) {
@@ -90,7 +94,7 @@ impl Hittable for Translate {
     }
 }
 
-#[derive(Clone,Debug)]
+#[derive(Clone, Debug)]
 pub struct RotateY {
     model: Box<Model>,
     sin_theta: f64,
@@ -138,7 +142,7 @@ impl RotateY {
 }
 
 impl Hittable for RotateY {
-    fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<(HitPayload, Material)> {
+    fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<(HitPayload, MaterialStorage)> {
         let mut origin = ray.orig;
         let mut direction = ray.dir;
 

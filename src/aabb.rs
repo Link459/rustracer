@@ -33,8 +33,35 @@ impl AABB {
     }
 
     pub fn hit(&self, ray: &Ray, mut ray_t: Interval) -> bool {
-        for a in 0..3 {
-            let inv_d = 1.0 / ray.dir[a];
+        let orig = ray.orig;
+        let dir = ray.dir;
+        for axis in 0..3 {
+            let ax = self.axis(axis);
+            let adinv = 1.0 / dir[axis];
+
+            let t0 = (ax.min - orig[axis]) * adinv;
+            let t1 = (ax.max - orig[axis]) * adinv;
+
+            if t0 < t1 {
+                if t0 > ray_t.min {
+                    ray_t.min = t0;
+                }
+                if t1 < ray_t.max {
+                    ray_t.max = t1;
+                }
+            } else {
+                if t1 > ray_t.min {
+                    ray_t.min = t1;
+                }
+                if t0 < ray_t.max {
+                    ray_t.max = t0;
+                }
+            }
+
+            if ray_t.max <= ray_t.min {
+                return false;
+            }
+            /*let inv_d = 1.0 / ray.dir[a];
             let orig = ray.orig[a];
 
             let mut t0 = (self.axis(a).min - orig) * inv_d;
@@ -49,7 +76,7 @@ impl AABB {
 
             if ray_t.max <= ray_t.min {
                 return false;
-            }
+            }*/
         }
         return true;
     }

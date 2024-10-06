@@ -6,7 +6,7 @@ use crate::{
     vec3::Vec3,
 };
 
-use super::material::{Material, Scatter};
+use super::material::{Material, MaterialStorage};
 
 #[derive(Clone, Debug)]
 pub struct DiffuseLight {
@@ -16,12 +16,12 @@ pub struct DiffuseLight {
 into_mat!(DiffuseLight);
 
 impl DiffuseLight {
-    pub fn new(emit: Texture) -> Material {
-        Material::DiffuseLight(Self { emit })
+    pub fn new(emit: Texture) -> MaterialStorage {
+        MaterialStorage::DiffuseLight(Self { emit })
     }
 }
 
-impl Scatter for DiffuseLight {
+impl Material for DiffuseLight {
     fn scatter(&self, _ray: &Ray, _payload: &HitPayload) -> Option<(Ray, Vec3)> {
         return None;
     }

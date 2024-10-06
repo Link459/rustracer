@@ -11,7 +11,7 @@ impl Into<fn(ray: &Ray) -> Vec3> for Background {
     fn into(self) -> fn(ray: &Ray) -> Vec3 {
         match self {
             Background::Sky => skybox,
-            Background::Night => todo!(),
+            Background::Night => night,
         }
     }
 }

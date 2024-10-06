@@ -22,5 +22,10 @@ nalgebra-glm = "0.19.0"
 serde = { version = "1.0.203", features = ["derive"] }
 toml= "0.8.14"
 
-glfw = "0.58.0"
+glfw = { version = "0.58.0"}
+winit = { version = "0.30.5", features = ["rwh_06"]}
 softbuffer = "0.4.5"
+
+[profile.release] 
+opt-level = 3
+lto = "thin"

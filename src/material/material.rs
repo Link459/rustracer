@@ -5,18 +5,8 @@ use super::{
     DiffuseLight,
 };
 
-#[macro_export]
-macro_rules! into_mat {
-    ($id:ident) => {
-        impl Into<Material> for $id {
-            fn into(self) -> Material {
-                Material::$id(self)
-            }
-        }
-    };
-}
-#[derive(Clone,Debug)]
-pub enum Material {
+#[derive(Clone, Debug)]
+pub enum MaterialStorage {
     Lambertian(Lambertian),
     Metal(Metal),
     Dielectric(Dielectric),
@@ -24,28 +14,39 @@ pub enum Material {
     Isotropic(Isotropic),
 }
 
-impl Material {
+#[macro_export]
+macro_rules! into_mat {
+    ($id:ident) => {
+        impl Into<crate::material::material::MaterialStorage> for $id {
+            fn into(self) -> crate::material::material::MaterialStorage {
+                crate::material::material::MaterialStorage::$id(self)
+            }
+        }
+    };
+}
+
+impl Material for MaterialStorage {
     #[inline]
-    pub fn scatter(&self, ray: &Ray, payload: &HitPayload) -> Option<(Ray, Vec3)> {
+    fn scatter(&self, ray: &Ray, payload: &HitPayload) -> Option<(Ray, Vec3)> {
         match self {
-            Material::Lambertian(ref m) => m.scatter(ray, payload),
-            Material::Metal(ref m) => m.scatter(ray, payload),
-            Material::Dielectric(ref m) => m.scatter(ray, payload),
-            Material::DiffuseLight(ref m) => m.scatter(ray, payload),
-            Material::Isotropic(ref m) => m.scatter(ray, payload),
+            MaterialStorage::Lambertian(ref m) => m.scatter(ray, payload),
+            MaterialStorage::Metal(ref m) => m.scatter(ray, payload),
+            MaterialStorage::Dielectric(ref m) => m.scatter(ray, payload),
+            MaterialStorage::DiffuseLight(ref m) => m.scatter(ray, payload),
+            MaterialStorage::Isotropic(ref m) => m.scatter(ray, payload),
         }
     }
 
     #[inline]
-    pub fn emitted(&self, u: f64, v: f64, p: &Vec3) -> Vec3 {
+    fn emitted(&self, u: f64, v: f64, p: &Vec3) -> Vec3 {
         match self {
-            Material::DiffuseLight(ref m) => m.emitted(u, v, p),
+            MaterialStorage::DiffuseLight(ref m) => m.emitted(u, v, p),
             _ => Vec3::ZERO,
         }
     }
 }
 
-pub trait Scatter: Send + Sync {
+pub trait Material: Send + Sync {
     fn scatter(&self, ray: &Ray, payload: &HitPayload) -> Option<(Ray, Vec3)>;
     fn emitted(&self, _u: f64, _v: f64, _p: &Vec3) -> Vec3 {
         return Vec3::ZERO;

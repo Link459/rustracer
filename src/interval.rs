@@ -1,6 +1,6 @@
 use std::ops::Add;
 
-#[derive(Clone, Copy,Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct Interval {
     pub min: f64,
     pub max: f64,
@@ -19,8 +19,6 @@ impl Interval {
     pub fn new(min: f64, max: f64) -> Self {
         Self { min, max }
     }
-
-    // add code here
 
     pub fn contains(&self, x: f64) -> bool {
         return self.min <= x && x <= self.max;

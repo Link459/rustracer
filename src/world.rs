@@ -1,4 +1,5 @@
 use crate::interval::Interval;
+use crate::material::material::MaterialStorage;
 use crate::ray::Ray;
 use crate::{
     aabb::AABB,
@@ -40,7 +41,7 @@ impl World {
 
 impl Hittable for World {
     #[inline]
-    fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<(HitPayload, Material)> {
+    fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<(HitPayload, MaterialStorage)> {
         let mut closest_so_far = ray_t.max;
         let mut res = None;
 

@@ -4,10 +4,8 @@ use crate::{
     camera::Camera,
     hittable::{RotateY, Translate},
     interval::Interval,
-    material::{Dielectric, DiffuseLight, Lambertian, Material, Metal},
-    model::model::Model,
-    model::quad::Quad,
-    model::sphere::Sphere,
+    material::{material::MaterialStorage, Dielectric, DiffuseLight, Lambertian, Material, Metal},
+    model::{model::Model, quad::Quad, sphere::Sphere},
     moving_sphere::MovingSphere,
     render::{Background, RenderConfig},
     texture::{ChessTexture, ImageTexture, NoiseTexture, SolidColor},
@@ -18,6 +16,82 @@ use crate::{
 
 #[inline]
 pub fn random_world() -> (World, Camera) {
+    let mut rng = rand::thread_rng();
+    let origin = Vec3::new(4.0, 0.2, 0.0);
+    let mut world = World::default();
+
+    let chess = ChessTexture::new(
+        Box::new(SolidColor::new(Vec3::new(0.2, 0.3, 0.1))),
+        Box::new(SolidColor::new(Vec3::new(0.9, 0.9, 0.9))),
+    );
+    world.add(Sphere::new(
+        Vec3::new(0.0, -1000.0, 0.0),
+        1000.0,
+        Lambertian::new(chess),
+    ));
+    for a in -11..11 {
+        for b in -11..11 {
+            let choose_material = rng.gen::<f64>();
+            let center = Vec3::new(
+                a as f64 + 0.9 * rng.gen::<f64>(),
+                0.2,
+                b as f64 + 0.9 * rng.gen::<f64>(),
+            );
+            if (center - origin).length() > 0.9 {
+                if choose_material < 0.8 {
+                    // diffuse
+                    world.add(Sphere::new(
+                        center,
+                        0.2,
+                        Lambertian::new(SolidColor::new(Vec3::new(
+                            rng.gen::<f64>() * rng.gen::<f64>(),
+                            rng.gen::<f64>() * rng.gen::<f64>(),
+                            rng.gen::<f64>() * rng.gen::<f64>(),
+                        ))),
+                    ));
+                } else if choose_material < 0.95 {
+                    // metal
+                    world.add(Sphere::new(
+                        center,
+                        0.2,
+                        Metal::new(
+                            Vec3::new(
+                                0.5 * (1.0 + rng.gen::<f64>()),
+                                0.5 * (1.0 + rng.gen::<f64>()),
+                                0.5 * (1.0 + rng.gen::<f64>()),
+                            ),
+                            0.5 * rng.gen::<f64>(),
+                        ),
+                    ));
+                } else {
+                    // glass
+                    world.add(Sphere::new(center, 0.2, Dielectric::new(1.5)));
+                }
+            }
+        }
+    }
+    world.add(Sphere::new(
+        Vec3::new(0.0, 1.0, 0.0),
+        1.0,
+        Dielectric::new(1.5),
+    ));
+    world.add(Sphere::new(
+        Vec3::new(-4.0, 1.0, 0.0),
+        1.0,
+        Lambertian::new(SolidColor::new(Vec3::new(0.4, 0.2, 0.1))),
+    ));
+    world.add(Sphere::new(
+        Vec3::new(4.0, 1.0, 0.0),
+        1.0,
+        Metal::new(Vec3::new(0.7, 0.6, 0.5), 0.0),
+    ));
+
+    let config = RenderConfig::with_aspect_ratio(16.0 / 9.0, 300, 50, 50);
+
+    return (world, Camera::default_with_config(config));
+}
+
+pub fn random_world_moving() -> (World, Camera) {
     let mut rng = rand::thread_rng();
     let origin = Vec3::new(4.0, 0.2, 0.0);
     let mut world = World::default();
@@ -92,7 +166,7 @@ pub fn random_world() -> (World, Camera) {
         Metal::new(Vec3::new(0.7, 0.6, 0.5), 0.0),
     ));
 
-    let config = RenderConfig::with_aspect_ratio(16.0 / 9.0, 400, 100, 50);
+    let config = RenderConfig::with_aspect_ratio(16.0 / 9.0, 300, 50, 50);
 
     return (world, Camera::default_with_config(config));
 }
@@ -145,17 +219,18 @@ pub fn earth() -> (World, Camera) {
     let globe = Sphere::new(Vec3::ZERO, 2.0, earth_surface);
     world.add(globe);
 
-    return (world, Camera::default());
+    let config = RenderConfig::with_aspect_ratio(16.0 / 9.0, 200, 50, 50);
+    return (world, Camera::default_with_config(config));
 }
 
 #[inline]
 pub fn quads() -> (World, Camera) {
     let mut world = World::default();
-    let left_red = Material::Lambertian(Lambertian::from(Vec3::new(1.0, 0.2, 0.2)));
-    let back_green = Material::Lambertian(Lambertian::from(Vec3::new(0.2, 1.0, 0.2)));
-    let right_blue = Material::Lambertian(Lambertian::from(Vec3::new(0.2, 0.2, 1.0)));
-    let upper_orange = Material::Lambertian(Lambertian::from(Vec3::new(1.0, 0.5, 0.0)));
-    let lower_teal = Material::Lambertian(Lambertian::from(Vec3::new(0.2, 0.8, 0.8)));
+    let left_red = MaterialStorage::Lambertian(Lambertian::from(Vec3::new(1.0, 0.2, 0.2)));
+    let back_green = MaterialStorage::Lambertian(Lambertian::from(Vec3::new(0.2, 1.0, 0.2)));
+    let right_blue = MaterialStorage::Lambertian(Lambertian::from(Vec3::new(0.2, 0.2, 1.0)));
+    let upper_orange = MaterialStorage::Lambertian(Lambertian::from(Vec3::new(1.0, 0.5, 0.0)));
+    let lower_teal = MaterialStorage::Lambertian(Lambertian::from(Vec3::new(0.2, 0.8, 0.8)));
 
     // Quads
     world.add(Quad::new(
@@ -260,7 +335,7 @@ pub fn simple_light() -> (World, Camera) {
 }
 
 #[inline]
-fn box_of_quads(a: &Vec3, b: &Vec3, mat: Material) -> Model {
+fn box_of_quads(a: &Vec3, b: &Vec3, mat: MaterialStorage) -> Model {
     // Returns the 3D box (six sides) that contains the two opposite vertices a & b.
 
     let mut sides = World::default();
@@ -463,7 +538,7 @@ pub fn cornell_smoke() -> (World, Camera) {
 
     world.add(ConstantMedium::new(Box::new(box2), 0.01, Vec3::ONE));
 
-    let config = RenderConfig::with_aspect_ratio(1.0, 200, 200, 50);
+    let config = RenderConfig::with_aspect_ratio(1.0, 200, 500, 50);
     let cam = Camera::new(
         Vec3::new(278.0, 278.0, -800.0),
         Vec3::new(278.0, 278.0, 0.0),

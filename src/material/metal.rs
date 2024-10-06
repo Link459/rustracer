@@ -2,12 +2,10 @@ use crate::vec3::Vec3;
 
 use crate::{hittable::HitPayload, into_mat, ray::Ray};
 
-use super::{
-    lambertian::random_unit_sphere,
-    material::{Material, Scatter},
-};
+use super::material::MaterialStorage;
+use super::{lambertian::random_unit_sphere, material::Material};
 
-#[derive(Clone, Copy,Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct Metal {
     albedo: Vec3,
     fuzz: f64,
@@ -16,12 +14,12 @@ pub struct Metal {
 into_mat!(Metal);
 
 impl Metal {
-    pub fn new(albedo: Vec3, fuzz: f64) -> Material {
-        return Material::Metal(Self { albedo, fuzz });
+    pub fn new(albedo: Vec3, fuzz: f64) -> MaterialStorage {
+        return MaterialStorage::Metal(Self { albedo, fuzz });
     }
 }
 
-impl Scatter for Metal {
+impl Material for Metal {
     #[inline]
     fn scatter(&self, ray: &Ray, payload: &HitPayload) -> Option<(Ray, Vec3)> {
         let reflected = ray.dir.normalize().reflect(&payload.normal);
