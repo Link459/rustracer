@@ -36,7 +36,7 @@ use softbuffer::Surface;
 use winit::application::ApplicationHandler;
 use winit::event::WindowEvent;
 use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
-use winit::window::{Window, WindowId};
+use winit::window::{Icon, Window, WindowId};
 
 use crate::image::Image;
 
@@ -60,9 +60,15 @@ impl ApplicationHandler for Presentation {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         let window = Rc::new(
             event_loop
-                .create_window(Window::default_attributes().with_inner_size(
-                    winit::dpi::PhysicalSize::new(self.image.width(), self.image.height()),
-                ))
+                .create_window(
+                    Window::default_attributes()
+                        .with_inner_size(winit::dpi::PhysicalSize::new(
+                            self.image.width(),
+                            self.image.height(),
+                        ))
+                        .with_title("rustracer")
+                        .with_resizable(false),
+                )
                 .unwrap(),
         );
 

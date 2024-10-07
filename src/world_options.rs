@@ -4,7 +4,7 @@ use crate::{
     camera::Camera,
     hittable::{RotateY, Translate},
     interval::Interval,
-    material::{material::MaterialStorage, Dielectric, DiffuseLight, Lambertian, Material, Metal},
+    material::{material::MaterialStorage, Dielectric, DiffuseLight, Lambertian, Metal},
     model::{model::Model, quad::Quad, sphere::Sphere},
     moving_sphere::MovingSphere,
     render::{Background, RenderConfig},

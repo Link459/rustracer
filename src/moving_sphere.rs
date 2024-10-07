@@ -1,10 +1,8 @@
-use std::cell::RefCell;
-
 use crate::{
     aabb::AABB,
     hittable::{HitPayload, Hittable},
     interval::Interval,
-    material::material::{Material, MaterialStorage},
+    material::material::MaterialStorage,
     model::sphere::Sphere,
     ray::Ray,
     vec3::Vec3,

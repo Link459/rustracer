@@ -1,11 +1,11 @@
 use crate::interval::Interval;
 use crate::material::material::MaterialStorage;
+use crate::model::Model;
 use crate::ray::Ray;
 use crate::{
     aabb::AABB,
     hittable::{HitPayload, Hittable},
 };
-use crate::{material::Material, model::Model};
 
 #[derive(Clone, Default, Debug)]
 pub struct World {
@@ -57,26 +57,6 @@ impl Hittable for World {
 
     fn bounding_box(&self) -> &AABB {
         return &self.bbox;
-        /*if self.entities.is_empty() {
-            return None;
-        };
-
-        let mut first_box = true;
-        let mut output_box = AABB::new(Vec3::ZERO, Vec3::ZERO);
-
-        for object in self.entities.iter() {
-            if let Some(b) = object.bounding_box(time0, time1) {
-                output_box = match first_box {
-                    true => b,
-                    false => output_box.surrounding_box(&b),
-                };
-                first_box = false;
-            } else {
-                return None;
-            }
-        }
-
-        return Some(output_box);*/
     }
 }
 

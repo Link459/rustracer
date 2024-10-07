@@ -1,4 +1,4 @@
-use std::{cell::Ref, mem::swap, ops::Add};
+use std::{cell::Ref, ops::Add};
 
 use crate::{interval::Interval, ray::Ray, vec3::Vec3};
 

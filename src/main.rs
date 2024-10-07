@@ -59,25 +59,11 @@ fn main() -> Result<()> {
     stdin().read_line(&mut buf).expect("failed to read line");
     let choice = buf.trim().parse::<usize>().unwrap();
     println!();
-    println!("choose scene: {choice}");
+    println!("choose scene: {}", options[choice].0);
 
-    let (mut world, camera) = options[choice].1();
+    let (world, camera) = options[choice].1();
 
-    /*let (mut world, camera) = match choice {
-        0 => world_options::random_world(),
-        1 => world_options::random_world_moving(),
-        2 => world_options::two_chess_spheres(),
-        3 => world_options::two_perlin_spheres(),
-        4 => world_options::earth(),
-        5 => world_options::quads(),
-        6 => world_options::simple_light(),
-        7 => world_options::cornell_box(),
-        8 => world_options::cornell_smoke(),
-        _ => panic!("{buf} was not a viable otption"),
-    };*/
-
-    let len = world.entities.len();
-    //let world = BvhNode::new(&mut world.entities, 0, len);
+    //let world = BvhNode::from_world(world);
 
     let image = camera.render(world)?;
 

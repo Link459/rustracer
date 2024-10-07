@@ -4,7 +4,7 @@ use crate::{
     aabb::AABB,
     hittable::{HitPayload, Hittable},
     interval::Interval,
-    material::material::{Material, MaterialStorage},
+    material::material::{ MaterialStorage},
     model::model::Model,
     ray::Ray,
     vec3::Vec3,
