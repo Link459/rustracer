@@ -1,9 +1,7 @@
 use std::cmp::Ordering;
 
-use rand::{thread_rng, Rng};
-
 use crate::{
-    aabb::AABB,
+    aabb::{self, AABB},
     hittable::{HitPayload, Hittable},
     interval::Interval,
     material::material::MaterialStorage,
@@ -21,8 +19,12 @@ pub struct BvhNode {
 
 impl BvhNode {
     pub fn new(mut models: Vec<Model>, start: usize, end: usize) -> Model {
-        let comp: usize = thread_rng().gen_range(0..2);
-        let comp = match comp {
+        let mut bbox = aabb::EMPTY;
+        for i in start..end {
+            bbox = AABB::from((bbox, models[i].bounding_box().to_owned()));
+        }
+        let axis = bbox.longest_axis();
+        let comp = match axis {
             0 => |a: &Model, b: &Model| compare(a, b, 0),
             1 => |a: &Model, b: &Model| compare(a, b, 1),
             2 => |a: &Model, b: &Model| compare(a, b, 2),
@@ -31,20 +33,20 @@ impl BvhNode {
 
         let span = end - start;
 
-        let mut node: BvhNode;
+        let node: BvhNode;
         match span {
             1 => {
                 node = BvhNode {
                     left: models[start].clone(),
                     right: models[start].clone(),
-                    bbox: AABB::default(),
+                    bbox,
                 };
             }
             2 => {
                 node = BvhNode {
                     left: models[start].clone(),
                     right: models[start + 1].clone(),
-                    bbox: AABB::default(),
+                    bbox,
                 };
             }
             _ => {
@@ -55,20 +57,17 @@ impl BvhNode {
                 let left = Self::new(models.clone(), start, mid);
                 let right = Self::new(models, mid, end);
 
-                node = BvhNode {
-                    left,
-                    right,
-                    bbox: AABB::default(),
-                };
+                node = BvhNode { left, right, bbox };
             }
         }
 
-        node.bbox = AABB::from((
+        /*node.bbox = AABB::from((
             node.left.bounding_box().to_owned(),
             node.right.bounding_box().to_owned(),
-        ));
+        ));*/
         return Model::Bvh(Box::new(node));
     }
+
     pub fn from_world(world: World) -> Model {
         let len = world.entities.len();
         Self::new(world.entities, 0, len)
@@ -76,23 +75,24 @@ impl BvhNode {
 }
 
 impl Hittable for BvhNode {
-    fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<(HitPayload, MaterialStorage)> {
+    #[inline]
+    fn hit(&self, ray: &Ray, mut ray_t: Interval) -> Option<(HitPayload, MaterialStorage)> {
         if !self.bbox.hit(ray, ray_t) {
             return None;
         }
 
         let left = self.left.hit(ray, ray_t);
-        let interval = Interval::new(
-            ray_t.min,
-            left.as_ref().map(|(h, _)| h.t).unwrap_or(ray_t.max),
-        );
-        let right = self.right.hit(ray, interval);
+        if left.is_some() {
+            unsafe {
+                ray_t.max = left.as_ref().unwrap_unchecked().0.t;
+            }
+        }
+        let right = self.right.hit(ray, ray_t);
         if right.is_some() {
             right
         } else {
             left
         }
-        //right.or(left)
     }
 
     fn bounding_box(&self) -> &AABB {
@@ -106,6 +106,6 @@ fn compare(a: &Model, b: &Model, axis: usize) -> Ordering {
 
     let ac = a_axis_interval.min + a_axis_interval.max;
     let bc = b_axis_interval.min + b_axis_interval.max;
-    return ac.partial_cmp(&bc).unwrap();
-    //return a_axis_interval.min.total_cmp(&b_axis_interval.min);
+    return ac.total_cmp(&bc);
+    //return ac.partial_cmp(&bc).unwrap();
 }

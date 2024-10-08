@@ -86,7 +86,7 @@ pub fn random_world() -> (World, Camera) {
         Metal::new(Vec3::new(0.7, 0.6, 0.5), 0.0),
     ));
 
-    let config = RenderConfig::with_aspect_ratio(16.0 / 9.0, 300, 50, 50);
+    let config = RenderConfig::with_aspect_ratio(16.0 / 9.0, 500, 100, 50);
 
     return (world, Camera::default_with_config(config));
 }
@@ -214,7 +214,7 @@ pub fn two_perlin_spheres() -> (World, Camera) {
 #[inline]
 pub fn earth() -> (World, Camera) {
     let mut world = World::new();
-    let earth = ImageTexture::new("earthmap.jpg");
+    let earth = ImageTexture::new("assets/earthmap.jpg");
     let earth_surface = Lambertian::new(earth);
     let globe = Sphere::new(Vec3::ZERO, 2.0, earth_surface);
     world.add(globe);

@@ -4,12 +4,8 @@ use std::{
 };
 
 use crate::{
-    aabb::AABB,
-    interval::Interval,
-    material::material::{ MaterialStorage},
-    model::model::Model,
-    ray::Ray,
-    vec3::Vec3,
+    aabb::AABB, interval::Interval, material::material::MaterialStorage, model::model::Model,
+    ray::Ray, vec3::Vec3,
 };
 
 #[derive(Default, Debug)]

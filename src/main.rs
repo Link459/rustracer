@@ -1,11 +1,11 @@
 #![allow(dead_code)]
-use crate::bvh::BvhNode;
-use ::image::EncodableLayout;
 use anyhow::Result;
+use bvh::BvhNode;
 use present::present;
 use std::{
     fs::File,
     io::{stdin, stdout, Write},
+    time::Instant,
 };
 
 mod aabb;
@@ -63,7 +63,14 @@ fn main() -> Result<()> {
 
     let (world, camera) = options[choice].1();
 
-    //let world = BvhNode::from_world(world);
+    let config = camera.get_config();
+    let rays_to_trace = config.width * config.height * config.samples;
+
+    println!("rays to be traced: {rays_to_trace}");
+
+    let now = Instant::now();
+    let world = BvhNode::from_world(world);
+    println!("time to generate bvh: {:?}", now.elapsed());
 
     let image = camera.render(world)?;
 
@@ -74,7 +81,7 @@ fn main() -> Result<()> {
         camera.get_config().height
     );
     file.write(ppm.as_bytes())?;
-    file.write(image.buffer.as_bytes())?;
+    file.write(image.buffer.as_slice())?;
 
     present(image)?;
     return Ok(());

@@ -1,6 +1,22 @@
 use std::{cell::Ref, ops::Add};
 
-use crate::{interval::Interval, ray::Ray, vec3::Vec3};
+use crate::{
+    interval::{self, Interval},
+    ray::Ray,
+    vec3::Vec3,
+};
+
+pub const EMPTY: AABB = AABB {
+    x: interval::EMPTY,
+    y: interval::EMPTY,
+    z: interval::EMPTY,
+};
+
+pub const UNIVERSE: AABB = AABB {
+    x: interval::UNIVERSE,
+    y: interval::UNIVERSE,
+    z: interval::UNIVERSE,
+};
 
 #[derive(Default, Clone, Copy, Debug)]
 pub struct AABB {
@@ -110,6 +126,19 @@ impl AABB {
             2 => self.z,
             _ => self.x,
         };
+    }
+
+    pub fn longest_axis(&self) -> usize {
+        if self.x.size() > self.y.size() {
+            if self.x.size() > self.z.size() {
+                return 0;
+            }
+            return 2;
+        }
+        if self.y.size() > self.z.size() {
+            return 1;
+        }
+        return 2;
     }
 }
 

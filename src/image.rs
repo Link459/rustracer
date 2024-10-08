@@ -3,11 +3,11 @@ use std::ptr;
 use crate::{render::RenderConfig, vec3::Vec3};
 use rayon::prelude::*;
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct Image {
     pub buffer: Vec<u8>,
-    width: u32,
-    height: u32,
+    pub width: u32,
+    pub height: u32,
     samples: f64,
 }
 
@@ -101,10 +101,59 @@ impl Image {
     fn index(&self, row: u32, column: u32) -> usize {
         self.buffer.len() - 3 * (row * self.width + column) as usize
     }
+
+    pub fn iter_pixels<'a>(&'a self) -> ImageIterator<'a> {
+        return ImageIterator::new(self);
+    }
 }
 
 impl From<RenderConfig> for Image {
     fn from(v: RenderConfig) -> Self {
         return Self::new(v.width, v.height, v.samples.into());
+    }
+}
+
+pub struct ImageIterator<'a> {
+    image: &'a Image,
+    x: usize,
+    y: usize,
+    idx: usize,
+}
+
+impl<'a> ImageIterator<'a> {
+    pub fn new(image: &'a Image) -> Self {
+        Self {
+            image,
+            x: 0,
+            y: 0,
+            idx: 0,
+        }
+    }
+}
+
+impl<'a> Iterator for ImageIterator<'a> {
+    type Item = (usize, usize, &'a [u8]);
+
+    #[inline(always)]
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.idx >= self.image.buffer.len() {
+            return None;
+        }
+
+        if self.x >= self.image.width as usize {
+            self.x = 0;
+            self.y += 1;
+        }
+        let (x, y) = (self.x, self.y);
+        self.x += 1;
+        let buf = &self.image.buffer[self.idx..(self.idx + 3)];
+        self.idx += 3;
+        Some((x, y, buf))
+    }
+
+    #[inline(always)]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let len = self.image.buffer.len();
+        (len, Some(len))
     }
 }
