@@ -1,4 +1,4 @@
-use rand::Rng;
+use rand::{thread_rng, Rng};
 
 use crate::{
     camera::Camera,
@@ -8,7 +8,8 @@ use crate::{
     model::{model::Model, quad::Quad, sphere::Sphere},
     moving_sphere::MovingSphere,
     render::{Background, RenderConfig},
-    texture::{ChessTexture, ImageTexture, NoiseTexture, SolidColor},
+    texture::{ChessTexture, ImageTexture, NoiseTexture, SolidColor, Texture::Image},
+    utils,
     vec3::Vec3,
     volume::ConstantMedium,
     world::World,
@@ -318,7 +319,8 @@ pub fn simple_light() -> (World, Camera) {
     ));
 
     let mut config = RenderConfig::with_aspect_ratio(16.0 / 9.0, 400, 300, 50);
-    config.background = Background::Night;
+    let hdri = utils::load_hdri("assets/klippad_sunrise_2_4k.hdr").unwrap();
+    config.background = Background::Hdri(Image(ImageTexture::from(hdri)));
     let cam = Camera::new(
         Vec3::new(26.0, 3.0, 6.0),
         Vec3::new(0.0, 2.0, 0.0),
@@ -538,6 +540,42 @@ pub fn cornell_smoke() -> (World, Camera) {
 
     world.add(ConstantMedium::new(Box::new(box2), 0.01, Vec3::ONE));
 
+    let config = RenderConfig::with_aspect_ratio(1.0, 200, 500, 50);
+    let cam = Camera::new(
+        Vec3::new(278.0, 278.0, -800.0),
+        Vec3::new(278.0, 278.0, 0.0),
+        Vec3::new(0.0, 1.0, 0.0),
+        40.0,
+        1.0,
+        0.0,
+        10.0,
+        Interval::new(0.0, 1.0),
+        config,
+    );
+
+    return (world, cam);
+}
+
+pub fn final_scene() -> (World, Camera) {
+    let world = World::new();
+    let ground = Lambertian::new(SolidColor::new(Vec3::new(0.48, 0.83, 0.53)));
+    let box_per_side = 20;
+    for i in 0..box_per_side {
+        for j in 0..box_per_side {
+            let w: f64 = 100.0;
+            let x0 = -1000.0 + i as f64 * w;
+            let z0 = -1000.0 + j as f64 * w;
+            let y0 = 0.0;
+            let x1 = x0 + w;
+            let y1: f64 = thread_rng().gen_range(1.0..101.0);
+            let z1 = z0 + w;
+            box_of_quads(
+                &Vec3::new(x0, y0, z0),
+                &Vec3::new(x1, y1, z1),
+                ground.clone(),
+            );
+        }
+    }
     let config = RenderConfig::with_aspect_ratio(1.0, 200, 500, 50);
     let cam = Camera::new(
         Vec3::new(278.0, 278.0, -800.0),

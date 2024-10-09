@@ -1,4 +1,4 @@
-use crate::{perlin::Perlin, vec3::Vec3};
+use crate::{image::Image, perlin::Perlin, vec3::Vec3};
 use image::{open, GenericImageView};
 
 #[derive(Clone, Debug)]
@@ -103,6 +103,16 @@ impl ImageTexture {
             ny,
             buffer: buffer.into_bytes(),
         });
+    }
+}
+
+impl From<Image> for ImageTexture {
+    fn from(value: Image) -> Self {
+        Self {
+            buffer: value.buffer,
+            nx: value.width,
+            ny: value.height,
+        }
     }
 }
 

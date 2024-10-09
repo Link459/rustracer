@@ -22,6 +22,7 @@ mod present;
 mod ray;
 mod render;
 mod texture;
+mod utils;
 mod vec3;
 mod volume;
 mod world;
@@ -65,7 +66,7 @@ fn main() -> Result<()> {
 
     let config = camera.get_config();
     let rays_to_trace = config.width * config.height * config.samples;
-
+    let rays_to_trace = utils::number_with_decimals(rays_to_trace as usize);
     println!("rays to be traced: {rays_to_trace}");
 
     let now = Instant::now();
@@ -74,14 +75,7 @@ fn main() -> Result<()> {
 
     let image = camera.render(world)?;
 
-    let mut file = File::create("out.ppm")?;
-    let ppm = format!(
-        "P6\n {:?} {:?}\n255\n",
-        camera.get_config().width,
-        camera.get_config().height
-    );
-    file.write(ppm.as_bytes())?;
-    file.write(image.buffer.as_slice())?;
+    utils::create_ppm_file("out.ppm", &image.buffer, image.width, image.height)?;
 
     present(image)?;
     return Ok(());

@@ -1,7 +1,9 @@
 use std::ptr;
 
 use crate::{render::RenderConfig, vec3::Vec3};
+use image::{EncodableLayout, ImageBuffer, Rgb};
 use rayon::prelude::*;
+use serde::{Deserialize, Serialize};
 
 #[derive(Default, Clone)]
 pub struct Image {
@@ -9,6 +11,24 @@ pub struct Image {
     pub width: u32,
     pub height: u32,
     samples: f64,
+}
+
+impl<'de> Deserialize<'de> for Image {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        todo!()
+    }
+}
+
+impl Serialize for Image {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        todo!()
+    }
 }
 
 impl Image {
@@ -107,9 +127,21 @@ impl Image {
     }
 }
 
-impl From<RenderConfig> for Image {
-    fn from(v: RenderConfig) -> Self {
+impl From<&RenderConfig> for Image {
+    fn from(v: &RenderConfig) -> Self {
         return Self::new(v.width, v.height, v.samples.into());
+    }
+}
+
+impl From<ImageBuffer<Rgb<u8>, Vec<u8>>> for Image {
+    fn from(value: ImageBuffer<Rgb<u8>, Vec<u8>>) -> Self {
+        let v = value.to_vec();
+        Self {
+            buffer: v,
+            width: value.width(),
+            height: value.height(),
+            samples: 0.0,
+        }
     }
 }
 

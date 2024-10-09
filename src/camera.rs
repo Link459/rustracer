@@ -7,7 +7,7 @@ use crate::{
     render::RenderConfig, vec3::Vec3,
 };
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct Camera {
     origin: Vec3,
     lower_left_corner: Vec3,
@@ -89,7 +89,7 @@ impl Camera {
 
         println!("starting the render");
         let render_time = Instant::now();
-        let mut image = Image::from(self.config);
+        let mut image = Image::from(&self.config);
         image.compute_parallel(|w, h| {
             let mut rng = rand::thread_rng();
             let mut color = Vec3::ZERO;
@@ -124,8 +124,7 @@ impl Camera {
             return color_from_emit;
         }
 
-        let bg: fn(&Ray) -> Vec3 = self.config.background.into();
-        return bg(ray);
+        return self.config.background.call(ray);
     }
 }
 
