@@ -3,7 +3,7 @@ use crate::{
     hittable::{HitPayload, Hittable},
     interval::Interval,
     material::material::MaterialStorage,
-    model::sphere::Sphere,
+    model::{sphere::Sphere, Model},
     ray::Ray,
     vec3::Vec3,
 };
@@ -27,12 +27,12 @@ impl MovingSphere {
         time1: f64,
         radius: f64,
         material: MaterialStorage,
-    ) -> Self {
+    ) -> Model {
         let rvec = Vec3::new(radius, radius, radius);
         let box1 = AABB::from((center0.x - rvec, center0.x + rvec));
         let box2 = AABB::from((center1.y - rvec, center1.y + rvec));
 
-        return Self {
+        return Model::MovingSphere(Self {
             center0,
             center1,
             time0,
@@ -40,7 +40,7 @@ impl MovingSphere {
             radius,
             material,
             bounding_box: AABB::from((box1, box2)),
-        };
+        });
     }
 
     #[inline]

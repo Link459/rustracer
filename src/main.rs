@@ -1,9 +1,8 @@
 #![allow(dead_code)]
 use anyhow::Result;
 use bvh::BvhNode;
-use present::present;
+use present::Presentation;
 use std::{
-    fs::File,
     io::{stdin, stdout, Write},
     time::Instant,
 };
@@ -48,6 +47,7 @@ fn main() -> Result<()> {
         option_pair!("simple_light", world_options::simple_light),
         option_pair!("cornell_box", world_options::cornell_box),
         option_pair!("cornell_smoke", world_options::cornell_smoke),
+        option_pair!("final_world", world_options::final_world),
     ];
 
     for (i, opt) in options.iter().enumerate() {
@@ -64,7 +64,7 @@ fn main() -> Result<()> {
 
     let (world, camera) = options[choice].1();
 
-    let config = camera.get_config();
+    let config = camera.get_config().clone();
     let rays_to_trace = config.width * config.height * config.samples;
     let rays_to_trace = utils::number_with_decimals(rays_to_trace as usize);
     println!("rays to be traced: {rays_to_trace}");
@@ -73,10 +73,20 @@ fn main() -> Result<()> {
     let world = BvhNode::from_world(world);
     println!("time to generate bvh: {:?}", now.elapsed());
 
-    let image = camera.render(world)?;
+    let event_loop = present::create_present_loop()?;
+    let proxy = event_loop.create_proxy();
 
-    utils::create_ppm_file("out.ppm", &image.buffer, image.width, image.height)?;
+    let handle = std::thread::spawn(move || -> Result<()> {
+        let image = camera.render(world, proxy)?;
 
-    present(image)?;
+        utils::create_ppm_file("out.ppm", &image.buffer, image.width, image.height)?;
+
+        return Ok(());
+    });
+
+    let mut app = Presentation::new(config.width, config.height, config.samples as f64);
+    event_loop.run_app(&mut app)?;
+
+    handle.join().unwrap()?;
     return Ok(());
 }

@@ -10,34 +10,43 @@ use winit::event::WindowEvent;
 use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
 use winit::window::{Window, WindowId};
 
-use crate::image::Image;
+use crate::utils;
+use crate::vec3::Vec3;
 
-#[derive(Default)]
+#[derive(Debug)]
+pub struct PresentationEvent {
+    pub color: Vec3,
+    pub x: u32,
+    pub y: u32,
+}
+
 pub struct Presentation {
     window: Option<Window>,
     surface: Option<Surface<Rc<Window>, Rc<Window>>>,
-    image: Image,
+    width: u32,
+    height: u32,
+    samples: f64,
 }
 
 impl Presentation {
-    pub fn new(image: Image) -> Self {
+    pub fn new(width: u32, height: u32, samples: f64) -> Self {
         Presentation {
-            image,
-            ..Default::default()
+            window: None,
+            surface: None,
+            width,
+            height,
+            samples,
         }
     }
 }
 
-impl ApplicationHandler for Presentation {
+impl ApplicationHandler<PresentationEvent> for Presentation {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         let window = Rc::new(
             event_loop
                 .create_window(
                     Window::default_attributes()
-                        .with_inner_size(winit::dpi::PhysicalSize::new(
-                            self.image.width,
-                            self.image.height,
-                        ))
+                        .with_inner_size(winit::dpi::PhysicalSize::new(self.width, self.height))
                         .with_position(winit::dpi::Position::Logical(LogicalPosition::new(
                             600.0, 600.0,
                         )))
@@ -57,40 +66,44 @@ impl ApplicationHandler for Presentation {
             WindowEvent::CloseRequested => {
                 event_loop.exit();
             }
-            WindowEvent::RedrawRequested => {
-                let surface = self.surface.as_mut().unwrap();
-                let (width, height) = { (self.image.width, self.image.height) };
-                surface
-                    .resize(
-                        NonZeroU32::new(width).unwrap(),
-                        NonZeroU32::new(height).unwrap(),
-                    )
-                    .unwrap();
-
-                let mut buffer = surface.buffer_mut().unwrap();
-                let width = self.image.width as usize;
-                for (x, y, pixel) in self.image.iter_pixels() {
-                    let red = pixel[0] as u32;
-                    let green = pixel[1] as u32;
-                    let blue = pixel[2] as u32;
-
-                    let color = blue | (green << 8) | (red << 16);
-                    buffer[y as usize * width + x as usize] = color;
-                }
-
-                buffer.present().unwrap();
-            }
             _ => (),
         }
     }
+
+    fn user_event(&mut self, _event_loop: &ActiveEventLoop, event: PresentationEvent) {
+        let mut r = event.color.x;
+        let mut g = event.color.y;
+        let mut b = event.color.z;
+
+        let scale = 1.0 / self.samples;
+        r = f64::sqrt(scale * r);
+        g = f64::sqrt(scale * g);
+        b = f64::sqrt(scale * b);
+        let r = (256.0 * r.clamp(0.0, 0.999)) as u32;
+        let g = (256.0 * g.clamp(0.0, 0.999)) as u32;
+        let b = (256.0 * b.clamp(0.0, 0.999)) as u32;
+
+        let surface = self.surface.as_mut().unwrap();
+        let (width, height) = { (self.width, self.height) };
+        surface
+            .resize(
+                NonZeroU32::new(width).unwrap(),
+                NonZeroU32::new(height).unwrap(),
+            )
+            .unwrap();
+
+        let mut buffer = surface.buffer_mut().unwrap();
+
+        let color = b | (g << 8) | (r << 16);
+        let index = utils::linear_plane_index(buffer.len(), self.width, event.y, event.x) - 1; // - (event.y * self.image.width + event.x);
+        buffer[index] = color;
+        buffer.present().unwrap();
+    }
 }
 
-pub fn present(image: Image) -> Result<()> {
-    let event_loop = EventLoop::new().unwrap();
+pub fn create_present_loop() -> Result<EventLoop<PresentationEvent>> {
+    let event_loop = EventLoop::<PresentationEvent>::with_user_event().build()?;
 
     event_loop.set_control_flow(ControlFlow::Poll);
-
-    let mut app = Presentation::new(image);
-    event_loop.run_app(&mut app)?;
-    Ok(())
+    return Ok(event_loop);
 }

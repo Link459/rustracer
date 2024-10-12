@@ -1,6 +1,7 @@
 use rand::{thread_rng, Rng};
 
 use crate::{
+    bvh::BvhNode,
     camera::Camera,
     hittable::{RotateY, Translate},
     interval::Interval,
@@ -8,7 +9,10 @@ use crate::{
     model::{model::Model, quad::Quad, sphere::Sphere},
     moving_sphere::MovingSphere,
     render::{Background, RenderConfig},
-    texture::{ChessTexture, ImageTexture, NoiseTexture, SolidColor, Texture::Image},
+    texture::{
+        ChessTexture, ImageTexture, NoiseTexture, SolidColor,
+        Texture::{self, Image},
+    },
     utils,
     vec3::Vec3,
     volume::ConstantMedium,
@@ -118,7 +122,7 @@ pub fn random_world_moving() -> (World, Camera) {
                 if choose_material < 0.8 {
                     let center2 = center + Vec3::new(0.0, rng.gen_range(0.0..0.5), 0.0);
                     // diffuse
-                    world.add(Model::MovingSphere(MovingSphere::new(
+                    world.add(MovingSphere::new(
                         center,
                         center2,
                         0.0,
@@ -129,7 +133,7 @@ pub fn random_world_moving() -> (World, Camera) {
                             rng.gen::<f64>() * rng.gen::<f64>(),
                             rng.gen::<f64>() * rng.gen::<f64>(),
                         ))),
-                    )));
+                    ));
                 } else if choose_material < 0.95 {
                     // metal
                     world.add(Sphere::new(
@@ -319,8 +323,7 @@ pub fn simple_light() -> (World, Camera) {
     ));
 
     let mut config = RenderConfig::with_aspect_ratio(16.0 / 9.0, 400, 300, 50);
-    let hdri = utils::load_hdri("assets/klippad_sunrise_2_4k.hdr").unwrap();
-    config.background = Background::Hdri(Image(ImageTexture::from(hdri)));
+    config.background = Background::Night;
     let cam = Camera::new(
         Vec3::new(26.0, 3.0, 6.0),
         Vec3::new(0.0, 2.0, 0.0),
@@ -457,7 +460,8 @@ pub fn cornell_box() -> (World, Camera) {
 
     world.add(box2);
 
-    let config = RenderConfig::with_aspect_ratio(1.0, 400, 200, 50);
+    let mut config = RenderConfig::with_aspect_ratio(1.0, 400, 1000, 50);
+    config.background = Background::Night;
     let cam = Camera::new(
         Vec3::new(278.0, 278.0, -800.0),
         Vec3::new(278.0, 278.0, 0.0),
@@ -556,8 +560,8 @@ pub fn cornell_smoke() -> (World, Camera) {
     return (world, cam);
 }
 
-pub fn final_scene() -> (World, Camera) {
-    let world = World::new();
+pub fn final_world() -> (World, Camera) {
+    let mut box_world = World::new();
     let ground = Lambertian::new(SolidColor::new(Vec3::new(0.48, 0.83, 0.53)));
     let box_per_side = 20;
     for i in 0..box_per_side {
@@ -569,16 +573,91 @@ pub fn final_scene() -> (World, Camera) {
             let x1 = x0 + w;
             let y1: f64 = thread_rng().gen_range(1.0..101.0);
             let z1 = z0 + w;
-            box_of_quads(
+            box_world.add(box_of_quads(
                 &Vec3::new(x0, y0, z0),
                 &Vec3::new(x1, y1, z1),
                 ground.clone(),
-            );
+            ));
         }
     }
-    let config = RenderConfig::with_aspect_ratio(1.0, 200, 500, 50);
+
+    let mut world = World::new();
+    world.add(BvhNode::from_world(box_world));
+
+    let light = DiffuseLight::new(SolidColor::new(Vec3::new(7.0, 7.0, 7.0)));
+    world.add(Quad::new(
+        Vec3::new(123.0, 554.0, 147.0),
+        Vec3::new(300.0, 0.0, 0.0),
+        Vec3::new(0.0, 0.0, 265.0),
+        light,
+    ));
+
+    let center1 = Vec3::new(400.0, 400.0, 200.0);
+    let center2 = center1 + Vec3::new(30.0, 0.0, 0.0);
+    let sphere_material = Lambertian::new(SolidColor::new(Vec3::new(0.7, 0.3, 0.1)));
+    world.add(MovingSphere::new(
+        center1,
+        center2,
+        0.0,
+        1.0,
+        50.0,
+        sphere_material,
+    ));
+
+    world.add(Sphere::new(
+        Vec3::new(260.0, 150.0, 45.0),
+        50.0,
+        Dielectric::new(1.5),
+    ));
+    world.add(Sphere::new(
+        Vec3::new(0.0, 150.0, 145.0),
+        50.0,
+        Metal::new(Vec3::new(0.8, 0.8, 0.9), 1.0),
+    ));
+
+    let boundary = Sphere::new(Vec3::new(360.0, 150.0, 145.0), 70.0, Dielectric::new(1.5));
+    world.add(boundary.clone());
+    world.add(ConstantMedium::new(
+        Box::new(boundary),
+        0.2,
+        Vec3::new(0.2, 0.4, 0.9),
+    ));
+    let boundary = Sphere::new(Vec3::new(0.0, 0.0, 0.0), 5000.0, Dielectric::new(1.5));
+    world.add(ConstantMedium::new(
+        Box::new(boundary),
+        0.0001,
+        Vec3::new(1.0, 1.0, 1.0),
+    ));
+
+    let emat = Lambertian::new(ImageTexture::new("assets/earthmap.jpg"));
+    world.add(Sphere::new(Vec3::new(400.0, 200.0, 400.0), 100.0, emat));
+    let pertext = NoiseTexture::new(0.2);
+    world.add(Sphere::new(
+        Vec3::new(220.0, 280.0, 300.0),
+        80.0,
+        Lambertian::new(pertext),
+    ));
+
+    let mut box_world = World::new();
+    let white = Lambertian::new(SolidColor::new(Vec3::new(0.73, 0.73, 0.73)));
+    for _ in 0..1000 {
+        box_world.add(Sphere::new(
+            Vec3::random(&mut rand::thread_rng(), 0.0..165.0),
+            10.0,
+            white.clone(),
+        ));
+    }
+
+    let rotate = RotateY::new(Box::new(BvhNode::from_world(box_world)), 15.0);
+    world.add(Translate::new(
+        Box::new(rotate),
+        Vec3::new(-100.0, 270.0, 395.0),
+    ));
+
+    let mut config = RenderConfig::with_aspect_ratio(1.0, 300, 350, 4);
+    config.background = Background::Night;
     let cam = Camera::new(
-        Vec3::new(278.0, 278.0, -800.0),
+        Vec3::new(478.0, 278.0, -600.0),
         Vec3::new(278.0, 278.0, 0.0),
         Vec3::new(0.0, 1.0, 0.0),
         40.0,

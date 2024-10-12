@@ -1,11 +1,12 @@
 use std::ptr;
 
-use crate::{render::RenderConfig, vec3::Vec3};
-use image::{EncodableLayout, ImageBuffer, Rgb};
+use crate::{present::PresentationEvent, render::RenderConfig, vec3::Vec3};
+use image::{ImageBuffer, Rgb};
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
+use winit::event_loop::EventLoopProxy;
 
-#[derive(Default, Clone)]
+#[derive(Default, Debug, Clone)]
 pub struct Image {
     pub buffer: Vec<u8>,
     pub width: u32,
@@ -14,7 +15,7 @@ pub struct Image {
 }
 
 impl<'de> Deserialize<'de> for Image {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    fn deserialize<D>(_deserializer: D) -> Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,
     {
@@ -23,7 +24,7 @@ impl<'de> Deserialize<'de> for Image {
 }
 
 impl Serialize for Image {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    fn serialize<S>(&self, _serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
     {
@@ -73,24 +74,27 @@ impl Image {
     }
 
     #[inline]
-    pub fn compute_parallel_present<F1, F2, T>(
+    pub fn compute_parallel_present<F>(
         &mut self,
-        data: &T,
-        work_load: F1,
-        present: F2,
+        work_load: F,
+        proxy: EventLoopProxy<PresentationEvent>,
     ) -> ()
     where
-        F1: Fn(u32, u32) -> Vec3 + Send + Sync,
-        F2: Fn(&T, u32, &[u8]) -> () + Sync,
-        T: Sync,
+        F: Fn(u32, u32) -> Vec3 + Send + Sync,
     {
         (0..self.height).into_par_iter().for_each(|h| {
             (0..self.width).into_par_iter().for_each(|w| {
                 let color = work_load(w, h);
                 let index = self.index(h, w);
+                proxy
+                    .send_event(PresentationEvent {
+                        color: color.clone(),
+                        x: w,
+                        y: h,
+                    })
+                    .unwrap();
                 self.write(color, index);
-            });
-            present(data, h, &self.buffer[h as usize..self.width as usize]);
+            })
         })
     }
 
@@ -118,7 +122,7 @@ impl Image {
         image::RgbImage::from_vec(self.width, self.height, self.buffer.clone()).unwrap()
     }
 
-    fn index(&self, row: u32, column: u32) -> usize {
+    pub fn index(&self, row: u32, column: u32) -> usize {
         self.buffer.len() - 3 * (row * self.width + column) as usize
     }
 

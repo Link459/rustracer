@@ -1,12 +1,10 @@
 use core::f64;
 
 use crate::{
-    image::Image,
     ray::Ray,
     texture::{Texture, TextureValue},
     vec3::Vec3,
 };
-use serde::Deserialize;
 
 #[derive(Clone)]
 pub enum Background {

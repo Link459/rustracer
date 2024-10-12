@@ -1,4 +1,5 @@
 use core::panic;
+use std::rc::Rc;
 
 use crate::{
     aabb::AABB,
@@ -20,10 +21,10 @@ pub enum Model {
     Quad(Quad),
     ConstantMedium(ConstantMedium),
     Bvh(Box<BvhNode>),
-    //Bvh(Box<Bvh>),
     World(World),
     Translate(Translate),
     RotateY(RotateY),
+    Shared(Rc<Model>),
 }
 
 impl Default for Model {
@@ -63,6 +64,7 @@ impl Hittable for Model {
             Model::Translate(ref m) => m.hit(ray, ray_t),
             Model::RotateY(ref m) => m.hit(ray, ray_t),
             Model::ConstantMedium(ref m) => m.hit(ray, ray_t),
+            Model::Shared(ref m) => m.hit(ray, ray_t),
         }
     }
 
@@ -76,6 +78,7 @@ impl Hittable for Model {
             Model::Translate(ref m) => m.bounding_box(),
             Model::RotateY(ref m) => m.bounding_box(),
             Model::ConstantMedium(ref m) => m.bounding_box(),
+            Model::Shared(ref m) => m.bounding_box(),
         }
     }
 }

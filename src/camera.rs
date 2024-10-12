@@ -1,10 +1,11 @@
 use anyhow::Result;
 use rand::Rng;
 use std::{println, time::Instant};
+use winit::event_loop::EventLoopProxy;
 
 use crate::{
-    hittable::Hittable, image::Image, interval::Interval, material::Material, ray::Ray,
-    render::RenderConfig, vec3::Vec3,
+    hittable::Hittable, image::Image, interval::Interval, material::Material,
+    present::PresentationEvent, ray::Ray, render::RenderConfig, vec3::Vec3,
 };
 
 #[derive(Clone)]
@@ -81,7 +82,11 @@ impl Camera {
         )
     }
 
-    pub fn render(self, world: impl Hittable) -> Result<Image> {
+    pub fn render(
+        self,
+        world: impl Hittable,
+        proxy: EventLoopProxy<PresentationEvent>,
+    ) -> Result<Image> {
         println!(
             "widht: {:?},\nheight: {:?},\nsamples: {:?},\ndepth: {:?}",
             self.config.width, self.config.height, self.config.samples, self.config.max_depth
@@ -90,19 +95,22 @@ impl Camera {
         println!("starting the render");
         let render_time = Instant::now();
         let mut image = Image::from(&self.config);
-        image.compute_parallel(|w, h| {
-            let mut rng = rand::thread_rng();
-            let mut color = Vec3::ZERO;
-            for _ in 0..self.config.samples {
-                let u =
-                    (w as f64 + rng.gen_range(0.0..1.0) as f64) / (self.config.width - 1) as f64;
-                let v =
-                    (h as f64 + rng.gen_range(0.0..1.0) as f64) / (self.config.height - 1) as f64;
-                let r = self.get_ray(u, v);
-                color += self.ray_color(&r, &world, self.config.max_depth);
-            }
-            return color;
-        });
+        image.compute_parallel_present(
+            |w, h| {
+                let mut rng = rand::thread_rng();
+                let mut color = Vec3::ZERO;
+                for _ in 0..self.config.samples {
+                    let u = (w as f64 + rng.gen_range(0.0..1.0) as f64)
+                        / (self.config.width - 1) as f64;
+                    let v = (h as f64 + rng.gen_range(0.0..1.0) as f64)
+                        / (self.config.height - 1) as f64;
+                    let r = self.get_ray(u, v);
+                    color += self.ray_color(&r, &world, self.config.max_depth);
+                }
+                return color;
+            },
+            proxy,
+        );
 
         let time_took = format!("rendering took: {:?}", render_time.elapsed());
         println!("{time_took}");

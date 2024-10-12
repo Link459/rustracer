@@ -1,5 +1,5 @@
 use anyhow::Result;
-use image::{open, EncodableLayout, ExtendedColorType};
+use image::{open, ExtendedColorType};
 use std::{fs::File, io::Write};
 
 use crate::image::Image;
@@ -32,4 +32,8 @@ pub fn load_hdri(path: &str) -> Result<Image> {
     let hdri = open(path)?;
     let hdri = hdri.into_rgb8();
     return Ok(Image::from(hdri));
+}
+
+pub fn linear_plane_index(len: usize, width: u32, row: u32, column: u32) -> usize {
+    len - (row * width + column) as usize
 }
