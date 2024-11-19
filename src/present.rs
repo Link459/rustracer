@@ -66,6 +66,20 @@ impl ApplicationHandler<PresentationEvent> for Presentation {
             WindowEvent::CloseRequested => {
                 event_loop.exit();
             }
+            WindowEvent::RedrawRequested => {
+                let surface = self.surface.as_mut().unwrap();
+                let (width, height) = { (self.width, self.height) };
+                surface
+                    .resize(
+                        NonZeroU32::new(width).unwrap(),
+                        NonZeroU32::new(height).unwrap(),
+                    )
+                    .unwrap();
+
+                let buffer = surface.buffer_mut().unwrap();
+
+                buffer.present().unwrap();
+            }
             _ => (),
         }
     }
