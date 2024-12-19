@@ -1,12 +1,14 @@
 use core::f64;
 
+use serde::{Deserialize, Serialize};
+
 use crate::{
     ray::Ray,
     texture::{Texture, TextureValue},
     vec3::Vec3,
 };
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub enum Background {
     Sky,
     Night,
@@ -14,7 +16,7 @@ pub enum Background {
 }
 
 impl Background {
-    #[inline]
+    #[inline(always)]
     pub fn call(&self, ray: &Ray) -> Vec3 {
         match self {
             Background::Sky => skybox(ray),
@@ -24,25 +26,26 @@ impl Background {
     }
 }
 
-#[inline]
+#[inline(always)]
 pub fn skybox(ray: &Ray) -> Vec3 {
     let unit_dir = ray.dir.normalize();
     let t = 0.5 * (unit_dir.y + 1.0);
     return (1.0 - t) * Vec3::ONE + t * Vec3::new(0.5, 0.7, 1.0);
 }
 
-#[inline]
+#[inline(always)]
 pub fn night(_ray: &Ray) -> Vec3 {
     Vec3::ZERO
 }
 
+#[inline(always)]
 pub fn hdri(ray: &Ray, hdri: &Texture) -> Vec3 {
     let u = 0.5 + f64::atan2(ray.dir.x, ray.dir.z) / (2.0 * f64::consts::PI);
     let v = 0.5 + -ray.dir.y.asin() / f64::consts::PI;
     return hdri.value(u, v, &ray.dir);
 }
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct RenderConfig {
     pub width: u32,
     pub height: u32,

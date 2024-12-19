@@ -3,7 +3,9 @@ use std::ops::{
     Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Range, Sub, SubAssign,
 };
 
-#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Default)]
+use serde::{Deserialize, Serialize};
+
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Default, Deserialize, Serialize)]
 pub struct Vec3 {
     pub x: f64,
     pub y: f64,

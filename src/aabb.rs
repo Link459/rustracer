@@ -25,6 +25,8 @@ pub struct AABB {
     pub z: Interval,
 }
 
+
+
 impl AABB {
     pub fn new(x: Interval, y: Interval, z: Interval) -> Self {
         Self { x, y, z }

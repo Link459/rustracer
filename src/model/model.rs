@@ -1,6 +1,8 @@
 use core::panic;
 use std::rc::Rc;
 
+use serde::{Deserialize, Serialize};
+
 use crate::{
     aabb::AABB,
     bvh::BvhNode,
@@ -14,16 +16,18 @@ use crate::{
     world::World,
 };
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Model {
     Sphere(Sphere),
     MovingSphere(MovingSphere),
     Quad(Quad),
     ConstantMedium(ConstantMedium),
+    #[serde(skip)]
     Bvh(Box<BvhNode>),
     World(World),
     Translate(Translate),
     RotateY(RotateY),
+    #[serde(skip)]
     Shared(Rc<Model>),
 }
 
@@ -68,7 +72,7 @@ impl Hittable for Model {
         }
     }
 
-    fn bounding_box(&self) -> &AABB {
+    fn bounding_box(&self) -> AABB {
         match self {
             Model::Sphere(ref m) => m.bounding_box(),
             Model::MovingSphere(ref m) => m.bounding_box(),

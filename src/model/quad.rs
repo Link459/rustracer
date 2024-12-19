@@ -1,3 +1,5 @@
+use serde::{Deserialize, Serialize};
+
 use crate::{
     aabb::AABB,
     hittable::{HitPayload, Hittable},
@@ -8,12 +10,13 @@ use crate::{
     vec3::Vec3,
 };
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Quad {
     q: Vec3,
     u: Vec3,
     v: Vec3,
     material: MaterialStorage,
+    #[serde(skip)]
     bbox: AABB,
     normal: Vec3,
     d: f64,
@@ -82,7 +85,8 @@ impl Hittable for Quad {
         return None;
     }
 
-    fn bounding_box(&self) -> &AABB {
-        return &self.bbox;
+    fn bounding_box(&self) -> AABB {
+        let bbox = AABB::from((self.q, self.q + self.u + self.v)).pad();
+        return bbox;
     }
 }

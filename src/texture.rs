@@ -1,7 +1,12 @@
 use crate::{image::Image, perlin::Perlin, vec3::Vec3};
 use image::{open, GenericImageView};
+use serde::{
+    de::{self, Visitor},
+    ser::SerializeStruct,
+    Deserialize, Serialize,
+};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Texture {
     SolidColor(SolidColor),
     Chess(ChessTexture),
@@ -24,7 +29,7 @@ pub trait TextureValue {
     fn value(&self, u: f64, v: f64, p: &Vec3) -> Vec3;
 }
 
-#[derive(Clone, Debug, Copy)]
+#[derive(Clone, Debug, Copy, Serialize, Deserialize)]
 pub struct SolidColor {
     pub color_value: Vec3,
 }
@@ -41,7 +46,7 @@ impl TextureValue for SolidColor {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ChessTexture {
     pub odd: Box<Texture>,
     pub even: Box<Texture>,
@@ -64,8 +69,9 @@ impl TextureValue for ChessTexture {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct NoiseTexture {
+    #[serde(skip)]
     perlin: Perlin,
     scale: f64,
 }
@@ -90,6 +96,7 @@ pub struct ImageTexture {
     buffer: Vec<u8>,
     nx: u32,
     ny: u32,
+    path: String,
 }
 
 impl ImageTexture {
@@ -102,7 +109,21 @@ impl ImageTexture {
             nx,
             ny,
             buffer: buffer.into_bytes(),
+            path: String::from(file_path),
         });
+    }
+
+    pub fn from_path(file_path: &str) -> Self {
+        let buffer =
+            open(file_path).expect(format!("failed to open image with path: {file_path}").as_str());
+        let (nx, ny) = buffer.dimensions();
+
+        return Self {
+            nx,
+            ny,
+            buffer: buffer.into_bytes(),
+            path: String::from(file_path),
+        };
     }
 }
 
@@ -112,6 +133,7 @@ impl From<Image> for ImageTexture {
             buffer: value.buffer,
             nx: value.width,
             ny: value.height,
+            path: String::default(),
         }
     }
 }
@@ -134,5 +156,57 @@ impl TextureValue for ImageTexture {
         let g = self.buffer[index + 1] as f64 / 255.0;
         let b = self.buffer[index + 2] as f64 / 255.0;
         Vec3::new(r, g, b)
+    }
+}
+
+impl Serialize for ImageTexture {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        if self.path.is_empty() {
+            return serializer.serialize_unit();
+        }
+
+        let mut image_texture = serializer.serialize_struct("ImageTexture", 1)?;
+        image_texture.serialize_field("path", &self.path)?;
+        return image_texture.end();
+    }
+}
+
+impl<'de> Deserialize<'de> for ImageTexture {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        struct ImageTextureVisitor;
+
+        impl<'de> Visitor<'de> for ImageTextureVisitor {
+            type Value = ImageTexture;
+            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                return write!(formatter, "struct ImageTexture");
+            }
+
+            fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+            where
+                A: serde::de::SeqAccess<'de>,
+            {
+                let path = seq
+                    .next_element()?
+                    .ok_or(de::Error::missing_field("missing field path"))?;
+                return Ok(ImageTexture::from_path(path));
+            }
+
+            fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
+            where
+                A: serde::de::MapAccess<'de>,
+            {
+                let path = map.next_value::<&str>()?;
+                //.ok_or(de::Error::missing_field("missing field path"))?;
+                return Ok(ImageTexture::from_path(path));
+            }
+        }
+
+        deserializer.deserialize_struct("ImageTexture", &["path"], ImageTextureVisitor {})
     }
 }

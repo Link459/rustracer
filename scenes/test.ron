@@ -1,0 +1,90 @@
+(
+    camera_config: (
+        lookfrom: (
+            x: 13.0,
+            y: 2.0,
+            z: 3.0,
+        ),
+        lookat: (
+            x: 0.0,
+            y: 0.0,
+            z: 0.0,
+        ),
+        vup: (
+            x: 0.0,
+            y: 1.0,
+            z: 0.0,
+        ),
+        vfov: 20.0,
+        aspect_ratio: 1.7777777777777777,
+        aperture: 0.0,
+        focus_dist: 10.0,
+        time: (
+            min: 0.0,
+            max: 1.0,
+        ),
+        config: (
+            width: 400,
+            height: 225,
+            samples: 100,
+            max_depth: 50,
+            background: Sky,
+        ),
+    ),
+    world: (
+        entities: [
+            Sphere((
+                center: (
+                    x: 0.0,
+                    y: -10.0,
+                    z: 0.0,
+                ),
+                radius: 10.0,
+                material: Lambertian((
+                    albedo: Chess((
+                        odd: SolidColor((
+                            color_value: (
+                                x: 0.2,
+                                y: 0.3,
+                                z: 0.1,
+                            ),
+                        )),
+                        even: SolidColor((
+                            color_value: (
+                                x: 0.9,
+                                y: 0.9,
+                                z: 0.9,
+                            ),
+                        )),
+                    )),
+                )),
+            )),
+            Sphere((
+                center: (
+                    x: 0.0,
+                    y: 10.0,
+                    z: 0.0,
+                ),
+                radius: 10.0,
+                material: Lambertian((
+                    albedo: Chess((
+                        odd: SolidColor((
+                            color_value: (
+                                x: 0.2,
+                                y: 0.3,
+                                z: 0.1,
+                            ),
+                        )),
+                        even: SolidColor((
+                            color_value: (
+                                x: 0.9,
+                                y: 0.9,
+                                z: 0.9,
+                            ),
+                        )),
+                    )),
+                )),
+            )),
+        ],
+    ),
+)

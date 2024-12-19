@@ -1,3 +1,5 @@
+use serde::{Deserialize, Serialize};
+
 use crate::{
     hittable::HitPayload,
     into_mat,
@@ -8,7 +10,7 @@ use crate::{
 
 use super::material::{Material, MaterialStorage};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DiffuseLight {
     emit: Texture,
 }

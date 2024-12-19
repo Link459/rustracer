@@ -1,3 +1,5 @@
+use serde::{Deserialize, Serialize};
+
 use crate::{
     aabb::AABB,
     hittable::{HitPayload, Hittable},
@@ -8,7 +10,7 @@ use crate::{
     vec3::Vec3,
 };
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct MovingSphere {
     pub center0: Vec3,
     pub center1: Vec3,
@@ -16,7 +18,6 @@ pub struct MovingSphere {
     pub time1: f64,
     pub radius: f64,
     pub material: MaterialStorage,
-    bounding_box: AABB,
 }
 
 impl MovingSphere {
@@ -28,10 +29,6 @@ impl MovingSphere {
         radius: f64,
         material: MaterialStorage,
     ) -> Model {
-        let rvec = Vec3::new(radius, radius, radius);
-        let box1 = AABB::from((center0.x - rvec, center0.x + rvec));
-        let box2 = AABB::from((center1.y - rvec, center1.y + rvec));
-
         return Model::MovingSphere(Self {
             center0,
             center1,
@@ -39,7 +36,6 @@ impl MovingSphere {
             time1,
             radius,
             material,
-            bounding_box: AABB::from((box1, box2)),
         });
     }
 
@@ -90,8 +86,11 @@ impl Hittable for MovingSphere {
         return Some((payload, self.material.clone()));
     }
 
-    fn bounding_box(&self) -> &AABB {
-        return &self.bounding_box;
+    fn bounding_box(&self) -> AABB {
+        let rvec = Vec3::from(self.radius);
+        let box1 = AABB::from((self.center0.x - rvec, self.center0.x + rvec));
+        let box2 = AABB::from((self.center1.y - rvec, self.center1.y + rvec));
+        return AABB::from((box1, box2));
     }
 }
 

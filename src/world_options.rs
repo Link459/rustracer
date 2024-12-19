@@ -2,25 +2,21 @@ use rand::{thread_rng, Rng};
 
 use crate::{
     bvh::BvhNode,
-    camera::Camera,
+    camera::{Camera, CameraConfig},
     hittable::{RotateY, Translate},
     interval::Interval,
     material::{material::MaterialStorage, Dielectric, DiffuseLight, Lambertian, Metal},
     model::{model::Model, quad::Quad, sphere::Sphere},
     moving_sphere::MovingSphere,
     render::{Background, RenderConfig},
-    texture::{
-        ChessTexture, ImageTexture, NoiseTexture, SolidColor,
-        Texture::{self, Image},
-    },
-    utils,
+    texture::{ChessTexture, ImageTexture, NoiseTexture, SolidColor},
     vec3::Vec3,
     volume::ConstantMedium,
     world::World,
 };
 
 #[inline]
-pub fn random_world() -> (World, Camera) {
+pub fn random_world() -> (World, CameraConfig) {
     let mut rng = rand::thread_rng();
     let origin = Vec3::new(4.0, 0.2, 0.0);
     let mut world = World::default();
@@ -93,10 +89,16 @@ pub fn random_world() -> (World, Camera) {
 
     let config = RenderConfig::with_aspect_ratio(16.0 / 9.0, 500, 100, 50);
 
-    return (world, Camera::default_with_config(config));
+    return (
+        world,
+        CameraConfig {
+            config,
+            ..Default::default()
+        },
+    );
 }
 
-pub fn random_world_moving() -> (World, Camera) {
+pub fn random_world_moving() -> (World, CameraConfig) {
     let mut rng = rand::thread_rng();
     let origin = Vec3::new(4.0, 0.2, 0.0);
     let mut world = World::default();
@@ -173,10 +175,16 @@ pub fn random_world_moving() -> (World, Camera) {
 
     let config = RenderConfig::with_aspect_ratio(16.0 / 9.0, 300, 50, 50);
 
-    return (world, Camera::default_with_config(config));
+    return (
+        world,
+        CameraConfig {
+            config,
+            ..Default::default()
+        },
+    );
 }
 
-pub fn two_chess_spheres() -> (World, Camera) {
+pub fn two_chess_spheres() -> (World, CameraConfig) {
     let mut world = World::default();
     let chess = ChessTexture::new(
         Box::new(SolidColor::new(Vec3::new(0.2, 0.3, 0.1))),
@@ -194,11 +202,11 @@ pub fn two_chess_spheres() -> (World, Camera) {
         Lambertian::new(chess),
     ));
 
-    return (world, Camera::default());
+    return (world, CameraConfig::default());
 }
 
 #[inline]
-pub fn two_perlin_spheres() -> (World, Camera) {
+pub fn two_perlin_spheres() -> (World, CameraConfig) {
     let mut world = World::default();
     let perlin = NoiseTexture::new(4.0);
 
@@ -213,11 +221,11 @@ pub fn two_perlin_spheres() -> (World, Camera) {
         Lambertian::new(perlin),
     ));
 
-    return (world, Camera::default());
+    return (world, CameraConfig::default());
 }
 
 #[inline]
-pub fn earth() -> (World, Camera) {
+pub fn earth() -> (World, CameraConfig) {
     let mut world = World::new();
     let earth = ImageTexture::new("assets/earthmap.jpg");
     let earth_surface = Lambertian::new(earth);
@@ -225,11 +233,11 @@ pub fn earth() -> (World, Camera) {
     world.add(globe);
 
     let config = RenderConfig::with_aspect_ratio(16.0 / 9.0, 200, 50, 50);
-    return (world, Camera::default_with_config(config));
+    return (world, CameraConfig::from_config(config));
 }
 
 #[inline]
-pub fn quads() -> (World, Camera) {
+pub fn quads() -> (World, CameraConfig) {
     let mut world = World::default();
     let left_red = MaterialStorage::Lambertian(Lambertian::from(Vec3::new(1.0, 0.2, 0.2)));
     let back_green = MaterialStorage::Lambertian(Lambertian::from(Vec3::new(0.2, 1.0, 0.2)));
@@ -279,7 +287,7 @@ pub fn quads() -> (World, Camera) {
     let aperture = 0.0;
 
     let config = RenderConfig::with_aspect_ratio(1.0, 400, 500, 200);
-    let camera = Camera::new(
+    let camera = CameraConfig {
         lookfrom,
         lookat,
         vup,
@@ -287,15 +295,15 @@ pub fn quads() -> (World, Camera) {
         aspect_ratio,
         aperture,
         focus_dist,
-        Interval::new(0.0, 1.0),
+        time: Interval::new(0.0, 1.0),
         config,
-    );
+    };
 
     return (world, camera);
 }
 
 #[inline]
-pub fn simple_light() -> (World, Camera) {
+pub fn simple_light() -> (World, CameraConfig) {
     let mut world = World::default();
     let pertext = NoiseTexture::new(4.0);
     let difflight = DiffuseLight::new(SolidColor::new(Vec3::new(4.0, 4.0, 4.0)));
@@ -324,17 +332,17 @@ pub fn simple_light() -> (World, Camera) {
 
     let mut config = RenderConfig::with_aspect_ratio(16.0 / 9.0, 400, 300, 50);
     config.background = Background::Night;
-    let cam = Camera::new(
-        Vec3::new(26.0, 3.0, 6.0),
-        Vec3::new(0.0, 2.0, 0.0),
-        Vec3::new(0.0, 1.0, 0.0),
-        20.0,
-        16.0 / 9.0,
-        0.0,
-        10.0,
-        Interval::new(0.001, 1.0),
+    let cam = CameraConfig {
+        lookfrom: Vec3::new(26.0, 3.0, 6.0),
+        lookat: Vec3::new(0.0, 2.0, 0.0),
+        vup: Vec3::new(0.0, 1.0, 0.0),
+        vfov: 20.0,
+        aspect_ratio: 16.0 / 9.0,
+        aperture: 0.0,
+        focus_dist: 10.0,
+        time: Interval::new(0.001, 1.0),
         config,
-    );
+    };
 
     return (world, cam);
 }
@@ -394,7 +402,7 @@ fn box_of_quads(a: &Vec3, b: &Vec3, mat: MaterialStorage) -> Model {
 }
 
 #[inline]
-pub fn cornell_box() -> (World, Camera) {
+pub fn cornell_box() -> (World, CameraConfig) {
     let mut world = World::default();
     let red = Lambertian::new(SolidColor::new(Vec3::new(0.65, 0.05, 0.05)));
     let white = Lambertian::new(SolidColor::new(Vec3::new(0.73, 0.73, 0.73)));
@@ -462,23 +470,23 @@ pub fn cornell_box() -> (World, Camera) {
 
     let mut config = RenderConfig::with_aspect_ratio(1.0, 400, 1000, 50);
     config.background = Background::Night;
-    let cam = Camera::new(
-        Vec3::new(278.0, 278.0, -800.0),
-        Vec3::new(278.0, 278.0, 0.0),
-        Vec3::new(0.0, 1.0, 0.0),
-        40.0,
-        1.0,
-        0.0,
-        10.0,
-        Interval::new(0.0, 1.0),
+    let cam = CameraConfig {
+        lookfrom: Vec3::new(278.0, 278.0, -800.0),
+        lookat: Vec3::new(278.0, 278.0, 0.0),
+        vup: Vec3::new(0.0, 1.0, 0.0),
+        vfov: 40.0,
+        aspect_ratio: 1.0,
+        aperture: 0.0,
+        focus_dist: 10.0,
+        time: Interval::new(0.0, 1.0),
         config,
-    );
+    };
 
     return (world, cam);
 }
 
 #[inline]
-pub fn cornell_smoke() -> (World, Camera) {
+pub fn cornell_smoke() -> (World, CameraConfig) {
     let mut world = World::default();
     let red = Lambertian::new(SolidColor::new(Vec3::new(0.65, 0.05, 0.05)));
     let white = Lambertian::new(SolidColor::new(Vec3::new(0.73, 0.73, 0.73)));
@@ -545,22 +553,22 @@ pub fn cornell_smoke() -> (World, Camera) {
     world.add(ConstantMedium::new(Box::new(box2), 0.01, Vec3::ONE));
 
     let config = RenderConfig::with_aspect_ratio(1.0, 200, 500, 50);
-    let cam = Camera::new(
-        Vec3::new(278.0, 278.0, -800.0),
-        Vec3::new(278.0, 278.0, 0.0),
-        Vec3::new(0.0, 1.0, 0.0),
-        40.0,
-        1.0,
-        0.0,
-        10.0,
-        Interval::new(0.0, 1.0),
+    let cam = CameraConfig {
+        lookfrom: Vec3::new(278.0, 278.0, -800.0),
+        lookat: Vec3::new(278.0, 278.0, 0.0),
+        vup: Vec3::new(0.0, 1.0, 0.0),
+        vfov: 40.0,
+        aspect_ratio: 1.0,
+        aperture: 0.0,
+        focus_dist: 10.0,
+        time: Interval::new(0.0, 1.0),
         config,
-    );
+    };
 
     return (world, cam);
 }
 
-pub fn final_world() -> (World, Camera) {
+pub fn final_world() -> (World, CameraConfig) {
     let mut box_world = World::new();
     let ground = Lambertian::new(SolidColor::new(Vec3::new(0.48, 0.83, 0.53)));
     let box_per_side = 20;
@@ -656,17 +664,17 @@ pub fn final_world() -> (World, Camera) {
 
     let mut config = RenderConfig::with_aspect_ratio(1.0, 300, 350, 4);
     config.background = Background::Night;
-    let cam = Camera::new(
-        Vec3::new(478.0, 278.0, -600.0),
-        Vec3::new(278.0, 278.0, 0.0),
-        Vec3::new(0.0, 1.0, 0.0),
-        40.0,
-        1.0,
-        0.0,
-        10.0,
-        Interval::new(0.0, 1.0),
+    let cam = CameraConfig {
+        lookfrom: Vec3::new(478.0, 278.0, -600.0),
+        lookat: Vec3::new(278.0, 278.0, 0.0),
+        vup: Vec3::new(0.0, 1.0, 0.0),
+        vfov: 40.0,
+        aspect_ratio: 1.0,
+        aperture: 0.0,
+        focus_dist: 10.0,
+        time: Interval::new(0.0, 1.0),
         config,
-    );
+    };
 
     return (world, cam);
 }

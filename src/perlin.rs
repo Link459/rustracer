@@ -12,6 +12,12 @@ pub struct Perlin {
     perm_z: [usize; MAX_PERLIN],
 }
 
+impl Default for Perlin {
+    fn default() -> Self {
+        return Self::new();
+    }
+}
+
 impl Perlin {
     pub fn new() -> Self {
         let mut ran_vec = [Vec3::ZERO; MAX_PERLIN];

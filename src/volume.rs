@@ -1,4 +1,5 @@
 use rand::Rng;
+use serde::{Deserialize, Serialize};
 
 use crate::{
     aabb::AABB,
@@ -10,7 +11,7 @@ use crate::{
     vec3::Vec3,
 };
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ConstantMedium {
     boundary: Box<Model>,
     neg_inv_density: f64,
@@ -64,7 +65,7 @@ impl Hittable for ConstantMedium {
         None
     }
 
-    fn bounding_box(&self) -> &AABB {
-        return &self.boundary.bounding_box();
+    fn bounding_box(&self) -> AABB {
+        return self.boundary.bounding_box();
     }
 }

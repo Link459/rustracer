@@ -1,5 +1,6 @@
 use anyhow::Result;
 use rand::Rng;
+use serde::{Deserialize, Serialize};
 use std::{println, time::Instant};
 use winit::event_loop::EventLoopProxy;
 
@@ -8,7 +9,51 @@ use crate::{
     present::PresentationEvent, ray::Ray, render::RenderConfig, vec3::Vec3,
 };
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
+pub struct CameraConfig {
+    pub lookfrom: Vec3,
+    pub lookat: Vec3,
+    pub vup: Vec3,
+    pub vfov: f64,
+    pub aspect_ratio: f64,
+    pub aperture: f64,
+    pub focus_dist: f64,
+    pub time: Interval,
+    pub config: RenderConfig,
+}
+
+impl Default for CameraConfig {
+    fn default() -> Self {
+        let lookfrom = Vec3::new(13.0, 2.0, 3.0);
+        let lookat = Vec3::new(0.0, 0.0, 0.0);
+        let vup = Vec3::new(0.0, 1.0, 0.0);
+        let focus_dist = 10.0;
+        let aperture = 0.0;
+
+        return Self {
+            lookfrom,
+            lookat,
+            vup,
+            vfov: 20.0,
+            aspect_ratio: 16.0 / 9.0 as f64,
+            aperture,
+            focus_dist,
+            time: Interval::new(0.0, 1.0),
+            config: RenderConfig::default(),
+        };
+    }
+}
+
+impl CameraConfig {
+    pub fn from_config(config: RenderConfig) -> Self {
+        return CameraConfig {
+            config,
+            ..Default::default()
+        };
+    }
+}
+
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Camera {
     origin: Vec3,
     lower_left_corner: Vec3,
@@ -60,6 +105,20 @@ impl Camera {
         }
     }
 
+    pub fn from_camera_config(config: CameraConfig) -> Camera {
+        return Self::new(
+            config.lookfrom,
+            config.lookat,
+            config.vup,
+            config.vfov,
+            config.aspect_ratio,
+            config.aperture,
+            config.focus_dist,
+            config.time,
+            config.config,
+        );
+    }
+
     pub fn get_config(&self) -> &RenderConfig {
         &self.config
     }
@@ -97,7 +156,7 @@ impl Camera {
         let mut image = Image::from(&self.config);
         image.compute_parallel_present(
             |w, h| {
-                let mut rng = rand::thread_rng();
+                /*let mut rng = rand::thread_rng();
                 let mut color = Vec3::ZERO;
                 for _ in 0..self.config.samples {
                     let u = (w as f64 + rng.gen_range(0.0..1.0) as f64)
@@ -107,7 +166,8 @@ impl Camera {
                     let r = self.get_ray(u, v);
                     color += self.ray_color(&r, &world, self.config.max_depth);
                 }
-                return color;
+                return color;*/
+                return self.trace_ray(w, h, &world);
             },
             proxy,
         );
@@ -116,6 +176,19 @@ impl Camera {
         println!("{time_took}");
 
         Ok(image)
+    }
+
+    #[inline(always)]
+    pub fn trace_ray(&self, w: u32, h: u32, world: &impl Hittable) -> Vec3 {
+        let mut rng = rand::thread_rng();
+        let mut color = Vec3::ZERO;
+        for _ in 0..self.config.samples {
+            let u = (w as f64 + rng.gen_range(0.0..1.0) as f64) / (self.config.width - 1) as f64;
+            let v = (h as f64 + rng.gen_range(0.0..1.0) as f64) / (self.config.height - 1) as f64;
+            let r = self.get_ray(u, v);
+            color += self.ray_color(&r, world, self.config.max_depth);
+        }
+        return color;
     }
 
     pub fn ray_color(&self, ray: &Ray, world: &impl Hittable, depth: u32) -> Vec3 {

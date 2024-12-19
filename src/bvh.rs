@@ -95,8 +95,8 @@ impl Hittable for BvhNode {
         }
     }
 
-    fn bounding_box(&self) -> &AABB {
-        return &self.bbox;
+    fn bounding_box(&self) -> AABB {
+        return self.bbox;
     }
 }
 

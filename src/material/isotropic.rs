@@ -1,3 +1,5 @@
+use serde::{Deserialize, Serialize};
+
 use crate::{
     hittable::HitPayload,
     into_mat,
@@ -11,7 +13,7 @@ use super::{
     material::{Material, MaterialStorage},
 };
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug,Serialize,Deserialize)]
 pub struct Isotropic {
     albedo: Texture,
 }

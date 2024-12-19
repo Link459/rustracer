@@ -1,3 +1,5 @@
+use serde::{Deserialize, Serialize};
+
 use crate::interval::Interval;
 use crate::material::material::MaterialStorage;
 use crate::model::Model;
@@ -7,9 +9,10 @@ use crate::{
     hittable::{HitPayload, Hittable},
 };
 
-#[derive(Clone, Default, Debug)]
+#[derive(Clone, Default, Debug, Serialize, Deserialize)]
 pub struct World {
     pub entities: Vec<Model>,
+    #[serde(skip)]
     bbox: AABB,
 }
 
@@ -26,7 +29,7 @@ impl World {
     }
 
     pub fn add(&mut self, entity: Model) -> () {
-        self.bbox = AABB::from((self.bbox, *entity.bounding_box()));
+        self.bbox = AABB::from((self.bbox, entity.bounding_box()));
         self.entities.push(entity);
     }
 
@@ -55,8 +58,8 @@ impl Hittable for World {
         return res;
     }
 
-    fn bounding_box(&self) -> &AABB {
-        return &self.bbox;
+    fn bounding_box(&self) -> AABB {
+        return self.bbox;
     }
 }
 

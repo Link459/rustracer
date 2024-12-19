@@ -1,3 +1,5 @@
+use serde::{Deserialize, Serialize};
+
 use crate::{hittable::HitPayload, ray::Ray, vec3::Vec3};
 
 use super::{
@@ -5,7 +7,7 @@ use super::{
     DiffuseLight,
 };
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum MaterialStorage {
     Lambertian(Lambertian),
     Metal(Metal),

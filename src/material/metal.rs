@@ -1,3 +1,5 @@
+use serde::{Deserialize, Serialize};
+
 use crate::vec3::Vec3;
 
 use crate::{hittable::HitPayload, into_mat, ray::Ray};
@@ -5,7 +7,7 @@ use crate::{hittable::HitPayload, into_mat, ray::Ray};
 use super::material::MaterialStorage;
 use super::{lambertian::random_unit_sphere, material::Material};
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Serialize,Deserialize)]
 pub struct Metal {
     albedo: Vec3,
     fuzz: f64,

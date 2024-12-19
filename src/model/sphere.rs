@@ -1,31 +1,30 @@
 use std::f64::consts::{FRAC_PI_2, PI};
 
+use serde::{Deserialize, Serialize};
+
 use crate::{
     aabb::AABB,
     hittable::{HitPayload, Hittable},
     interval::Interval,
-    material::material::{ MaterialStorage},
+    material::material::MaterialStorage,
     model::model::Model,
     ray::Ray,
     vec3::Vec3,
 };
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Sphere {
     pub center: Vec3,
     pub radius: f64,
     pub material: MaterialStorage,
-    bbox: AABB,
 }
 
 impl Sphere {
     pub fn new(center: Vec3, radius: f64, material: MaterialStorage) -> Model {
-        let rvec = Vec3::from(radius);
         return Model::Sphere(Self {
             center,
             radius,
             material,
-            bbox: AABB::from((center - rvec, center + rvec)),
         });
     }
 
@@ -80,8 +79,9 @@ impl Hittable for Sphere {
     }
 
     #[inline]
-    fn bounding_box(&self) -> &AABB {
-        return &self.bbox;
+    fn bounding_box(&self) -> AABB {
+        let rvec = Vec3::from(self.radius);
+        return AABB::from((self.center - rvec, self.center + rvec));
     }
 }
 

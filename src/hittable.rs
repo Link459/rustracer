@@ -3,6 +3,8 @@ use std::{
     write,
 };
 
+use serde::{Deserialize, Serialize};
+
 use crate::{
     aabb::AABB, interval::Interval, material::material::MaterialStorage, model::model::Model,
     ray::Ray, vec3::Vec3,
@@ -53,23 +55,18 @@ impl Display for HitPayload {
 
 pub trait Hittable: Send + Sync {
     fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<(HitPayload, MaterialStorage)>;
-    fn bounding_box(&self) -> &AABB;
+    fn bounding_box(&self) -> AABB;
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Translate {
     model: Box<Model>,
     offset: Vec3,
-    bbox: AABB,
 }
 
 impl Translate {
     pub fn new(model: Box<Model>, offset: Vec3) -> Model {
-        Model::Translate(Self {
-            offset,
-            bbox: *model.bounding_box() + offset,
-            model,
-        })
+        Model::Translate(Self { offset, model })
     }
 }
 
@@ -85,17 +82,17 @@ impl Hittable for Translate {
         return None;
     }
 
-    fn bounding_box(&self) -> &AABB {
-        return &self.bbox;
+    fn bounding_box(&self) -> AABB {
+        //return &self.bbox;
+        return self.model.bounding_box() + self.offset;
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct RotateY {
     model: Box<Model>,
     sin_theta: f64,
     cos_theta: f64,
-    bbox: AABB,
 }
 
 impl RotateY {
@@ -103,36 +100,12 @@ impl RotateY {
         let radians = angle.to_radians();
         let sin_theta = radians.sin();
         let cos_theta = radians.cos();
-        let bbox = model.bounding_box();
 
-        let mut min = Vec3::new(f64::INFINITY, f64::INFINITY, f64::INFINITY);
-        let mut max = Vec3::new(-f64::INFINITY, -f64::INFINITY, -f64::INFINITY);
-
-        for i in 0..2 {
-            for j in 0..2 {
-                for k in 0..2 {
-                    let x = i as f64 * bbox.x.max + (1.0 - i as f64) * bbox.x.min;
-                    let y = j as f64 * bbox.y.max + (1.0 - j as f64) * bbox.y.min;
-                    let z = k as f64 * bbox.z.max + (1.0 - k as f64) * bbox.z.min;
-
-                    let newx = cos_theta * x + sin_theta * z;
-                    let newz = -sin_theta * x + cos_theta * z;
-
-                    let tester = Vec3::new(newx, y, newz);
-
-                    for c in 0..3 {
-                        min[c] = f64::min(min[c], tester[c]);
-                        max[c] = f64::max(max[c], tester[c]);
-                    }
-                }
-            }
-        }
 
         return Model::RotateY(Self {
             model,
             sin_theta,
             cos_theta,
-            bbox: AABB::from((min, max)),
         });
     }
 }
@@ -171,7 +144,31 @@ impl Hittable for RotateY {
         return None;
     }
 
-    fn bounding_box(&self) -> &AABB {
-        return &self.bbox;
+    fn bounding_box(&self) -> AABB {
+        let bbox = self.model.bounding_box();
+        let mut min = Vec3::new(f64::INFINITY, f64::INFINITY, f64::INFINITY);
+        let mut max = Vec3::new(-f64::INFINITY, -f64::INFINITY, -f64::INFINITY);
+
+        for i in 0..2 {
+            for j in 0..2 {
+                for k in 0..2 {
+                    let x = i as f64 * bbox.x.max + (1.0 - i as f64) * bbox.x.min;
+                    let y = j as f64 * bbox.y.max + (1.0 - j as f64) * bbox.y.min;
+                    let z = k as f64 * bbox.z.max + (1.0 - k as f64) * bbox.z.min;
+
+                    let newx = self.cos_theta * x + self.sin_theta * z;
+                    let newz = -self.sin_theta * x + self.cos_theta * z;
+
+                    let tester = Vec3::new(newx, y, newz);
+
+                    for c in 0..3 {
+                        min[c] = f64::min(min[c], tester[c]);
+                        max[c] = f64::max(max[c], tester[c]);
+                    }
+                }
+            }
+        }
+
+        return AABB::from((min, max));
     }
 }

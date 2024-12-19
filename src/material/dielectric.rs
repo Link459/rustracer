@@ -1,11 +1,12 @@
 use rand::Rng;
+use serde::{Deserialize, Serialize};
 
 use crate::{hittable::HitPayload, ray::Ray, vec3::Vec3};
 
 use super::material::{Material, MaterialStorage};
 use crate::into_mat;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct Dielectric {
     ir: f64,
 }

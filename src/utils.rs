@@ -1,8 +1,54 @@
 use anyhow::Result;
 use image::{open, ExtendedColorType};
-use std::{fs::File, io::Write};
+use rand::{thread_rng, Rng};
+use std::{
+    fs::{self, File},
+    io::Write,
+    time::{Duration, Instant},
+};
 
-use crate::image::Image;
+use crate::{camera::Camera, hittable::Hittable, image::Image, scene::Scene};
+
+pub fn serialize_scene(scene: &Scene, path: &str) -> Result<()> {
+    let config = ron::ser::PrettyConfig::new().struct_names(false);
+    let data = ron::ser::to_string_pretty(&scene, config)?;
+    let mut file = File::create(path)?;
+    file.write(data.as_bytes())?;
+    return Ok(());
+}
+
+pub fn deserialize_scene(path: &str) -> Result<Scene> {
+    let data = fs::read_to_string(path)?;
+    let world = ron::from_str::<Scene>(&data)?;
+    return Ok(world);
+}
+
+pub fn get_time_prediction(rays: u32, camera: &Camera, world: &impl Hittable) -> Duration {
+    let width = camera.get_config().width;
+    let height = camera.get_config().height;
+    let samples = 10;
+
+    let mut rng = thread_rng();
+    let mut elapsed = Vec::new();
+    for _ in 0..samples {
+        let w = rng.gen_range(0..width);
+        let h = rng.gen_range(0..height);
+        let time = Instant::now();
+        camera.trace_ray(w, h, world);
+        elapsed.push(time.elapsed());
+    }
+    let sum = elapsed.iter().map(|x| x.as_secs_f64()).sum::<f64>();
+    let average = sum / samples as f64;
+    dbg!(elapsed);
+    dbg!(average);
+
+    // time on a single thread
+    let single_time = average * rays as f64;
+    let time = single_time / rayon::current_num_threads() as f64;
+
+    println!("estimated time: {}", time);
+    return Duration::from_secs_f64(time);
+}
 
 pub fn number_with_decimals(n: usize) -> String {
     n.to_string()

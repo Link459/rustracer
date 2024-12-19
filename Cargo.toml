@@ -24,6 +24,7 @@ toml= "0.8.19"
 
 winit = { version = "0.30.5", features = ["rwh_06"]}
 softbuffer = "0.4.6"
+ron = "0.8.1"
 
 [profile.release] 
 opt-level = 3
