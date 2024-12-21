@@ -10,8 +10,7 @@ use std::{
 use crate::{camera::Camera, hittable::Hittable, image::Image, scene::Scene};
 
 pub fn serialize_scene(scene: &Scene, path: &str) -> Result<()> {
-    let extensions = 
-         ron::extensions::Extensions::UNWRAP_VARIANT_NEWTYPES;
+    let extensions = ron::extensions::Extensions::UNWRAP_VARIANT_NEWTYPES;
     let config = ron::ser::PrettyConfig::new()
         .struct_names(false)
         .extensions(extensions);
@@ -85,5 +84,5 @@ pub fn load_hdri(path: &str) -> Result<Image> {
 }
 
 pub fn linear_plane_index(len: usize, width: u32, row: u32, column: u32) -> usize {
-    len - (row * width + column) as usize
+    return len - (row * width + column) as usize;
 }

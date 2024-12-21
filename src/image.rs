@@ -65,7 +65,7 @@ impl Image {
         F: Fn(u32, u32) -> Vec3 + Send + Sync,
     {
         (0..self.height).into_par_iter().for_each(|h| {
-            (0..self.width).into_par_iter().for_each(|w| {
+            (0..self.width).into_par_iter().rev().for_each(|w| {
                 let color = work_load(w, h);
                 let index = self.index(h, w);
                 self.write(color, index);
@@ -83,9 +83,11 @@ impl Image {
         F: Fn(u32, u32) -> Vec3 + Send + Sync,
     {
         (0..self.height).into_par_iter().for_each(|h| {
-            (0..self.width).into_par_iter().for_each(|w| {
+            (0..self.width).into_par_iter().rev().for_each(|w| {
                 let color = work_load(w, h);
                 let index = self.index(h, w);
+                //let index = self.index(w, h);
+
                 proxy
                     .send_event(PresentationEvent {
                         color: color.clone(),
@@ -98,8 +100,7 @@ impl Image {
         })
     }
 
-    //BUG: fails to write to the buffer
-    #[inline]
+    #[inline(always)]
     pub fn write(&self, add_color: Vec3, index: usize) -> () {
         let mut r = add_color.x;
         let mut g = add_color.y;
@@ -123,6 +124,7 @@ impl Image {
     }
 
     pub fn index(&self, row: u32, column: u32) -> usize {
+        let column = self.width - column;
         self.buffer.len() - 3 * (row * self.width + column) as usize
     }
 

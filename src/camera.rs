@@ -151,22 +151,14 @@ impl Camera {
             self.config.width, self.config.height, self.config.samples, self.config.max_depth
         );
 
+        let sqrt_samples = (self.config.samples as f64).sqrt();
+        let recip_sqrt_samples = 1.0 / sqrt_samples;
+
         println!("starting the render");
         let render_time = Instant::now();
         let mut image = Image::from(&self.config);
         image.compute_parallel_present(
             |w, h| {
-                /*let mut rng = rand::thread_rng();
-                let mut color = Vec3::ZERO;
-                for _ in 0..self.config.samples {
-                    let u = (w as f64 + rng.gen_range(0.0..1.0) as f64)
-                        / (self.config.width - 1) as f64;
-                    let v = (h as f64 + rng.gen_range(0.0..1.0) as f64)
-                        / (self.config.height - 1) as f64;
-                    let r = self.get_ray(u, v);
-                    color += self.ray_color(&r, &world, self.config.max_depth);
-                }
-                return color;*/
                 return self.trace_ray(w, h, &world);
             },
             proxy,

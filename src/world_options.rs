@@ -11,7 +11,8 @@ use crate::{
     model::{model::Model, quad::Quad, sphere::Sphere},
     moving_sphere::MovingSphere,
     render::{Background, RenderConfig},
-    texture::{ChessTexture, ImageTexture, NoiseTexture, SolidColor},
+    texture::{ChessTexture, ImageTexture, NoiseTexture, SolidColor, TextureStorage},
+    utils::load_hdri,
     vec3::Vec3,
     volume::ConstantMedium,
     world::World,
@@ -349,6 +350,49 @@ pub fn simple_light() -> (World, CameraConfig) {
     return (world, cam);
 }
 
+pub fn simple_skybox() -> (World, CameraConfig) {
+    let mut world = World::default();
+
+    let chess = ChessTexture::new(
+        Box::new(SolidColor::new(Vec3::new(0.2, 0.3, 0.1))),
+        Box::new(SolidColor::new(Vec3::new(0.9, 0.9, 0.9))),
+    );
+    world.add(Sphere::new(
+        Vec3::new(0.0, -1000.0, 0.0),
+        1000.0,
+        Lambertian::new(chess),
+    ));
+
+    world.add(Sphere::new(
+        Vec3::new(0.0, 1.0, 0.0),
+        1.0,
+        Dielectric::new(1.5),
+    ));
+    world.add(Sphere::new(
+        Vec3::new(-4.0, 1.0, 0.0),
+        1.0,
+        Lambertian::new(SolidColor::new(Vec3::new(0.4, 0.2, 0.1))),
+    ));
+    world.add(Sphere::new(
+        Vec3::new(4.0, 1.0, 0.0),
+        1.0,
+        Metal::new(Vec3::new(0.7, 0.6, 0.5), 0.0),
+    ));
+
+    let hdri = load_hdri("assets/skybox.hdr").unwrap();
+    let skybox = Background::Hdri(TextureStorage::Image(ImageTexture::from(hdri)));
+    let mut config = RenderConfig::with_aspect_ratio(16.0 / 9.0, 500, 100, 50);
+    config.background = skybox;
+
+    return (
+        world,
+        CameraConfig {
+            config,
+            ..Default::default()
+        },
+    );
+}
+
 #[inline]
 fn box_of_quads(a: &Vec3, b: &Vec3, mat: MaterialStorage) -> Model {
     // Returns the 3D box (six sides) that contains the two opposite vertices a & b.
@@ -470,7 +514,7 @@ pub fn cornell_box() -> (World, CameraConfig) {
 
     world.add(box2);
 
-    let mut config = RenderConfig::with_aspect_ratio(1.0, 400, 1000, 50);
+    let mut config = RenderConfig::with_aspect_ratio(1.0, 400, 100, 50);
     config.background = Background::Night;
     let cam = CameraConfig {
         lookfrom: Vec3::new(278.0, 278.0, -800.0),
@@ -699,6 +743,7 @@ pub fn choose_scene() -> (World, CameraConfig) {
         option_pair!("earth", earth),
         option_pair!("quads", quads),
         option_pair!("simple_light", simple_light),
+        option_pair!("simple_skybox", simple_skybox),
         option_pair!("cornell_box", cornell_box),
         option_pair!("cornell_smoke", cornell_smoke),
         option_pair!("final_world", final_world),

@@ -30,6 +30,7 @@ pub struct Presentation {
 
 impl Presentation {
     pub fn new(width: u32, height: u32, samples: f64) -> Self {
+        println!("presentation width {} height {} ", width, height);
         Presentation {
             window: None,
             surface: None,
@@ -109,7 +110,10 @@ impl ApplicationHandler<PresentationEvent> for Presentation {
         let mut buffer = surface.buffer_mut().unwrap();
 
         let color = b | (g << 8) | (r << 16);
-        let index = utils::linear_plane_index(buffer.len(), self.width, event.y, event.x) - 1; // - (event.y * self.image.width + event.x);
+        let area = buffer.len();
+        //TODO: flip the x
+        let x = event.x;
+        let index = utils::linear_plane_index(area, width, event.y, x) - 1;
         buffer[index] = color;
         buffer.present().unwrap();
     }
