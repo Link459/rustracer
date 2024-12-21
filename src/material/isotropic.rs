@@ -4,7 +4,7 @@ use crate::{
     hittable::HitPayload,
     into_mat,
     ray::Ray,
-    texture::{SolidColor, Texture, TextureValue},
+    texture::{SolidColor, TextureStorage, Texture},
     vec3::Vec3,
 };
 
@@ -15,13 +15,13 @@ use super::{
 
 #[derive(Clone, Debug,Serialize,Deserialize)]
 pub struct Isotropic {
-    albedo: Texture,
+    albedo: TextureStorage,
 }
 
 into_mat!(Isotropic);
 
 impl Isotropic {
-    pub fn new(texture: Texture) -> MaterialStorage {
+    pub fn new(texture: TextureStorage) -> MaterialStorage {
         MaterialStorage::Isotropic(Self { albedo: texture })
     }
 }

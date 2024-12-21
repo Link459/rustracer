@@ -1,3 +1,4 @@
+#![enable(unwrap_variant_newtypes)]
 (
     camera_config: (
         lookfrom: (
@@ -33,32 +34,32 @@
     ),
     world: (
         entities: [
-            Sphere((
+            Sphere(
                 center: (
                     x: 0.0,
                     y: -1000.0,
                     z: 0.0,
                 ),
                 radius: 1000.0,
-                material: Lambertian((
-                    albedo: Noise((
+                material: Lambertian(
+                    albedo: Noise(
                         scale: 4.0,
-                    )),
-                )),
-            )),
-            Sphere((
+                    ),
+                ),
+            ),
+            Sphere(
                 center: (
                     x: 0.0,
                     y: 2.0,
                     z: 0.0,
                 ),
                 radius: 2.0,
-                material: Lambertian((
-                    albedo: Noise((
+                material: Lambertian(
+                    albedo: Noise(
                         scale: 4.0,
-                    )),
-                )),
-            )),
+                    ),
+                ),
+            ),
         ],
     ),
 )

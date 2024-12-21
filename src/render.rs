@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     ray::Ray,
-    texture::{Texture, TextureValue},
+    texture::{TextureStorage, Texture},
     vec3::Vec3,
 };
 
@@ -12,7 +12,7 @@ use crate::{
 pub enum Background {
     Sky,
     Night,
-    Hdri(Texture),
+    Hdri(TextureStorage),
 }
 
 impl Background {
@@ -39,7 +39,7 @@ pub fn night(_ray: &Ray) -> Vec3 {
 }
 
 #[inline(always)]
-pub fn hdri(ray: &Ray, hdri: &Texture) -> Vec3 {
+pub fn hdri(ray: &Ray, hdri: &TextureStorage) -> Vec3 {
     let u = 0.5 + f64::atan2(ray.dir.x, ray.dir.z) / (2.0 * f64::consts::PI);
     let v = 0.5 + -ray.dir.y.asin() / f64::consts::PI;
     return hdri.value(u, v, &ray.dir);

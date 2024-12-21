@@ -1,31 +1,33 @@
+use std::fmt;
+
 use crate::{image::Image, perlin::Perlin, vec3::Vec3};
 use image::{open, GenericImageView};
 use serde::{
     de::{self, Visitor},
     ser::SerializeStruct,
-    Deserialize, Serialize,
+    Deserialize, Deserializer, Serialize,
 };
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub enum Texture {
+pub enum TextureStorage {
     SolidColor(SolidColor),
     Chess(ChessTexture),
     Noise(NoiseTexture),
     Image(ImageTexture),
 }
 
-impl TextureValue for Texture {
+impl Texture for TextureStorage {
     fn value(&self, u: f64, v: f64, p: &Vec3) -> Vec3 {
         match self {
-            Texture::SolidColor(ref t) => t.value(u, v, p),
-            Texture::Chess(ref t) => t.value(u, v, p),
-            Texture::Noise(ref t) => t.value(u, v, p),
-            Texture::Image(ref t) => t.value(u, v, p),
+            TextureStorage::SolidColor(ref t) => t.value(u, v, p),
+            TextureStorage::Chess(ref t) => t.value(u, v, p),
+            TextureStorage::Noise(ref t) => t.value(u, v, p),
+            TextureStorage::Image(ref t) => t.value(u, v, p),
         }
     }
 }
 
-pub trait TextureValue {
+pub trait Texture {
     fn value(&self, u: f64, v: f64, p: &Vec3) -> Vec3;
 }
 
@@ -35,12 +37,12 @@ pub struct SolidColor {
 }
 
 impl SolidColor {
-    pub fn new(color_value: Vec3) -> Texture {
-        return Texture::SolidColor(SolidColor { color_value });
+    pub fn new(color_value: Vec3) -> TextureStorage {
+        return TextureStorage::SolidColor(SolidColor { color_value });
     }
 }
 
-impl TextureValue for SolidColor {
+impl Texture for SolidColor {
     fn value(&self, _u: f64, _v: f64, _p: &Vec3) -> Vec3 {
         self.color_value
     }
@@ -48,17 +50,17 @@ impl TextureValue for SolidColor {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ChessTexture {
-    pub odd: Box<Texture>,
-    pub even: Box<Texture>,
+    pub odd: Box<TextureStorage>,
+    pub even: Box<TextureStorage>,
 }
 
 impl ChessTexture {
-    pub fn new(odd: Box<Texture>, even: Box<Texture>) -> Texture {
-        return Texture::Chess(Self { odd, even });
+    pub fn new(odd: Box<TextureStorage>, even: Box<TextureStorage>) -> TextureStorage {
+        return TextureStorage::Chess(Self { odd, even });
     }
 }
 
-impl TextureValue for ChessTexture {
+impl Texture for ChessTexture {
     fn value(&self, u: f64, v: f64, p: &Vec3) -> Vec3 {
         let sines = f64::sin(10.0 * p.x) * f64::sin(10.0 * p.y) * f64::sin(10.0 * p.z);
         if sines < 0.0 {
@@ -77,15 +79,15 @@ pub struct NoiseTexture {
 }
 
 impl NoiseTexture {
-    pub fn new(scale: f64) -> Texture {
-        return Texture::Noise(Self {
+    pub fn new(scale: f64) -> TextureStorage {
+        return TextureStorage::Noise(Self {
             perlin: Perlin::new(),
             scale,
         });
     }
 }
 
-impl TextureValue for NoiseTexture {
+impl Texture for NoiseTexture {
     fn value(&self, _u: f64, _v: f64, p: &Vec3) -> Vec3 {
         return Vec3::ONE * 0.5 * (1.0 + (self.scale * p.x + 10.0 * self.perlin.turb(&p, 7)).sin());
     }
@@ -100,12 +102,12 @@ pub struct ImageTexture {
 }
 
 impl ImageTexture {
-    pub fn new(file_path: &str) -> Texture {
+    pub fn new(file_path: &str) -> TextureStorage {
         let buffer =
             open(file_path).expect(format!("failed to open image with path: {file_path}").as_str());
         let (nx, ny) = buffer.dimensions();
 
-        return Texture::Image(Self {
+        return TextureStorage::Image(Self {
             nx,
             ny,
             buffer: buffer.into_bytes(),
@@ -138,7 +140,7 @@ impl From<Image> for ImageTexture {
     }
 }
 
-impl TextureValue for ImageTexture {
+impl Texture for ImageTexture {
     fn value(&self, u: f64, v: f64, _p: &Vec3) -> Vec3 {
         let nx = self.nx as usize;
         let ny = self.ny as usize;
@@ -179,12 +181,45 @@ impl<'de> Deserialize<'de> for ImageTexture {
     where
         D: serde::Deserializer<'de>,
     {
+        enum Field {
+            Path,
+        }
+
+        impl<'de> Deserialize<'de> for Field {
+            fn deserialize<D>(deserializer: D) -> Result<Field, D::Error>
+            where
+                D: Deserializer<'de>,
+            {
+                struct FieldVisitor;
+                impl<'de> Visitor<'de> for FieldVisitor {
+                    type Value = Field;
+
+                    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                        formatter.write_str("`path`")
+                    }
+
+                    fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+                    where
+                        E: de::Error,
+                    {
+                        dbg!(value);
+                        match value {
+                            "path" => Ok(Field::Path),
+                            _ => Err(de::Error::unknown_field(value, FIELDS)),
+                        }
+                    }
+                }
+
+                deserializer.deserialize_identifier(FieldVisitor)
+            }
+        }
+
         struct ImageTextureVisitor;
 
         impl<'de> Visitor<'de> for ImageTextureVisitor {
             type Value = ImageTexture;
             fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-                return write!(formatter, "struct ImageTexture");
+                return write!(formatter, "path");
             }
 
             fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
@@ -201,12 +236,20 @@ impl<'de> Deserialize<'de> for ImageTexture {
             where
                 A: serde::de::MapAccess<'de>,
             {
-                let path = map.next_value::<&str>()?;
+                let mut path = None;
+                while let Some(key) = map.next_key()? {
+                    match key {
+                        Field::Path => path = Some(map.next_value()?),
+                    }
+                }
                 //.ok_or(de::Error::missing_field("missing field path"))?;
+                dbg!(path);
+                let path = path.ok_or_else(|| de::Error::missing_field("path"))?;
                 return Ok(ImageTexture::from_path(path));
             }
         }
 
-        deserializer.deserialize_struct("ImageTexture", &["path"], ImageTextureVisitor {})
+        const FIELDS: &[&str] = &["path"];
+        deserializer.deserialize_struct("ImageTexture", FIELDS, ImageTextureVisitor {})
     }
 }

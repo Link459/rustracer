@@ -1,16 +1,11 @@
 #![allow(dead_code)]
 use anyhow::Result;
 use bvh::BvhNode;
-use camera::{Camera, CameraConfig};
+use camera::Camera;
 use present::Presentation;
 use scene::Scene;
-use std::{
-    env,
-    io::{stdin, stdout, Write},
-    time::Instant,
-};
+use std::{env, time::Instant};
 use utils::serialize_scene;
-use world::World;
 
 mod aabb;
 mod bvh;
@@ -33,45 +28,6 @@ mod volume;
 mod world;
 mod world_options;
 
-macro_rules! option_pair {
-    ($name:tt,$fn:expr) => {
-        (
-            $name,
-            $fn as fn() -> (crate::world::World, crate::camera::CameraConfig),
-        )
-    };
-}
-
-pub fn choose_scene() -> (World, CameraConfig) {
-    let options = vec![
-        option_pair!("random_world", world_options::random_world),
-        option_pair!("random_world_moving", world_options::random_world_moving),
-        option_pair!("two_chess_spheres", world_options::two_chess_spheres),
-        option_pair!("two_perlin_spheres", world_options::two_perlin_spheres),
-        option_pair!("earth", world_options::earth),
-        option_pair!("quads", world_options::quads),
-        option_pair!("simple_light", world_options::simple_light),
-        option_pair!("cornell_box", world_options::cornell_box),
-        option_pair!("cornell_smoke", world_options::cornell_smoke),
-        option_pair!("final_world", world_options::final_world),
-    ];
-
-    for (i, opt) in options.iter().enumerate() {
-        println!("{i}: {}", opt.0);
-    }
-
-    print!("choose a scene to render: ");
-    stdout().flush().unwrap();
-    let mut buf = String::new();
-    stdin().read_line(&mut buf).expect("failed to read line");
-    let choice = buf.trim().parse::<usize>().unwrap();
-    println!();
-    println!("choose scene: {}", options[choice].0);
-
-    let (world, camera) = options[choice].1();
-    return (world, camera);
-}
-
 fn main() -> Result<()> {
     let args = env::args().skip(1).collect::<Vec<_>>();
     if args.len() > 3 {
@@ -80,7 +36,7 @@ fn main() -> Result<()> {
 
     if args.len() == 2 {
         if args[0] == "--save" {
-            let (world, camera_config) = choose_scene();
+            let (world, camera_config) = world_options::choose_scene();
             let scene = Scene {
                 camera_config,
                 world,
@@ -95,7 +51,7 @@ fn main() -> Result<()> {
     if args.len() == 1 {
         scene = utils::deserialize_scene(&args[0])?;
     } else {
-        let (world, camera_config) = choose_scene();
+        let (world, camera_config) = world_options::choose_scene();
         scene = Scene {
             camera_config,
             world,

@@ -4,21 +4,21 @@ use crate::{
     hittable::HitPayload,
     into_mat,
     ray::Ray,
-    texture::{SolidColor, Texture, TextureValue},
+    texture::{SolidColor, Texture, TextureStorage},
     vec3::Vec3,
 };
 
 use super::material::{Material, MaterialStorage};
 
-#[derive(Clone, Debug, Serialize,Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Lambertian {
-    albedo: Texture,
+    albedo: TextureStorage,
 }
 
 into_mat!(Lambertian);
 
 impl Lambertian {
-    pub fn new(albedo: Texture) -> MaterialStorage {
+    pub fn new(albedo: TextureStorage) -> MaterialStorage {
         return MaterialStorage::Lambertian(Self { albedo });
     }
 }

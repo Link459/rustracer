@@ -1,8 +1,10 @@
+use std::io::{stdin, stdout, Write};
+
 use rand::{thread_rng, Rng};
 
 use crate::{
     bvh::BvhNode,
-    camera::{Camera, CameraConfig},
+    camera::CameraConfig,
     hittable::{RotateY, Translate},
     interval::Interval,
     material::{material::MaterialStorage, Dielectric, DiffuseLight, Lambertian, Metal},
@@ -677,4 +679,43 @@ pub fn final_world() -> (World, CameraConfig) {
     };
 
     return (world, cam);
+}
+
+macro_rules! option_pair {
+    ($name:tt,$fn:expr) => {
+        (
+            $name,
+            $fn as fn() -> (crate::world::World, crate::camera::CameraConfig),
+        )
+    };
+}
+
+pub fn choose_scene() -> (World, CameraConfig) {
+    let options = vec![
+        option_pair!("random_world", random_world),
+        option_pair!("random_world_moving", random_world_moving),
+        option_pair!("two_chess_spheres", two_chess_spheres),
+        option_pair!("two_perlin_spheres", two_perlin_spheres),
+        option_pair!("earth", earth),
+        option_pair!("quads", quads),
+        option_pair!("simple_light", simple_light),
+        option_pair!("cornell_box", cornell_box),
+        option_pair!("cornell_smoke", cornell_smoke),
+        option_pair!("final_world", final_world),
+    ];
+
+    for (i, opt) in options.iter().enumerate() {
+        println!("{i}: {}", opt.0);
+    }
+
+    print!("choose a scene to render: ");
+    stdout().flush().unwrap();
+    let mut buf = String::new();
+    stdin().read_line(&mut buf).expect("failed to read line");
+    let choice = buf.trim().parse::<usize>().unwrap();
+    println!();
+    println!("choose scene: {}", options[choice].0);
+
+    let (world, camera) = options[choice].1();
+    return (world, camera);
 }

@@ -1,3 +1,4 @@
+#![enable(unwrap_variant_newtypes)]
 (
     camera_config: (
         lookfrom: (
@@ -33,19 +34,19 @@
     ),
     world: (
         entities: [
-            Sphere((
+            Sphere(
                 center: (
                     x: 0.0,
                     y: 0.0,
                     z: 0.0,
                 ),
                 radius: 2.0,
-                material: Lambertian((
-                    albedo: Image((
+                material: Lambertian(
+                    albedo: Image(
                         path: "assets/earthmap.jpg",
-                    )),
-                )),
-            )),
+                    ),
+                ),
+            ),
         ],
     ),
 )

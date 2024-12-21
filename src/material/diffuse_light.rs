@@ -4,7 +4,7 @@ use crate::{
     hittable::HitPayload,
     into_mat,
     ray::Ray,
-    texture::{Texture, TextureValue},
+    texture::{TextureStorage, Texture},
     vec3::Vec3,
 };
 
@@ -12,13 +12,13 @@ use super::material::{Material, MaterialStorage};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DiffuseLight {
-    emit: Texture,
+    emit: TextureStorage,
 }
 
 into_mat!(DiffuseLight);
 
 impl DiffuseLight {
-    pub fn new(emit: Texture) -> MaterialStorage {
+    pub fn new(emit: TextureStorage) -> MaterialStorage {
         MaterialStorage::DiffuseLight(Self { emit })
     }
 }

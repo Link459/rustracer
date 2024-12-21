@@ -10,7 +10,11 @@ use std::{
 use crate::{camera::Camera, hittable::Hittable, image::Image, scene::Scene};
 
 pub fn serialize_scene(scene: &Scene, path: &str) -> Result<()> {
-    let config = ron::ser::PrettyConfig::new().struct_names(false);
+    let extensions = 
+         ron::extensions::Extensions::UNWRAP_VARIANT_NEWTYPES;
+    let config = ron::ser::PrettyConfig::new()
+        .struct_names(false)
+        .extensions(extensions);
     let data = ron::ser::to_string_pretty(&scene, config)?;
     let mut file = File::create(path)?;
     file.write(data.as_bytes())?;
