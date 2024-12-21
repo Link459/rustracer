@@ -7,8 +7,8 @@ use crate::{
     camera::CameraConfig,
     hittable::{RotateY, Translate},
     interval::Interval,
-    material::{material::MaterialStorage, Dielectric, DiffuseLight, Lambertian, Metal},
-    model::{model::Model, quad::Quad, sphere::Sphere},
+    material::{Dielectric, DiffuseLight, Lambertian, MaterialStorage, Metal},
+    model::{Model, quad::Quad, sphere::Sphere},
     moving_sphere::MovingSphere,
     render::{Background, RenderConfig},
     texture::{ChessTexture, ImageTexture, NoiseTexture, SolidColor, TextureStorage},
@@ -25,8 +25,8 @@ pub fn random_world() -> (World, CameraConfig) {
     let mut world = World::default();
 
     let chess = ChessTexture::new(
-        Box::new(SolidColor::new(Vec3::new(0.2, 0.3, 0.1))),
-        Box::new(SolidColor::new(Vec3::new(0.9, 0.9, 0.9))),
+        SolidColor::new(Vec3::new(0.2, 0.3, 0.1)),
+        SolidColor::new(Vec3::new(0.9, 0.9, 0.9)),
     );
     world.add(Sphere::new(
         Vec3::new(0.0, -1000.0, 0.0),
@@ -107,8 +107,8 @@ pub fn random_world_moving() -> (World, CameraConfig) {
     let mut world = World::default();
 
     let chess = ChessTexture::new(
-        Box::new(SolidColor::new(Vec3::new(0.2, 0.3, 0.1))),
-        Box::new(SolidColor::new(Vec3::new(0.9, 0.9, 0.9))),
+        SolidColor::new(Vec3::new(0.2, 0.3, 0.1)),
+        SolidColor::new(Vec3::new(0.9, 0.9, 0.9)),
     );
     world.add(Sphere::new(
         Vec3::new(0.0, -1000.0, 0.0),
@@ -190,8 +190,8 @@ pub fn random_world_moving() -> (World, CameraConfig) {
 pub fn two_chess_spheres() -> (World, CameraConfig) {
     let mut world = World::default();
     let chess = ChessTexture::new(
-        Box::new(SolidColor::new(Vec3::new(0.2, 0.3, 0.1))),
-        Box::new(SolidColor::new(Vec3::new(0.9, 0.9, 0.9))),
+        SolidColor::new(Vec3::new(0.2, 0.3, 0.1)),
+        SolidColor::new(Vec3::new(0.9, 0.9, 0.9)),
     );
 
     world.add(Sphere::new(
@@ -354,8 +354,8 @@ pub fn simple_skybox() -> (World, CameraConfig) {
     let mut world = World::default();
 
     let chess = ChessTexture::new(
-        Box::new(SolidColor::new(Vec3::new(0.2, 0.3, 0.1))),
-        Box::new(SolidColor::new(Vec3::new(0.9, 0.9, 0.9))),
+        SolidColor::new(Vec3::new(0.2, 0.3, 0.1)),
+        SolidColor::new(Vec3::new(0.9, 0.9, 0.9)),
     );
     world.add(Sphere::new(
         Vec3::new(0.0, -1000.0, 0.0),
@@ -394,7 +394,7 @@ pub fn simple_skybox() -> (World, CameraConfig) {
 }
 
 #[inline]
-fn box_of_quads(a: &Vec3, b: &Vec3, mat: MaterialStorage) -> Model {
+fn box_of_quads(a: &Vec3, b: &Vec3, mat: impl Into<MaterialStorage> + Clone) -> Model {
     // Returns the 3D box (six sides) that contains the two opposite vertices a & b.
 
     let mut sides = World::default();
@@ -498,8 +498,8 @@ pub fn cornell_box() -> (World, CameraConfig) {
         white.clone(),
     );
 
-    let box1 = RotateY::new(Box::new(box1), 15.0);
-    let box1 = Translate::new(Box::new(box1), Vec3::new(265.0, 0.0, 295.0));
+    let box1 = RotateY::new(box1, 15.0);
+    let box1 = Translate::new(box1, Vec3::new(265.0, 0.0, 295.0));
 
     world.add(box1);
 
@@ -509,8 +509,8 @@ pub fn cornell_box() -> (World, CameraConfig) {
         white,
     );
 
-    let box2 = RotateY::new(Box::new(box2), -18.0);
-    let box2 = Translate::new(Box::new(box2), Vec3::new(130.0, 0.0, 65.0));
+    let box2 = RotateY::new(box2, -18.0);
+    let box2 = Translate::new(box2, Vec3::new(130.0, 0.0, 65.0));
 
     world.add(box2);
 
@@ -582,10 +582,10 @@ pub fn cornell_smoke() -> (World, CameraConfig) {
         white.clone(),
     );
 
-    let box1 = RotateY::new(Box::new(box1), 15.0);
-    let box1 = Translate::new(Box::new(box1), Vec3::new(265.0, 0.0, 295.0));
+    let box1 = RotateY::new(box1, 15.0);
+    let box1 = Translate::new(box1, Vec3::new(265.0, 0.0, 295.0));
 
-    world.add(ConstantMedium::new(Box::new(box1), 0.01, Vec3::ZERO));
+    world.add(ConstantMedium::new(box1, 0.01, Vec3::ZERO));
 
     let box2 = box_of_quads(
         &Vec3::new(0.0, 0.0, 0.0),
@@ -593,10 +593,10 @@ pub fn cornell_smoke() -> (World, CameraConfig) {
         white,
     );
 
-    let box2 = RotateY::new(Box::new(box2), -18.0);
-    let box2 = Translate::new(Box::new(box2), Vec3::new(130.0, 0.0, 65.0));
+    let box2 = RotateY::new(box2, -18.0);
+    let box2 = Translate::new(box2, Vec3::new(130.0, 0.0, 65.0));
 
-    world.add(ConstantMedium::new(Box::new(box2), 0.01, Vec3::ONE));
+    world.add(ConstantMedium::new(box2, 0.01, Vec3::ONE));
 
     let config = RenderConfig::with_aspect_ratio(1.0, 200, 500, 50);
     let cam = CameraConfig {
@@ -671,14 +671,10 @@ pub fn final_world() -> (World, CameraConfig) {
 
     let boundary = Sphere::new(Vec3::new(360.0, 150.0, 145.0), 70.0, Dielectric::new(1.5));
     world.add(boundary.clone());
-    world.add(ConstantMedium::new(
-        Box::new(boundary),
-        0.2,
-        Vec3::new(0.2, 0.4, 0.9),
-    ));
+    world.add(ConstantMedium::new(boundary, 0.2, Vec3::new(0.2, 0.4, 0.9)));
     let boundary = Sphere::new(Vec3::new(0.0, 0.0, 0.0), 5000.0, Dielectric::new(1.5));
     world.add(ConstantMedium::new(
-        Box::new(boundary),
+        boundary,
         0.0001,
         Vec3::new(1.0, 1.0, 1.0),
     ));
@@ -702,11 +698,8 @@ pub fn final_world() -> (World, CameraConfig) {
         ));
     }
 
-    let rotate = RotateY::new(Box::new(BvhNode::from_world(box_world)), 15.0);
-    world.add(Translate::new(
-        Box::new(rotate),
-        Vec3::new(-100.0, 270.0, 395.0),
-    ));
+    let rotate = RotateY::new(BvhNode::from_world(box_world), 15.0);
+    world.add(Translate::new(rotate, Vec3::new(-100.0, 270.0, 395.0)));
 
     let mut config = RenderConfig::with_aspect_ratio(1.0, 300, 350, 4);
     config.background = Background::Night;

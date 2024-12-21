@@ -3,7 +3,6 @@ use std::ptr;
 use crate::{present::PresentationEvent, render::RenderConfig, vec3::Vec3};
 use image::{ImageBuffer, Rgb};
 use rayon::prelude::*;
-use serde::{Deserialize, Serialize};
 use winit::event_loop::EventLoopProxy;
 
 #[derive(Default, Debug, Clone)]
@@ -12,24 +11,6 @@ pub struct Image {
     pub width: u32,
     pub height: u32,
     samples: f64,
-}
-
-impl<'de> Deserialize<'de> for Image {
-    fn deserialize<D>(_deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        todo!()
-    }
-}
-
-impl Serialize for Image {
-    fn serialize<S>(&self, _serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        todo!()
-    }
 }
 
 impl Image {
@@ -45,13 +26,13 @@ impl Image {
         return img;
     }
 
-    #[inline]
-    pub fn compute<F>(&mut self, work_load: F) -> ()
+    #[inline(always)]
+    pub fn compute<F>(&mut self, work_load: F)
     where
         F: Fn(u32, u32) -> Vec3,
     {
-        (0..self.height).into_iter().for_each(|h| {
-            (0..self.width).into_iter().for_each(|w| {
+        (0..self.height).for_each(|h| {
+            (0..self.width).for_each(|w| {
                 let color = work_load(w, h);
                 let index = self.index(h, w);
                 self.write(color, index);
@@ -60,7 +41,7 @@ impl Image {
     }
 
     #[inline]
-    pub fn compute_parallel<F>(&mut self, work_load: F) -> ()
+    pub fn compute_parallel<F>(&mut self, work_load: F)
     where
         F: Fn(u32, u32) -> Vec3 + Send + Sync,
     {
@@ -78,8 +59,7 @@ impl Image {
         &mut self,
         work_load: F,
         proxy: EventLoopProxy<PresentationEvent>,
-    ) -> ()
-    where
+    ) where
         F: Fn(u32, u32) -> Vec3 + Send + Sync,
     {
         (0..self.height).into_par_iter().for_each(|h| {
@@ -89,11 +69,7 @@ impl Image {
                 //let index = self.index(w, h);
 
                 proxy
-                    .send_event(PresentationEvent {
-                        color: color.clone(),
-                        x: w,
-                        y: h,
-                    })
+                    .send_event(PresentationEvent { color, x: w, y: h })
                     .unwrap();
                 self.write(color, index);
             })
@@ -101,7 +77,7 @@ impl Image {
     }
 
     #[inline(always)]
-    pub fn write(&self, add_color: Vec3, index: usize) -> () {
+    pub fn write(&self, add_color: Vec3, index: usize) {
         let mut r = add_color.x;
         let mut g = add_color.y;
         let mut b = add_color.z;
@@ -128,7 +104,7 @@ impl Image {
         self.buffer.len() - 3 * (row * self.width + column) as usize
     }
 
-    pub fn iter_pixels<'a>(&'a self) -> ImageIterator<'a> {
+    pub fn iter_pixels(&self) -> ImageIterator<'_> {
         return ImageIterator::new(self);
     }
 }

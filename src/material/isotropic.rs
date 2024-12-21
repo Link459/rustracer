@@ -2,35 +2,29 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     hittable::HitPayload,
-    into_mat,
     ray::Ray,
-    texture::{SolidColor, TextureStorage, Texture},
+    texture::{SolidColor, Texture, TextureStorage},
     vec3::Vec3,
 };
 
-use super::{
-    lambertian::random_unit_vector,
-    material::{Material, MaterialStorage},
-};
+use super::{lambertian::random_unit_vector, Material};
 
-#[derive(Clone, Debug,Serialize,Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Isotropic {
     albedo: TextureStorage,
 }
 
-into_mat!(Isotropic);
-
 impl Isotropic {
-    pub fn new(texture: TextureStorage) -> MaterialStorage {
-        MaterialStorage::Isotropic(Self { albedo: texture })
+    pub fn new(texture: impl Into<TextureStorage>) -> Self {
+        return Self {
+            albedo: texture.into(),
+        };
     }
 }
 
 impl From<Vec3> for Isotropic {
     fn from(value: Vec3) -> Self {
-        Self {
-            albedo: SolidColor::new(value),
-        }
+        return Self::new(SolidColor::new(value));
     }
 }
 

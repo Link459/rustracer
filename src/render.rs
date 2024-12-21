@@ -21,7 +21,7 @@ impl Background {
         match self {
             Background::Sky => skybox(ray),
             Background::Night => night(ray),
-            Background::Hdri(ref img) => hdri(ray, &img),
+            Background::Hdri(ref img) => hdri(ray, img),
         }
     }
 }

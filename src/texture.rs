@@ -12,7 +12,7 @@ use serde::{
 pub enum TextureStorage {
     SolidColor(SolidColor),
     Chess(ChessTexture),
-    Noise(NoiseTexture),
+    Noise(Box<NoiseTexture>),
     Image(ImageTexture),
 }
 
@@ -27,6 +27,27 @@ impl Texture for TextureStorage {
     }
 }
 
+impl From<SolidColor> for TextureStorage {
+    fn from(value: SolidColor) -> Self {
+        return Self::SolidColor(value);
+    }
+}
+impl From<ChessTexture> for TextureStorage {
+    fn from(value: ChessTexture) -> Self {
+        return Self::Chess(value);
+    }
+}
+impl From<NoiseTexture> for TextureStorage {
+    fn from(value: NoiseTexture) -> Self {
+        return Self::Noise(Box::new(value));
+    }
+}
+impl From<ImageTexture> for TextureStorage {
+    fn from(value: ImageTexture) -> Self {
+        return Self::Image(value);
+    }
+}
+
 pub trait Texture {
     fn value(&self, u: f64, v: f64, p: &Vec3) -> Vec3;
 }
@@ -37,8 +58,8 @@ pub struct SolidColor {
 }
 
 impl SolidColor {
-    pub fn new(color_value: Vec3) -> TextureStorage {
-        return TextureStorage::SolidColor(SolidColor { color_value });
+    pub fn new(color_value: Vec3) -> Self {
+        return SolidColor { color_value };
     }
 }
 
@@ -55,8 +76,11 @@ pub struct ChessTexture {
 }
 
 impl ChessTexture {
-    pub fn new(odd: Box<TextureStorage>, even: Box<TextureStorage>) -> TextureStorage {
-        return TextureStorage::Chess(Self { odd, even });
+    pub fn new(odd: impl Into<TextureStorage>, even: impl Into<TextureStorage>) -> Self {
+        return Self {
+            odd: Box::new(odd.into()),
+            even: Box::new(even.into()),
+        };
     }
 }
 
@@ -79,17 +103,17 @@ pub struct NoiseTexture {
 }
 
 impl NoiseTexture {
-    pub fn new(scale: f64) -> TextureStorage {
-        return TextureStorage::Noise(Self {
+    pub fn new(scale: f64) -> Self {
+        return Self {
             perlin: Perlin::new(),
             scale,
-        });
+        };
     }
 }
 
 impl Texture for NoiseTexture {
     fn value(&self, _u: f64, _v: f64, p: &Vec3) -> Vec3 {
-        return Vec3::ONE * 0.5 * (1.0 + (self.scale * p.x + 10.0 * self.perlin.turb(&p, 7)).sin());
+        return Vec3::ONE * 0.5 * (1.0 + (self.scale * p.x + 10.0 * self.perlin.turb(p, 7)).sin());
     }
 }
 
@@ -102,22 +126,22 @@ pub struct ImageTexture {
 }
 
 impl ImageTexture {
-    pub fn new(file_path: &str) -> TextureStorage {
-        let buffer =
-            open(file_path).expect(format!("failed to open image with path: {file_path}").as_str());
+    pub fn new(file_path: &str) -> Self {
+        let buffer = open(file_path)
+            .unwrap_or_else(|x| panic!("failed to open image with path: {file_path} because {x}"));
         let (nx, ny) = buffer.dimensions();
 
-        return TextureStorage::Image(Self {
+        return Self {
             nx,
             ny,
             buffer: buffer.into_bytes(),
             path: String::from(file_path),
-        });
+        };
     }
 
     pub fn from_path(file_path: &str) -> Self {
-        let buffer =
-            open(file_path).expect(format!("failed to open image with path: {file_path}").as_str());
+        let buffer = open(file_path)
+            .unwrap_or_else(|x| panic!("failed to open image with path: {file_path} because {x}"));
         let (nx, ny) = buffer.dimensions();
 
         return Self {

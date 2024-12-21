@@ -2,24 +2,21 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     hittable::HitPayload,
-    into_mat,
     ray::Ray,
-    texture::{TextureStorage, Texture},
+    texture::{Texture, TextureStorage},
     vec3::Vec3,
 };
 
-use super::material::{Material, MaterialStorage};
+use super::Material;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DiffuseLight {
     emit: TextureStorage,
 }
 
-into_mat!(DiffuseLight);
-
 impl DiffuseLight {
-    pub fn new(emit: TextureStorage) -> MaterialStorage {
-        MaterialStorage::DiffuseLight(Self { emit })
+    pub fn new(emit: impl Into<TextureStorage>) -> Self {
+        return Self { emit: emit.into() };
     }
 }
 
@@ -29,6 +26,6 @@ impl Material for DiffuseLight {
     }
 
     fn emitted(&self, u: f64, v: f64, p: &Vec3) -> Vec3 {
-        return self.emit.value(u, v, &p);
+        return self.emit.value(u, v, p);
     }
 }

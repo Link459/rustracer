@@ -16,7 +16,7 @@ pub fn serialize_scene(scene: &Scene, path: &str) -> Result<()> {
         .extensions(extensions);
     let data = ron::ser::to_string_pretty(&scene, config)?;
     let mut file = File::create(path)?;
-    file.write(data.as_bytes())?;
+    file.write_all(data.as_bytes())?;
     return Ok(());
 }
 
@@ -64,15 +64,15 @@ pub fn number_with_decimals(n: usize) -> String {
         .join(",")
 }
 
-pub fn create_ppm_file(file: &str, buf: &Vec<u8>, width: u32, height: u32) -> Result<()> {
+pub fn create_ppm_file(file: &str, buf: &[u8], width: u32, height: u32) -> Result<()> {
     let mut file = File::create(file)?;
     let ppm = format!("P6\n {:?} {:?}\n255\n", width, height);
-    file.write(ppm.as_bytes())?;
-    file.write(buf.as_slice())?;
+    file.write_all(ppm.as_bytes())?;
+    file.write_all(buf)?;
     Ok(())
 }
 
-pub fn create_image_file(file: &str, buf: &Vec<u8>, width: u32, height: u32) -> Result<()> {
+pub fn create_image_file(file: &str, buf: &[u8], width: u32, height: u32) -> Result<()> {
     image::save_buffer(file, buf, width, height, ExtendedColorType::Rgb8)?;
     Ok(())
 }

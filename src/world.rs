@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::interval::Interval;
-use crate::material::material::MaterialStorage;
+use crate::material::MaterialStorage;
 use crate::model::Model;
 use crate::ray::Ray;
 use crate::{
@@ -24,20 +24,23 @@ impl World {
         };
     }
 
-    pub fn clear(&mut self) -> () {
+    pub fn clear(&mut self) {
         self.entities.clear();
     }
 
-    pub fn add(&mut self, entity: Model) -> () {
+    pub fn add<T>(&mut self, entity: T)
+    where
+        T: Hittable + Into<Model>,
+    {
         self.bbox = AABB::from((self.bbox, entity.bounding_box()));
-        self.entities.push(entity);
+        self.entities.push(Into::into(entity));
     }
 
-    pub fn add_slice(&mut self, models: impl IntoIterator<Item = Model>) -> () {
+    pub fn add_slice(&mut self, models: impl IntoIterator<Item = Model>) {
         self.entities.extend(models);
     }
 
-    pub fn extend(&mut self, other: World) -> () {
+    pub fn extend(&mut self, other: World) {
         self.entities.extend(other.entities);
     }
 }

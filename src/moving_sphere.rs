@@ -4,8 +4,8 @@ use crate::{
     aabb::AABB,
     hittable::{HitPayload, Hittable},
     interval::Interval,
-    material::material::MaterialStorage,
-    model::{sphere::Sphere, Model},
+    material::MaterialStorage,
+    model::sphere::Sphere,
     ray::Ray,
     vec3::Vec3,
 };
@@ -27,16 +27,16 @@ impl MovingSphere {
         time0: f64,
         time1: f64,
         radius: f64,
-        material: MaterialStorage,
-    ) -> Model {
-        return Model::MovingSphere(Self {
+        material: impl Into<MaterialStorage>,
+    ) -> Self {
+        return Self {
             center0,
             center1,
             time0,
             time1,
             radius,
-            material,
-        });
+            material: material.into(),
+        };
     }
 
     #[inline]
@@ -81,7 +81,7 @@ impl Hittable for MovingSphere {
             front_face: false,
         };
 
-        payload.set_face_normal(&ray, outward_normal);
+        payload.set_face_normal(ray, outward_normal);
 
         return Some((payload, self.material.clone()));
     }

@@ -2,32 +2,29 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     hittable::HitPayload,
-    into_mat,
     ray::Ray,
     texture::{SolidColor, Texture, TextureStorage},
     vec3::Vec3,
 };
 
-use super::material::{Material, MaterialStorage};
+use super::Material;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Lambertian {
     albedo: TextureStorage,
 }
 
-into_mat!(Lambertian);
-
 impl Lambertian {
-    pub fn new(albedo: TextureStorage) -> MaterialStorage {
-        return MaterialStorage::Lambertian(Self { albedo });
+    pub fn new(albedo: impl Into<TextureStorage>) -> Self {
+        return Self {
+            albedo: albedo.into(),
+        };
     }
 }
 
 impl From<Vec3> for Lambertian {
     fn from(value: Vec3) -> Self {
-        Self {
-            albedo: SolidColor::new(value),
-        }
+        return Self::new(SolidColor::new(value));
     }
 }
 

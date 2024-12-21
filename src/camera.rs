@@ -35,7 +35,7 @@ impl Default for CameraConfig {
             lookat,
             vup,
             vfov: 20.0,
-            aspect_ratio: 16.0 / 9.0 as f64,
+            aspect_ratio: 16.0 / 9.0,
             aperture,
             focus_dist,
             time: Interval::new(0.0, 1.0),
@@ -67,56 +67,35 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn new(
-        lookfrom: Vec3,
-        lookat: Vec3,
-        vup: Vec3,
-        vfov: f64,
-        aspect_ratio: f64,
-        aperture: f64,
-        focus_dist: f64,
-        time: Interval,
-        config: RenderConfig,
-    ) -> Camera {
+    pub fn new(config: CameraConfig) -> Self {
+        return Self::from_camera_config(config);
+    }
+
+    pub fn from_camera_config(config: CameraConfig) -> Self {
         // Vertical field-of-view in degrees
-        let theta = std::f64::consts::PI / 180.0 * vfov;
+        let theta = std::f64::consts::PI / 180.0 * config.vfov;
         let viewport_height = 2.0 * (theta / 2.0).tan();
-        let viewport_width = aspect_ratio * viewport_height;
+        let viewport_width = config.aspect_ratio * viewport_height;
 
-        let cw = (lookfrom - lookat).normalize();
-        let cu = vup.cross(&cw).normalize();
+        let cw = (config.lookfrom - config.lookat).normalize();
+        let cu = config.vup.cross(&cw).normalize();
         let cv = cw.cross(&cu);
-        let h = focus_dist * viewport_width * cu;
-        let v = focus_dist * viewport_height * cv;
+        let h = config.focus_dist * viewport_width * cu;
+        let v = config.focus_dist * viewport_height * cv;
 
-        let llc = lookfrom - h / 2.0 - v / 2.0 - focus_dist * cw;
+        let llc = config.lookfrom - h / 2.0 - v / 2.0 - config.focus_dist * cw;
 
-        Camera {
-            origin: lookfrom,
+        return Camera {
+            origin: config.lookfrom,
             horizontal: h,
             vertical: v,
             lower_left_corner: llc,
-            //cw,
             cu,
             cv,
-            lens_radius: aperture / 2.0,
-            time,
-            config,
-        }
-    }
-
-    pub fn from_camera_config(config: CameraConfig) -> Camera {
-        return Self::new(
-            config.lookfrom,
-            config.lookat,
-            config.vup,
-            config.vfov,
-            config.aspect_ratio,
-            config.aperture,
-            config.focus_dist,
-            config.time,
-            config.config,
-        );
+            lens_radius: config.aperture / 2.0,
+            time: config.time,
+            config: config.config,
+        };
     }
 
     pub fn get_config(&self) -> &RenderConfig {
@@ -124,9 +103,10 @@ impl Camera {
     }
 
     pub fn default_with_config(config: RenderConfig) -> Self {
-        let mut cam = Self::default();
-        cam.config = config;
-        return cam;
+        return Camera {
+            config,
+            ..Default::default()
+        };
     }
 
     #[inline]
@@ -152,7 +132,7 @@ impl Camera {
         );
 
         let sqrt_samples = (self.config.samples as f64).sqrt();
-        let recip_sqrt_samples = 1.0 / sqrt_samples;
+        let _recip_sqrt_samples = 1.0 / sqrt_samples;
 
         println!("starting the render");
         let render_time = Instant::now();
@@ -184,7 +164,8 @@ impl Camera {
     }
 
     pub fn ray_color(&self, ray: &Ray, world: &impl Hittable, depth: u32) -> Vec3 {
-        if depth <= 0 {
+        //depth <= 0
+        if depth == 0 {
             return Vec3::ZERO;
         }
 
@@ -203,30 +184,16 @@ impl Camera {
 
 impl Default for Camera {
     fn default() -> Self {
-        let lookfrom = Vec3::new(13.0, 2.0, 3.0);
-        let lookat = Vec3::new(0.0, 0.0, 0.0);
-        let vup = Vec3::new(0.0, 1.0, 0.0);
-        let dist_to_focus = 10.0;
-        let aperture = 0.0;
+        let config = CameraConfig::default();
 
-        return Self::new(
-            lookfrom,
-            lookat,
-            vup,
-            20.0,
-            16.0 / 9.0 as f64,
-            aperture,
-            dist_to_focus,
-            Interval::new(0.0, 1.0),
-            RenderConfig::default(),
-        );
+        return Self::new(config);
     }
 }
 
 unsafe impl Send for Camera {}
 unsafe impl Sync for Camera {}
 
-#[inline]
+#[inline(always)]
 fn random_in_unit_disk() -> Vec3 {
     let mut rng = rand::thread_rng();
     loop {

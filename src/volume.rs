@@ -5,7 +5,7 @@ use crate::{
     aabb::AABB,
     hittable::{HitPayload, Hittable},
     interval::Interval,
-    material::{material::MaterialStorage, Isotropic},
+    material::{MaterialStorage, Isotropic},
     model::Model,
     ray::Ray,
     vec3::Vec3,
@@ -19,22 +19,22 @@ pub struct ConstantMedium {
 }
 
 impl ConstantMedium {
-    pub fn new(boundary: Box<Model>, d: f64, c: Vec3) -> Model {
-        Model::ConstantMedium(Self {
-            boundary,
+    pub fn new(boundary: impl Into<Model>, d: f64, c: Vec3) -> Self {
+        return Self {
+            boundary: Box::new(boundary.into()),
             neg_inv_density: -1.0 / d,
             phase_func: Isotropic::from(c).into(),
-        })
+        };
     }
 }
 
 impl Hittable for ConstantMedium {
     fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<(HitPayload, MaterialStorage)> {
         let mut rng = rand::thread_rng();
-        if let Some((mut hit1, _)) = self.boundary.hit(&ray, Interval::new(-f64::MAX, f64::MAX)) {
+        if let Some((mut hit1, _)) = self.boundary.hit(ray, Interval::new(-f64::MAX, f64::MAX)) {
             if let Some((mut hit2, _)) = self
                 .boundary
-                .hit(&ray, Interval::new(hit1.t + 0.0001, f64::MAX))
+                .hit(ray, Interval::new(hit1.t + 0.0001, f64::MAX))
             {
                 if hit1.t < ray_t.min {
                     hit1.t = ray_t.min

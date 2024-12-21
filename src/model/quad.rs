@@ -4,8 +4,7 @@ use crate::{
     aabb::AABB,
     hittable::{HitPayload, Hittable},
     interval::Interval,
-    material::material::MaterialStorage,
-    model::model::Model,
+    material::MaterialStorage,
     ray::Ray,
     vec3::Vec3,
 };
@@ -24,7 +23,7 @@ pub struct Quad {
 }
 
 impl Quad {
-    pub fn new(q: Vec3, u: Vec3, v: Vec3, material: MaterialStorage) -> Model {
+    pub fn new(q: Vec3, u: Vec3, v: Vec3, material: impl Into<MaterialStorage>) -> Self {
         let n = u.cross(&v);
         let normal = n.normalize();
         let d = normal.dot(&q);
@@ -32,23 +31,25 @@ impl Quad {
         let bbox = AABB::from((q, q + u + v)).pad();
         let w = n / n.dot(&n);
 
-        Model::Quad(Self {
+        return Self {
             q,
             u,
             v,
-            material,
+            material: material.into(),
             bbox,
             normal,
             d,
             w,
-        })
+        };
     }
 
     fn is_interior(a: f64, b: f64) -> Option<(f64, f64)> {
         // Given the hit point in plane coordinates, return false if it is outside the
         // primitive, otherwise set the hit record UV coordinates and return true.
 
-        if a < 0.0 || 1.0 < a || b < 0.0 || 1.0 < b {
+        if !(0.0..=1.0).contains(&a) || !(0.0..=1.0).contains(&b)
+        //if a < 0.0 || 1.0 < a || b < 0.0 || 1.0 < b
+        {
             return None;
         }
 
@@ -78,7 +79,7 @@ impl Hittable for Quad {
 
         if let Some((u, v)) = Self::is_interior(alpha, beta) {
             let mut payload = HitPayload::new(intersection, self.normal, t, u, v);
-            payload.set_face_normal(&ray, self.normal);
+            payload.set_face_normal(ray, self.normal);
 
             return Some((payload, self.material.clone()));
         }

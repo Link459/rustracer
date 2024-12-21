@@ -6,8 +6,8 @@ use std::{
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    aabb::AABB, interval::Interval, material::material::MaterialStorage, model::model::Model,
-    ray::Ray, vec3::Vec3,
+    aabb::AABB, interval::Interval, material::MaterialStorage, model::Model, ray::Ray,
+    vec3::Vec3,
 };
 
 #[derive(Default, Debug)]
@@ -32,7 +32,7 @@ impl HitPayload {
         }
     }
 
-    pub fn set_face_normal(&mut self, ray: &Ray, outward_normal: Vec3) -> () {
+    pub fn set_face_normal(&mut self, ray: &Ray, outward_normal: Vec3) {
         self.front_face = Vec3::dot(&ray.dir, &outward_normal) < 0.0;
         self.normal = match self.front_face {
             true => outward_normal,
@@ -65,8 +65,11 @@ pub struct Translate {
 }
 
 impl Translate {
-    pub fn new(model: Box<Model>, offset: Vec3) -> Model {
-        Model::Translate(Self { offset, model })
+    pub fn new(model: impl Into<Model>, offset: Vec3) -> Self {
+        return Self {
+            offset,
+            model: Box::new(model.into()),
+        };
     }
 }
 
@@ -96,17 +99,16 @@ pub struct RotateY {
 }
 
 impl RotateY {
-    pub fn new(model: Box<Model>, angle: f64) -> Model {
+    pub fn new(model: impl Into<Model>, angle: f64) -> Self {
         let radians = angle.to_radians();
         let sin_theta = radians.sin();
         let cos_theta = radians.cos();
 
-
-        return Model::RotateY(Self {
-            model,
+        return Self {
+            model: Box::new(model.into()),
             sin_theta,
             cos_theta,
-        });
+        };
     }
 }
 

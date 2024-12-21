@@ -6,8 +6,7 @@ use crate::{
     aabb::AABB,
     hittable::{HitPayload, Hittable},
     interval::Interval,
-    material::material::MaterialStorage,
-    model::model::Model,
+    material::MaterialStorage,
     ray::Ray,
     vec3::Vec3,
 };
@@ -20,12 +19,12 @@ pub struct Sphere {
 }
 
 impl Sphere {
-    pub fn new(center: Vec3, radius: f64, material: MaterialStorage) -> Model {
-        return Model::Sphere(Self {
+    pub fn new(center: Vec3, radius: f64, material: impl Into<MaterialStorage>) -> Self {
+        return Self {
             center,
             radius,
-            material,
-        });
+            material: material.into(),
+        };
     }
 
     pub fn get_uv(p: &Vec3) -> (f64, f64) {
@@ -73,7 +72,7 @@ impl Hittable for Sphere {
             front_face: false,
         };
 
-        payload.set_face_normal(&ray, outward_normal);
+        payload.set_face_normal(ray, outward_normal);
 
         return Some((payload, self.material.clone()));
     }

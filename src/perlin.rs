@@ -22,8 +22,8 @@ impl Perlin {
     pub fn new() -> Self {
         let mut ran_vec = [Vec3::ZERO; MAX_PERLIN];
         let mut rng = rand::thread_rng();
-        for i in 0..MAX_PERLIN {
-            ran_vec[i as usize] = Vec3::random(&mut rng, -1.0..1.0);
+        for i in ran_vec.iter_mut().take(MAX_PERLIN) {
+            *i = Vec3::random(&mut rng, -1.0..1.0);
         }
 
         return Self {
@@ -48,6 +48,7 @@ impl Perlin {
 
         let mut c = [[[Vec3::ZERO; 2]; 2]; 2];
 
+        #[allow(clippy::needless_range_loop)]
         for di in 0..2 {
             for dj in 0..2 {
                 for dk in 0..2 {
@@ -75,8 +76,8 @@ impl Perlin {
 }
 fn generate_perm() -> [usize; MAX_PERLIN] {
     let mut p = [0; MAX_PERLIN];
-    for i in 0..MAX_PERLIN {
-        p[i as usize] = i;
+    for (i, e) in p.iter_mut().enumerate() {
+        *e = i;
     }
     permute(&mut p, 256);
     return p;
@@ -84,7 +85,7 @@ fn generate_perm() -> [usize; MAX_PERLIN] {
 
 fn permute(p: &mut [usize; MAX_PERLIN], n: usize) {
     let mut rng = rand::thread_rng();
-    for i in (0..n as usize).rev() {
+    for i in (0..n).rev() {
         let target = rng.gen_range(0..(i + 1));
         p.swap(i, target);
     }
@@ -95,6 +96,7 @@ fn trilinear_interp(c: &[[[Vec3; 2]; 2]; 2], u: f64, v: f64, w: f64) -> f64 {
     let vv = v * v * (3.0 - 2.0 * v);
     let ww = w * w * (3.0 - 2.0 * w);
     let mut accum = 0.0;
+    #[allow(clippy::needless_range_loop)]
     for i in 0..2 {
         for j in 0..2 {
             for k in 0..2 {

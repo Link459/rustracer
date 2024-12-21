@@ -2,22 +2,19 @@ use serde::{Deserialize, Serialize};
 
 use crate::vec3::Vec3;
 
-use crate::{hittable::HitPayload, into_mat, ray::Ray};
+use crate::{hittable::HitPayload, ray::Ray};
 
-use super::material::MaterialStorage;
-use super::{lambertian::random_unit_sphere, material::Material};
+use super::{lambertian::random_unit_sphere, Material};
 
-#[derive(Clone, Copy, Debug, Serialize,Deserialize)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct Metal {
     albedo: Vec3,
     fuzz: f64,
 }
 
-into_mat!(Metal);
-
 impl Metal {
-    pub fn new(albedo: Vec3, fuzz: f64) -> MaterialStorage {
-        return MaterialStorage::Metal(Self { albedo, fuzz });
+    pub fn new(albedo: Vec3, fuzz: f64) -> Self {
+        return Self { albedo, fuzz };
     }
 }
 

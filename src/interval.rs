@@ -2,22 +2,22 @@ use std::ops::Add;
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Copy, Debug,Serialize,Deserialize)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct Interval {
     pub min: f64,
     pub max: f64,
 }
 
-pub const EMPTY: Interval = Interval {
-    min: f64::INFINITY,
-    max: -f64::INFINITY,
-};
-pub const UNIVERSE: Interval = Interval {
-    min: -f64::INFINITY,
-    max: f64::INFINITY,
-};
-
 impl Interval {
+    pub const EMPTY: Interval = Interval {
+        min: f64::INFINITY,
+        max: -f64::INFINITY,
+    };
+    pub const UNIVERSE: Interval = Interval {
+        min: -f64::INFINITY,
+        max: f64::INFINITY,
+    };
+
     pub fn new(min: f64, max: f64) -> Self {
         Self { min, max }
     }

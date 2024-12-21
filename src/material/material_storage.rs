@@ -4,7 +4,7 @@ use crate::{hittable::HitPayload, ray::Ray, vec3::Vec3};
 
 use super::{
     dielectric::Dielectric, isotropic::Isotropic, lambertian::Lambertian, metal::Metal,
-    DiffuseLight,
+    DiffuseLight, Material,
 };
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -14,17 +14,6 @@ pub enum MaterialStorage {
     Dielectric(Dielectric),
     DiffuseLight(DiffuseLight),
     Isotropic(Isotropic),
-}
-
-#[macro_export]
-macro_rules! into_mat {
-    ($id:ident) => {
-        impl Into<crate::material::material::MaterialStorage> for $id {
-            fn into(self) -> crate::material::material::MaterialStorage {
-                crate::material::material::MaterialStorage::$id(self)
-            }
-        }
-    };
 }
 
 impl Material for MaterialStorage {
@@ -48,9 +37,18 @@ impl Material for MaterialStorage {
     }
 }
 
-pub trait Material: Send + Sync {
-    fn scatter(&self, ray: &Ray, payload: &HitPayload) -> Option<(Ray, Vec3)>;
-    fn emitted(&self, _u: f64, _v: f64, _p: &Vec3) -> Vec3 {
-        return Vec3::ZERO;
-    }
+macro_rules! from_mat {
+    ($id:ident) => {
+        impl From<crate::material::$id> for MaterialStorage {
+            fn from(value: crate::material::$id) -> MaterialStorage {
+                return crate::material::MaterialStorage::$id(value);
+            }
+        }
+    };
 }
+
+from_mat!(Lambertian);
+from_mat!(Metal);
+from_mat!(Dielectric);
+from_mat!(DiffuseLight);
+from_mat!(Isotropic);

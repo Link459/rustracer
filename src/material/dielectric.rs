@@ -3,19 +3,16 @@ use serde::{Deserialize, Serialize};
 
 use crate::{hittable::HitPayload, ray::Ray, vec3::Vec3};
 
-use super::material::{Material, MaterialStorage};
-use crate::into_mat;
+use super::Material;
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct Dielectric {
     ir: f64,
 }
 
-into_mat!(Dielectric);
-
 impl Dielectric {
-    pub fn new(ir: f64) -> MaterialStorage {
-        return MaterialStorage::Dielectric(Self { ir });
+    pub fn new(ir: f64) -> Self {
+        return Self { ir };
     }
 
     fn reflectance(cosine: f64, ref_idx: f64) -> f64 {

@@ -1,23 +1,8 @@
 use std::{cell::Ref, ops::Add};
 
-use crate::{
-    interval::{self, Interval},
-    ray::Ray,
-    vec3::Vec3,
-};
+use crate::{interval::Interval, ray::Ray, vec3::Vec3};
 
-pub const EMPTY: AABB = AABB {
-    x: interval::EMPTY,
-    y: interval::EMPTY,
-    z: interval::EMPTY,
-};
-
-pub const UNIVERSE: AABB = AABB {
-    x: interval::UNIVERSE,
-    y: interval::UNIVERSE,
-    z: interval::UNIVERSE,
-};
-
+#[allow(clippy::upper_case_acronyms)]
 #[derive(Default, Clone, Copy, Debug)]
 pub struct AABB {
     pub x: Interval,
@@ -25,9 +10,19 @@ pub struct AABB {
     pub z: Interval,
 }
 
-
-
 impl AABB {
+    pub const EMPTY: AABB = AABB {
+        x: Interval::EMPTY,
+        y: Interval::EMPTY,
+        z: Interval::EMPTY,
+    };
+
+    pub const UNIVERSE: AABB = AABB {
+        x: Interval::UNIVERSE,
+        y: Interval::UNIVERSE,
+        z: Interval::UNIVERSE,
+    };
+
     pub fn new(x: Interval, y: Interval, z: Interval) -> Self {
         Self { x, y, z }
     }

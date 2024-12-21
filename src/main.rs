@@ -1,4 +1,6 @@
 #![allow(dead_code)]
+#![allow(clippy::needless_return)]
+
 use anyhow::Result;
 use bvh::BvhNode;
 use camera::Camera;
@@ -34,29 +36,25 @@ fn main() -> Result<()> {
         panic!();
     }
 
-    if args.len() == 2 {
-        if args[0] == "--save" {
-            let (world, camera_config) = world_options::choose_scene();
-            let scene = Scene {
-                camera_config,
-                world,
-            };
-            serialize_scene(&scene, &args[1])?;
-            return Ok(());
-        }
-        //scene = utils::deserialize_scene(&args[0])?;
-    }
-
-    let scene;
-    if args.len() == 1 {
-        scene = utils::deserialize_scene(&args[0])?;
-    } else {
+    if args.len() == 2 && args[0] == "--save" {
         let (world, camera_config) = world_options::choose_scene();
-        scene = Scene {
+        let scene = Scene {
             camera_config,
             world,
         };
+        serialize_scene(&scene, &args[1])?;
+        return Ok(());
     }
+
+    let scene = if args.len() == 1 {
+        utils::deserialize_scene(&args[0])?
+    } else {
+        let (world, camera_config) = world_options::choose_scene();
+        Scene {
+            camera_config,
+            world,
+        }
+    };
 
     let Scene {
         camera_config,

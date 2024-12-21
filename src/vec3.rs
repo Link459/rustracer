@@ -24,22 +24,22 @@ impl Vec3 {
         z: 1.0,
     };
 
-    #[inline]
+    #[inline(always)]
     pub fn new(x: f64, y: f64, z: f64) -> Vec3 {
         Vec3 { x, y, z }
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn normalize(self) -> Vec3 {
         self / self.length()
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn length(&self) -> f64 {
         return self.length_squared().sqrt();
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn min(&self, other: &Vec3) -> Vec3 {
         return Vec3 {
             x: self.x.min(other.x),
@@ -48,7 +48,7 @@ impl Vec3 {
         };
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn max(&self, other: &Vec3) -> Vec3 {
         return Vec3 {
             x: self.x.max(other.x),
@@ -57,7 +57,7 @@ impl Vec3 {
         };
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn abs(&self) -> Vec3 {
         return Vec3 {
             x: self.x.abs(),
@@ -66,17 +66,17 @@ impl Vec3 {
         };
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn length_squared(&self) -> f64 {
         return self.x * self.x + self.y * self.y + self.z * self.z;
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn dot(&self, b: &Vec3) -> f64 {
         return self.x * b.x + self.y * b.y + self.z * b.z;
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn cross(&self, b: &Vec3) -> Vec3 {
         return Vec3 {
             x: self.y * b.z - self.z * b.y,
@@ -85,7 +85,7 @@ impl Vec3 {
         };
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn default_random<T: rand::Rng>(r: &mut T) -> Vec3 {
         return Vec3 {
             x: r.gen_range(0.0..1.0),
@@ -94,7 +94,7 @@ impl Vec3 {
         };
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn random<T: rand::Rng>(r: &mut T, range: Range<f64>) -> Vec3 {
         return Vec3 {
             x: r.gen_range(range.clone()),
@@ -103,18 +103,18 @@ impl Vec3 {
         };
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn near_zero(&self) -> bool {
         const S: f64 = 1e-8;
         return (self.x.abs() < S) && (self.y.abs() < S) && (self.z.abs() < S);
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn reflect(&self, n: &Vec3) -> Vec3 {
         return self - 2.0 * Vec3::dot(self, n) * n;
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn refract(&self, n: &Vec3, etai_over_etat: f64) -> Vec3 {
         let cos_theta = ((-1.0) * self).dot(n).min(1.0);
         let r_out_perp = etai_over_etat * (self + cos_theta * n);
@@ -124,7 +124,7 @@ impl Vec3 {
 }
 
 impl From<f64> for Vec3 {
-    #[inline]
+    #[inline(always)]
     fn from(value: f64) -> Self {
         Vec3 {
             x: value,
@@ -137,7 +137,7 @@ impl From<f64> for Vec3 {
 impl Index<usize> for Vec3 {
     type Output = f64;
 
-    #[inline]
+    #[inline(always)]
     fn index(&self, index: usize) -> &Self::Output {
         match index {
             0 => &self.x,
@@ -149,7 +149,7 @@ impl Index<usize> for Vec3 {
 }
 
 impl IndexMut<usize> for Vec3 {
-    #[inline]
+    #[inline(always)]
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         match index {
             0 => &mut self.x,
@@ -164,7 +164,7 @@ unsafe impl Send for Vec3 {}
 unsafe impl Sync for Vec3 {}
 
 impl std::fmt::Display for Vec3 {
-    #[inline]
+    #[inline(always)]
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:?}", self.x)?;
         write!(f, "{:?}", self.x)?;
@@ -187,7 +187,7 @@ macro_rules! impl_binary_operations {
         // - are values by forwarding through to this implementation.
         impl<'a, 'b> $Operation<&'a $VectorType> for &'b $VectorType {
             type Output = $VectorType;
-            #[inline]
+            #[inline(always)]
             fn $op_fn(self, other: &'a $VectorType) -> $VectorType {
                 $VectorType {
                     x: self.x $op_symbol other.x,
@@ -207,7 +207,7 @@ macro_rules! impl_binary_operations {
         impl $Operation<$VectorType> for $VectorType {
             type Output = $VectorType;
 
-            #[inline]
+            #[inline(always)]
             fn $op_fn(self, other: $VectorType) -> $VectorType {
                 &self $op_symbol &other
             }
@@ -216,7 +216,7 @@ macro_rules! impl_binary_operations {
         impl<'a> $Operation<&'a $VectorType> for $VectorType {
             type Output = $VectorType;
 
-            #[inline]
+            #[inline(always)]
             fn $op_fn(self, other: &'a $VectorType) -> $VectorType {
                 &self $op_symbol other
             }
@@ -225,7 +225,7 @@ macro_rules! impl_binary_operations {
         impl<'a> $Operation<$VectorType> for &'a $VectorType {
             type Output = $VectorType;
 
-            #[inline]
+            #[inline(always)]
             fn $op_fn(self, other: $VectorType) -> $VectorType {
                 self $op_symbol &other
             }
@@ -235,7 +235,7 @@ macro_rules! impl_binary_operations {
         impl<'a> $Operation<f64> for &'a $VectorType {
             type Output = $VectorType;
 
-			#[inline]
+			#[inline(always)]
             fn $op_fn(self, other: f64) -> $VectorType {
                 $VectorType {
                     x: self.x $op_symbol other,
@@ -256,7 +256,7 @@ macro_rules! impl_binary_operations {
         impl $Operation<f64> for $VectorType {
             type Output = $VectorType;
 
-            #[inline]
+            #[inline(always)]
             fn $op_fn(self, other: f64) -> $VectorType {
                 &self $op_symbol other
             }
@@ -265,7 +265,7 @@ macro_rules! impl_binary_operations {
         impl $Operation<$VectorType> for f64 {
             type Output = $VectorType;
 
-            #[inline]
+            #[inline(always)]
             fn $op_fn(self, other: $VectorType) -> $VectorType {
                 &other $op_symbol self
             }
@@ -274,7 +274,7 @@ macro_rules! impl_binary_operations {
         impl<'a> $Operation<&'a $VectorType> for f64 {
             type Output = $VectorType;
 
-            #[inline]
+            #[inline(always)]
             fn $op_fn(self, other: &'a $VectorType) -> $VectorType {
                 other $op_symbol self
             }
@@ -295,7 +295,7 @@ macro_rules! impl_unary_operations {
         impl<'a> $Operation for &'a $VectorType {
             type Output = $VectorType;
 
-            #[inline]
+            #[inline(always)]
             fn $op_fn(self) -> Vec3 {
                 $VectorType {
                     x: $op_symbol self.x,
@@ -310,7 +310,7 @@ macro_rules! impl_unary_operations {
         impl $Operation for $VectorType {
             type Output = $VectorType;
 
-            #[inline]
+            #[inline(always)]
             fn $op_fn(self) -> Vec3 {
                 $op_symbol &self
             }
@@ -329,7 +329,7 @@ macro_rules! impl_op_assign {
     ($VectorType:ident $OperationAssign:ident $op_fn:ident $op_symbol:tt) => {
         // Implement $OperationAssign for RHS &Vec3
         impl<'a> $OperationAssign<&'a $VectorType> for $VectorType {
-            #[inline]
+            #[inline(always)]
             fn $op_fn(&mut self, other: &'a $VectorType) {
                 *self = $VectorType {
                     x: self.x $op_symbol other.x,
@@ -342,7 +342,7 @@ macro_rules! impl_op_assign {
         // Implement $OperationAssign for RHS Vec3 by forwarding through to the
         // implementation above
         impl $OperationAssign for $VectorType {
-            #[inline]
+            #[inline(always)]
             fn $op_fn(&mut self, other: $VectorType) {
                 *self = *self $op_symbol &other
             }
