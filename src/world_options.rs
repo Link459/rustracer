@@ -8,7 +8,7 @@ use crate::{
     hittable::{RotateY, Translate},
     interval::Interval,
     material::{Dielectric, DiffuseLight, Lambertian, MaterialStorage, Metal},
-    model::{Model, quad::Quad, sphere::Sphere},
+    model::{quad::Quad, sphere::Sphere, Model},
     moving_sphere::MovingSphere,
     render::{Background, RenderConfig},
     texture::{ChessTexture, ImageTexture, NoiseTexture, SolidColor, TextureStorage},
