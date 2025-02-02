@@ -598,7 +598,8 @@ pub fn cornell_smoke() -> (World, CameraConfig) {
 
     world.add(ConstantMedium::new(box2, 0.01, Vec3::ONE));
 
-    let config = RenderConfig::with_aspect_ratio(1.0, 200, 500, 50);
+    let mut config = RenderConfig::with_aspect_ratio(1.0, 200, 500, 50);
+    config.background = Background::Night;
     let cam = CameraConfig {
         lookfrom: Vec3::new(278.0, 278.0, -800.0),
         lookat: Vec3::new(278.0, 278.0, 0.0),

@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{fmt, sync::Arc};
 
 use crate::{image::Image, perlin::Perlin, vec3::Vec3};
 use image::{open, GenericImageView};
@@ -117,9 +117,9 @@ impl Texture for NoiseTexture {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct ImageTexture {
-    buffer: Vec<u8>,
+    buffer: Arc<Vec<u8>>,
     nx: u32,
     ny: u32,
     path: String,
@@ -134,7 +134,7 @@ impl ImageTexture {
         return Self {
             nx,
             ny,
-            buffer: buffer.into_bytes(),
+            buffer: Arc::new(buffer.into_bytes()),
             path: String::from(file_path),
         };
     }
@@ -147,16 +147,27 @@ impl ImageTexture {
         return Self {
             nx,
             ny,
-            buffer: buffer.into_bytes(),
+            buffer: Arc::new(buffer.into_bytes()),
             path: String::from(file_path),
         };
+    }
+}
+
+impl Clone for ImageTexture {
+    fn clone(&self) -> Self {
+        Self {
+            buffer: self.buffer.clone(),
+            nx: self.nx,
+            ny: self.ny,
+            path: self.path.clone(),
+        }
     }
 }
 
 impl From<Image> for ImageTexture {
     fn from(value: Image) -> Self {
         Self {
-            buffer: value.buffer,
+            buffer: Arc::new(value.buffer),
             nx: value.width,
             ny: value.height,
             path: String::default(),

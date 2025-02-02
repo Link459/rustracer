@@ -29,28 +29,21 @@ pub fn deserialize_scene(path: &str) -> Result<Scene> {
 pub fn get_time_prediction(rays: u32, camera: &Camera, world: &impl Hittable) -> Duration {
     let width = camera.get_config().width;
     let height = camera.get_config().height;
-    let samples = 10;
+    let samples = 100;
 
     let mut rng = thread_rng();
-    let mut elapsed = Vec::new();
+    let mut elapsed = Duration::default();
     for _ in 0..samples {
         let w = rng.gen_range(0..width);
         let h = rng.gen_range(0..height);
         let time = Instant::now();
         camera.trace_ray(w, h, world);
-        elapsed.push(time.elapsed());
+        elapsed += time.elapsed();
     }
-    let sum = elapsed.iter().map(|x| x.as_secs_f64()).sum::<f64>();
-    let average = sum / samples as f64;
-    dbg!(elapsed);
-    dbg!(average);
-
-    // time on a single thread
-    let single_time = average * rays as f64;
-    let time = single_time / rayon::current_num_threads() as f64;
-
-    println!("estimated time: {}", time);
-    return Duration::from_secs_f64(time);
+    let average = elapsed / samples;
+    let total_ray = average * rays;
+    let with_threading = total_ray / rayon::current_num_threads() as u32;
+    return with_threading;
 }
 
 pub fn number_with_decimals(n: usize) -> String {

@@ -10,7 +10,7 @@ use crate::{
     world::World,
 };
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct BvhNode {
     left: Model,
     right: Model,

@@ -67,7 +67,7 @@ fn main() -> Result<()> {
 
     let camera = Camera::from_camera_config(camera_config);
     let config = camera.get_config().clone();
-    let rays_to_trace = config.width * config.height * config.samples;
+    let rays_to_trace = config.width * config.height ;
     let ray_time = utils::get_time_prediction(rays_to_trace, &camera, &world);
     let rays_to_trace = utils::number_with_decimals(rays_to_trace as usize);
     println!("rays to be traced: {rays_to_trace}");
