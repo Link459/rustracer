@@ -1,5 +1,5 @@
 use anyhow::Result;
-use rand::Rng;
+use rand::{thread_rng, Rng};
 use serde::{Deserialize, Serialize};
 use std::{println, time::Instant};
 use winit::event_loop::EventLoopProxy;
@@ -64,6 +64,10 @@ pub struct Camera {
     lens_radius: f64,
     time: Interval,
     config: RenderConfig,
+    sqrt_samples: f64,
+    recip_sqrt_samples: f64,
+    pixel_delta_u: Vec3,
+    pixel_delta_v: Vec3,
 }
 
 impl Camera {
@@ -85,6 +89,16 @@ impl Camera {
 
         let llc = config.lookfrom - h / 2.0 - v / 2.0 - config.focus_dist * cw;
 
+        let viewport_u = Vec3::new(viewport_width, 0.0, 0.0);
+        let viewport_v = Vec3::new(0.0, -viewport_height, 0.0);
+        let pixel_delta_u = viewport_u / config.config.width as f64;
+        let pixel_delta_v = viewport_v / config.config.height as f64;
+
+        let sqrt_samples = (config.config.samples as f64).sqrt();
+        let recip_sqrt_samples = 1.0 / sqrt_samples;
+
+        let lens_radius = config.aperture / 2.0;
+
         return Camera {
             origin: config.lookfrom,
             horizontal: h,
@@ -92,9 +106,13 @@ impl Camera {
             lower_left_corner: llc,
             cu,
             cv,
-            lens_radius: config.aperture / 2.0,
+            lens_radius,
             time: config.time,
             config: config.config,
+            sqrt_samples,
+            recip_sqrt_samples,
+            pixel_delta_u,
+            pixel_delta_v,
         };
     }
 
@@ -109,14 +127,51 @@ impl Camera {
         };
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn get_ray(&self, s: f64, t: f64) -> Ray {
-        let rd = self.lens_radius * random_in_unit_disk();
-        let offset = self.cu * rd.x + self.cv * rd.y;
+        let origin = if self.lens_radius <= 0.0 {
+            self.origin
+        } else {
+            let rd = self.lens_radius * random_in_unit_disk();
+            self.origin + self.cu * rd.x + self.cv * rd.y
+        };
+
+        let offset = self.sample_square();
+
+        let pixel_sample = self.lower_left_corner
+            + (s + offset.x * self.pixel_delta_u) * self.horizontal
+            + (t + offset.y * self.pixel_delta_v) * self.vertical;
+
+        let dir = pixel_sample - origin;
 
         Ray::new(
-            self.origin + offset,
-            self.lower_left_corner + s * self.horizontal + t * self.vertical - self.origin - offset,
+            origin + offset,
+            dir,
+            rand::thread_rng().gen_range(self.time.min..self.time.max),
+        )
+    }
+
+    #[inline(always)]
+    pub fn get_ray_stratified(&self, s: f64, t: f64, s_i: f64, s_j: f64) -> Ray {
+        let origin = if self.lens_radius <= 0.0 {
+            self.origin
+        } else {
+            let rd = self.lens_radius * random_in_unit_disk();
+            self.origin + self.cu * rd.x + self.cv * rd.y
+        };
+
+        let offset = self.sample_square_stratification(s_i, s_j);
+
+        //let pixel_sample = self.lower_left_corner + s * self.horizontal + t * self.vertical;
+        let pixel_sample = self.lower_left_corner
+            + (s + offset.x * self.pixel_delta_u) * self.horizontal
+            + (t + offset.y * self.pixel_delta_v) * self.vertical;
+
+        //let dir = pixel_sample - (origin + offset);
+        let dir = pixel_sample - origin;
+        Ray::new(
+            origin + offset,
+            dir,
             rand::thread_rng().gen_range(self.time.min..self.time.max),
         )
     }
@@ -130,9 +185,6 @@ impl Camera {
             "widht: {:?},\nheight: {:?},\nsamples: {:?},\ndepth: {:?}",
             self.config.width, self.config.height, self.config.samples, self.config.max_depth
         );
-
-        let sqrt_samples = (self.config.samples as f64).sqrt();
-        let _recip_sqrt_samples = 1.0 / sqrt_samples;
 
         println!("starting the render");
         let render_time = Instant::now();
@@ -154,12 +206,24 @@ impl Camera {
     pub fn trace_ray(&self, w: u32, h: u32, world: &impl Hittable) -> Vec3 {
         let mut rng = rand::thread_rng();
         let mut color = Vec3::ZERO;
-        for _ in 0..self.config.samples {
+        /*for _ in 0..self.config.samples {
             let u = (w as f64 + rng.gen_range(0.0..1.0) as f64) / (self.config.width - 1) as f64;
             let v = (h as f64 + rng.gen_range(0.0..1.0) as f64) / (self.config.height - 1) as f64;
             let r = self.get_ray(u, v);
             color += self.ray_color(&r, world, self.config.max_depth);
+        }*/
+
+        for s_i in 0..self.sqrt_samples as u64 {
+            for s_j in 0..self.sqrt_samples as u64 {
+                let u =
+                    (w as f64 + rng.gen_range(0.0..1.0) as f64) / (self.config.width - 1) as f64;
+                let v =
+                    (h as f64 + rng.gen_range(0.0..1.0) as f64) / (self.config.height - 1) as f64;
+                let r = self.get_ray_stratified(u, v, s_i as f64, s_j as f64);
+                color += self.ray_color(&r, world, self.config.max_depth);
+            }
         }
+
         return color;
     }
 
@@ -179,6 +243,18 @@ impl Camera {
         }
 
         return self.config.background.call(ray);
+    }
+
+    pub fn sample_square(&self) -> Vec3 {
+        let mut rng = thread_rng();
+        return Vec3::new(rng.gen_range(-0.5..0.5), rng.gen_range(-0.5..0.5), 0.0);
+    }
+
+    pub fn sample_square_stratification(&self, s_i: f64, s_j: f64) -> Vec3 {
+        let mut rng = thread_rng();
+        let px = ((s_i + rng.gen_range(0.0..1.0)) * self.recip_sqrt_samples) - 0.5;
+        let py = ((s_j + rng.gen_range(0.0..1.0)) * self.recip_sqrt_samples) - 0.5;
+        return Vec3::new(px, py, 0.0);
     }
 }
 
