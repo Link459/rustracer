@@ -136,16 +136,16 @@ impl Camera {
             self.origin + self.cu * rd.x + self.cv * rd.y
         };
 
-        let offset = self.sample_square();
+        /*let offset = self.sample_square();
 
         let pixel_sample = self.lower_left_corner
-            + (s + offset.x * self.pixel_delta_u) * self.horizontal
-            + (t + offset.y * self.pixel_delta_v) * self.vertical;
-
-        let dir = pixel_sample - origin;
+            + ((s + offset.x) * self.pixel_delta_u) * self.horizontal
+            + ((t + offset.y) * self.pixel_delta_v) * self.vertical;*/
+        let dir = self.lower_left_corner + s * self.horizontal + t * self.vertical - self.origin;
 
         Ray::new(
-            origin + offset,
+            origin,
+            //origin + offset,
             dir,
             rand::thread_rng().gen_range(self.time.min..self.time.max),
         )
@@ -219,7 +219,8 @@ impl Camera {
                     (w as f64 + rng.gen_range(0.0..1.0) as f64) / (self.config.width - 1) as f64;
                 let v =
                     (h as f64 + rng.gen_range(0.0..1.0) as f64) / (self.config.height - 1) as f64;
-                let r = self.get_ray_stratified(u, v, s_i as f64, s_j as f64);
+                //let r = self.get_ray_stratified(u, v, s_i as f64, s_j as f64);
+                let r = self.get_ray(u, v);
                 color += self.ray_color(&r, world, self.config.max_depth);
             }
         }

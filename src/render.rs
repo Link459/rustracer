@@ -1,4 +1,4 @@
-use core::f64;
+use std::f64;
 
 use serde::{Deserialize, Serialize};
 
@@ -40,9 +40,10 @@ pub fn night(_ray: &Ray) -> Vec3 {
 
 #[inline(always)]
 pub fn hdri(ray: &Ray, hdri: &TextureStorage) -> Vec3 {
-    let u = 0.5 + f64::atan2(ray.dir.x, ray.dir.z) / (2.0 * f64::consts::PI);
-    let v = 0.5 + ray.dir.y.asin() / f64::consts::PI;
-    return hdri.value(u, v, &ray.dir);
+    let dir = ray.dir.normalize();
+    let u = 0.5 + f64::atan2(dir.x, dir.z) / (2.0 * f64::consts::PI);
+    let v = 0.5 + dir.y.asin() / f64::consts::PI;
+    return hdri.value(u, v, &dir);
 }
 
 #[derive(Clone, Serialize, Deserialize)]
