@@ -1,3 +1,6 @@
+use std::f64;
+
+use rand::{thread_rng, Rng};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -31,7 +34,8 @@ impl From<Vec3> for Lambertian {
 impl Material for Lambertian {
     #[inline]
     fn scatter(&self, ray: &Ray, payload: &HitPayload) -> Option<(Ray, Vec3)> {
-        let mut scatter_direction = payload.normal + random_unit_vector();
+        //let mut scatter_direction = payload.normal + random_unit_vector();
+        let mut scatter_direction = random_on_hemisphere(&payload.normal);
 
         if scatter_direction.near_zero() {
             scatter_direction = payload.normal;
@@ -42,6 +46,18 @@ impl Material for Lambertian {
             scattered,
             self.albedo.value(payload.u, payload.v, &payload.p),
         ));
+    }
+
+    fn scattering_pdf(&self, _incoming: &Ray, payload: &HitPayload, scattered: &Ray) -> f64 {
+        let cos_theta = payload.normal.dot(&scattered.dir.normalize());
+        //account for minimal error so that there won't be a divide by 0
+        //let error = 1e-5;
+        /*if cos_theta < 0.0 {
+            return 0.0;
+        }
+        return cos_theta / f64::consts::PI;
+        */
+        return 1.0 / (2.0 * f64::consts::PI);
     }
 }
 
@@ -57,4 +73,26 @@ pub fn random_unit_sphere() -> Vec3 {
         }
         return p;
     }
+}
+
+pub fn random_on_hemisphere(normal: &Vec3) -> Vec3 {
+    let on_unit_sphere = random_unit_vector();
+    if on_unit_sphere.dot(normal) > 0.0 {
+        return on_unit_sphere;
+    }
+    return -on_unit_sphere;
+}
+
+pub fn random_cosine_direction() -> Vec3 {
+    let mut rng = thread_rng();
+    let r1: f64 = rng.gen_range(0.0..1.0);
+    let r2: f64 = rng.gen_range(0.0..1.0);
+
+    let phi = 2.0 * f64::consts::PI * r1;
+    let r2_sqrt = r2.sqrt();
+    let x = phi.cos() * r2_sqrt;
+    let y = phi.sin() * r2_sqrt;
+    let z = (1.0 - r2).sqrt();
+
+    return Vec3::new(x, y, z);
 }

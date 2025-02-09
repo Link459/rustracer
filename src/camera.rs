@@ -1,7 +1,7 @@
 use anyhow::Result;
 use rand::{thread_rng, Rng};
 use serde::{Deserialize, Serialize};
-use std::{println, time::Instant};
+use std::{f64, println, time::Instant};
 use winit::event_loop::EventLoopProxy;
 
 use crate::{
@@ -234,7 +234,24 @@ impl Camera {
             return Vec3::ZERO;
         }
 
-        if let Some((payload, material)) = world.hit(ray, Interval::new(0.001, f64::INFINITY)) {
+        let Some((payload, material)) = world.hit(ray, Interval::new(0.001, f64::INFINITY)) else {
+            return self.config.background.call(ray);
+        };
+
+        let color_from_emit = material.emitted(payload.u, payload.v, &payload.p);
+
+        let Some((scattered, attenuation)) = material.scatter(ray, &payload) else {
+            return color_from_emit;
+        };
+
+        let scattering_pdf = material.scattering_pdf(ray, &payload, &scattered);
+        let pdf_value = scattering_pdf;
+        let color_from_scatter =
+            (attenuation * scattering_pdf * self.ray_color(&scattered, world, depth - 1))
+                / pdf_value;
+        return color_from_emit + color_from_scatter;
+
+        /*if let Some((payload, material)) = world.hit(ray, Interval::new(0.001, f64::INFINITY)) {
             let color_from_emit = material.emitted(payload.u, payload.v, &payload.p);
             if let Some((scattered, attenuation)) = material.scatter(ray, &payload) {
                 let color_from_scatter = attenuation * self.ray_color(&scattered, world, depth - 1);
@@ -243,7 +260,7 @@ impl Camera {
             return color_from_emit;
         }
 
-        return self.config.background.call(ray);
+        return self.config.background.call(ray);*/
     }
 
     pub fn sample_square(&self) -> Vec3 {

@@ -514,7 +514,8 @@ pub fn cornell_box() -> (World, CameraConfig) {
 
     world.add(box2);
 
-    let mut config = RenderConfig::with_aspect_ratio(1.0, 400, 100, 50);
+    let samples = 1000;
+    let mut config = RenderConfig::with_aspect_ratio(1.0, 400, samples, 50);
     config.background = Background::Night;
     let cam = CameraConfig {
         lookfrom: Vec3::new(278.0, 278.0, -800.0),

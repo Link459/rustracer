@@ -42,7 +42,7 @@ fn main() -> Result<()> {
             camera_config,
             world,
         };
-        serialize_scene(&scene, &args[1])?;
+        utils::serialize_scene(&scene, &args[1])?;
         return Ok(());
     }
 
