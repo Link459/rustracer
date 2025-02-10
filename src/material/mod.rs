@@ -15,8 +15,11 @@ pub use metal::Metal;
 use crate::{hittable::HitPayload, ray::Ray, vec3::Vec3};
 
 pub trait Material: Send + Sync {
-    fn scatter(&self, ray: &Ray, payload: &HitPayload) -> Option<(Ray, Vec3)>;
-    fn emitted(&self, _u: f64, _v: f64, _p: &Vec3) -> Vec3 {
+    /// Ray: the scattered ray,
+    /// Vec3: the color attenuation
+    /// f64: the pdf value
+    fn scatter(&self, ray: &Ray, payload: &HitPayload) -> Option<(Ray, Vec3, f64)>;
+    fn emitted(&self, _ray: &Ray, _payload: &HitPayload, _u: f64, _v: f64, _p: &Vec3) -> Vec3 {
         return Vec3::ZERO;
     }
 

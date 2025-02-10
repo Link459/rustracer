@@ -15,6 +15,7 @@ use crate::{
     model::{quad::Quad, sphere::Sphere},
     moving_sphere::MovingSphere,
     ray::Ray,
+    vec3::Vec3,
     volume::ConstantMedium,
     world::World,
 };
@@ -86,6 +87,34 @@ impl Hittable for Model {
             Model::RotateY(ref m) => m.bounding_box(),
             Model::ConstantMedium(ref m) => m.bounding_box(),
             Model::Shared(ref m) => m.bounding_box(),
+        }
+    }
+
+    fn pdf_value(&self, origin: &Vec3, dir: &Vec3) -> f64 {
+        match self {
+            Model::Sphere(ref m) => m.pdf_value(origin, dir),
+            Model::MovingSphere(ref m) => m.pdf_value(origin, dir),
+            Model::Quad(ref m) => m.pdf_value(origin, dir),
+            Model::Bvh(ref m) => m.pdf_value(origin, dir),
+            Model::World(ref m) => m.pdf_value(origin, dir),
+            Model::Translate(ref m) => m.pdf_value(origin, dir),
+            Model::RotateY(ref m) => m.pdf_value(origin, dir),
+            Model::ConstantMedium(ref m) => m.pdf_value(origin, dir),
+            Model::Shared(ref m) => m.pdf_value(origin, dir),
+        }
+    }
+
+    fn random(&self, origin: &Vec3) -> Vec3 {
+        match self {
+            Model::Sphere(ref m) => m.random(origin),
+            Model::MovingSphere(ref m) => m.random(origin),
+            Model::Quad(ref m) => m.random(origin),
+            Model::Bvh(ref m) => m.random(origin),
+            Model::World(ref m) => m.random(origin),
+            Model::Translate(ref m) => m.random(origin),
+            Model::RotateY(ref m) => m.random(origin),
+            Model::ConstantMedium(ref m) => m.random(origin),
+            Model::Shared(ref m) => m.random(origin),
         }
     }
 }

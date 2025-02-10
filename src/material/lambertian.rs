@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     hittable::HitPayload,
+    onb::ONB,
     ray::Ray,
     texture::{SolidColor, Texture, TextureStorage},
     vec3::Vec3,
@@ -33,23 +34,27 @@ impl From<Vec3> for Lambertian {
 
 impl Material for Lambertian {
     #[inline]
-    fn scatter(&self, ray: &Ray, payload: &HitPayload) -> Option<(Ray, Vec3)> {
+    fn scatter(&self, ray: &Ray, payload: &HitPayload) -> Option<(Ray, Vec3, f64)> {
         //let mut scatter_direction = payload.normal + random_unit_vector();
-        let mut scatter_direction = random_on_hemisphere(&payload.normal);
+        //let mut scatter_direction = random_on_hemisphere(&payload.normal);
+        let uvw = ONB::new(&payload.normal);
+        let scatter_direction = uvw.transform(&random_cosine_direction());
 
-        if scatter_direction.near_zero() {
+        /*if scatter_direction.near_zero() {
             scatter_direction = payload.normal;
-        }
+        }*/
 
         let scattered = Ray::new(payload.p, scatter_direction, ray.time);
+        let pdf = uvw.w().dot(&scattered.dir) / f64::consts::PI;
         return Some((
             scattered,
             self.albedo.value(payload.u, payload.v, &payload.p),
+            pdf,
         ));
     }
 
     fn scattering_pdf(&self, _incoming: &Ray, payload: &HitPayload, scattered: &Ray) -> f64 {
-        let cos_theta = payload.normal.dot(&scattered.dir.normalize());
+        //let cos_theta = payload.normal.dot(&scattered.dir.normalize());
         //account for minimal error so that there won't be a divide by 0
         //let error = 1e-5;
         /*if cos_theta < 0.0 {

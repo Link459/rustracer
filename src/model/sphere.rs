@@ -1,4 +1,7 @@
-use std::f64::consts::{FRAC_PI_2, PI};
+use std::f64::{
+    self,
+    consts::{FRAC_PI_2, PI},
+};
 
 use serde::{Deserialize, Serialize};
 
@@ -81,6 +84,22 @@ impl Hittable for Sphere {
     fn bounding_box(&self) -> AABB {
         let rvec = Vec3::from(self.radius);
         return AABB::from((self.center - rvec, self.center + rvec));
+    }
+
+    fn pdf_value(&self, origin: &Vec3, dir: &Vec3) -> f64 {
+        let ray = Ray::new(*origin, *dir, 0.0);
+        let Some((payload, _material)) = self.hit(&ray, Interval::new(0.001, f64::INFINITY)) else {
+            return 0.0;
+        };
+
+        let distance_sq = (self.center.x - origin).length_squared();
+        let cos_theta_max = (1.0 - self.radius * self.radius / distance_sq).sqrt();
+        let solid_angle = 2.0 * f64::consts::PI * (1.0 - cos_theta_max);
+        return 1.0 / solid_angle;
+    }
+
+    fn random(&self, _origin: &Vec3) -> Vec3 {
+       return Vec3::ZERO; 
     }
 }
 

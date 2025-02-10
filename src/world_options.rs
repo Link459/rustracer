@@ -11,6 +11,7 @@ use crate::{
     model::{quad::Quad, sphere::Sphere, Model},
     moving_sphere::MovingSphere,
     render::{Background, RenderConfig},
+    scene::Scene,
     texture::{ChessTexture, ImageTexture, NoiseTexture, SolidColor, TextureStorage},
     utils::load_hdri,
     vec3::Vec3,
@@ -19,7 +20,7 @@ use crate::{
 };
 
 #[inline]
-pub fn random_world() -> (World, CameraConfig) {
+pub fn random_world() -> Scene {
     let mut rng = rand::thread_rng();
     let origin = Vec3::new(4.0, 0.2, 0.0);
     let mut world = World::default();
@@ -98,10 +99,11 @@ pub fn random_world() -> (World, CameraConfig) {
             config,
             ..Default::default()
         },
-    );
+    )
+        .into();
 }
 
-pub fn random_world_moving() -> (World, CameraConfig) {
+pub fn random_world_moving() -> Scene {
     let mut rng = rand::thread_rng();
     let origin = Vec3::new(4.0, 0.2, 0.0);
     let mut world = World::default();
@@ -184,10 +186,11 @@ pub fn random_world_moving() -> (World, CameraConfig) {
             config,
             ..Default::default()
         },
-    );
+    )
+        .into();
 }
 
-pub fn two_chess_spheres() -> (World, CameraConfig) {
+pub fn two_chess_spheres() -> Scene {
     let mut world = World::default();
     let chess = ChessTexture::new(
         SolidColor::new(Vec3::new(0.2, 0.3, 0.1)),
@@ -205,11 +208,11 @@ pub fn two_chess_spheres() -> (World, CameraConfig) {
         Lambertian::new(chess),
     ));
 
-    return (world, CameraConfig::default());
+    return (world, CameraConfig::default()).into();
 }
 
 #[inline]
-pub fn two_perlin_spheres() -> (World, CameraConfig) {
+pub fn two_perlin_spheres() -> Scene {
     let mut world = World::default();
     let perlin = NoiseTexture::new(4.0);
 
@@ -224,11 +227,11 @@ pub fn two_perlin_spheres() -> (World, CameraConfig) {
         Lambertian::new(perlin),
     ));
 
-    return (world, CameraConfig::default());
+    return (world, CameraConfig::default()).into();
 }
 
 #[inline]
-pub fn earth() -> (World, CameraConfig) {
+pub fn earth() -> Scene {
     let mut world = World::new();
     let earth = ImageTexture::new("assets/earthmap.jpg");
     let earth_surface = Lambertian::new(earth);
@@ -236,11 +239,11 @@ pub fn earth() -> (World, CameraConfig) {
     world.add(globe);
 
     let config = RenderConfig::with_aspect_ratio(16.0 / 9.0, 200, 50, 50);
-    return (world, CameraConfig::from_config(config));
+    return (world, CameraConfig::from_config(config)).into();
 }
 
 #[inline]
-pub fn quads() -> (World, CameraConfig) {
+pub fn quads() -> Scene {
     let mut world = World::default();
     let left_red = MaterialStorage::Lambertian(Lambertian::from(Vec3::new(1.0, 0.2, 0.2)));
     let back_green = MaterialStorage::Lambertian(Lambertian::from(Vec3::new(0.2, 1.0, 0.2)));
@@ -302,11 +305,11 @@ pub fn quads() -> (World, CameraConfig) {
         config,
     };
 
-    return (world, camera);
+    return (world, camera).into();
 }
 
 #[inline]
-pub fn simple_light() -> (World, CameraConfig) {
+pub fn simple_light() -> Scene {
     let mut world = World::default();
     let pertext = NoiseTexture::new(4.0);
     let difflight = DiffuseLight::new(SolidColor::new(Vec3::new(4.0, 4.0, 4.0)));
@@ -347,10 +350,10 @@ pub fn simple_light() -> (World, CameraConfig) {
         config,
     };
 
-    return (world, cam);
+    return (world, cam).into();
 }
 
-pub fn simple_skybox() -> (World, CameraConfig) {
+pub fn simple_skybox() -> Scene {
     let mut world = World::default();
 
     let chess = ChessTexture::new(
@@ -390,7 +393,8 @@ pub fn simple_skybox() -> (World, CameraConfig) {
             config,
             ..Default::default()
         },
-    );
+    )
+        .into();
 }
 
 #[inline]
@@ -448,7 +452,7 @@ fn box_of_quads(a: &Vec3, b: &Vec3, mat: impl Into<MaterialStorage> + Clone) -> 
 }
 
 #[inline]
-pub fn cornell_box() -> (World, CameraConfig) {
+pub fn cornell_box() -> Scene {
     let mut world = World::default();
     let red = Lambertian::new(SolidColor::new(Vec3::new(0.65, 0.05, 0.05)));
     let white = Lambertian::new(SolidColor::new(Vec3::new(0.73, 0.73, 0.73)));
@@ -529,11 +533,11 @@ pub fn cornell_box() -> (World, CameraConfig) {
         config,
     };
 
-    return (world, cam);
+    return (world, cam).into();
 }
 
 #[inline]
-pub fn cornell_smoke() -> (World, CameraConfig) {
+pub fn cornell_smoke() -> Scene {
     let mut world = World::default();
     let red = Lambertian::new(SolidColor::new(Vec3::new(0.65, 0.05, 0.05)));
     let white = Lambertian::new(SolidColor::new(Vec3::new(0.73, 0.73, 0.73)));
@@ -613,10 +617,10 @@ pub fn cornell_smoke() -> (World, CameraConfig) {
         config,
     };
 
-    return (world, cam);
+    return (world, cam).into();
 }
 
-pub fn final_world() -> (World, CameraConfig) {
+pub fn final_world() -> Scene {
     let mut box_world = World::new();
     let ground = Lambertian::new(SolidColor::new(Vec3::new(0.48, 0.83, 0.53)));
     let box_per_side = 20;
@@ -717,19 +721,16 @@ pub fn final_world() -> (World, CameraConfig) {
         config,
     };
 
-    return (world, cam);
+    return (world, cam).into();
 }
 
 macro_rules! option_pair {
     ($name:tt,$fn:expr) => {
-        (
-            $name,
-            $fn as fn() -> (crate::world::World, crate::camera::CameraConfig),
-        )
+        ($name, $fn as fn() -> crate::scene::Scene)
     };
 }
 
-pub fn choose_scene() -> (World, CameraConfig) {
+pub fn choose_scene() -> Scene {
     let options = vec![
         option_pair!("random_world", random_world),
         option_pair!("random_world_moving", random_world_moving),
@@ -756,6 +757,6 @@ pub fn choose_scene() -> (World, CameraConfig) {
     println!();
     println!("choose scene: {}", options[choice].0);
 
-    let (world, camera) = options[choice].1();
-    return (world, camera);
+    let scene = options[choice].1();
+    return scene;
 }

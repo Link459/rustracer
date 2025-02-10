@@ -362,3 +362,31 @@ impl_op_assign!(Vec3 MulAssign mul_assign *);
 
 impl_binary_operations!(Vec3 Div div /);
 impl_op_assign!(Vec3 DivAssign div_assign /);
+
+#[cfg(test)]
+mod tests {
+    use super::Vec3;
+
+    #[test]
+    fn construct() {
+        let data = Vec3::new(1.6, 100066666.6732, -262.0);
+        assert_eq!(data.x, 1.6);
+        assert_eq!(data.y, 100066666.6732);
+        assert_eq!(data.z, -262.0);
+    }
+
+    #[test]
+    fn add() {}
+
+    #[test]
+    fn multiply() {}
+
+    #[test]
+    fn lenght() {}
+
+    #[test]
+    fn lenght_squared() {}
+
+    #[test]
+    fn normalizing() {}
+}

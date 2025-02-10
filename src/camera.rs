@@ -5,8 +5,15 @@ use std::{f64, println, time::Instant};
 use winit::event_loop::EventLoopProxy;
 
 use crate::{
-    hittable::Hittable, image::Image, interval::Interval, material::Material,
-    present::PresentationEvent, ray::Ray, render::RenderConfig, vec3::Vec3,
+    hittable::Hittable,
+    image::Image,
+    interval::Interval,
+    material::Material,
+    pdf::{CosinePDF, PDF},
+    present::PresentationEvent,
+    ray::Ray,
+    render::RenderConfig,
+    vec3::Vec3,
 };
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -238,17 +245,47 @@ impl Camera {
             return self.config.background.call(ray);
         };
 
-        let color_from_emit = material.emitted(payload.u, payload.v, &payload.p);
+        let color_from_emit = material.emitted(&ray, &payload, payload.u, payload.v, &payload.p);
 
-        let Some((scattered, attenuation)) = material.scatter(ray, &payload) else {
+        let Some((scattered, attenuation, pdf)) = material.scatter(ray, &payload) else {
             return color_from_emit;
         };
 
+        let surface_pdf = CosinePDF::new(&payload.normal);
+
+        let scattered = Ray::new(payload.p, surface_pdf.generate(), ray.time);
+        let pdf = surface_pdf.value(&scattered.dir);
+
+        /*let mut rng = thread_rng();
+        let on_light = Vec3::new(
+            rng.gen_range(213.0..343.0),
+            554.0,
+            rng.gen_range(227.0..332.0),
+        );
+
+        let to_light = on_light - payload.p;
+
+        let distance_sq = to_light.length_squared();
+        let to_light = to_light.normalize();
+
+        if to_light.dot(&payload.normal) < 0.0 {
+            return color_from_emit;
+        }
+
+        let light_area = (343.0 - 213.0) * (332.0 - 227.0);
+        let light_cosine = to_light.y.abs();
+
+        if light_cosine < 0.000001 {
+            return color_from_emit;
+        }
+
+        let pdf = distance_sq / (light_cosine * light_area);
+        let scattered = Ray::new(payload.p, to_light, ray.time);*/
+
         let scattering_pdf = material.scattering_pdf(ray, &payload, &scattered);
-        let pdf_value = scattering_pdf;
+        //let pdf = scattering_pdf;
         let color_from_scatter =
-            (attenuation * scattering_pdf * self.ray_color(&scattered, world, depth - 1))
-                / pdf_value;
+            (attenuation * scattering_pdf * self.ray_color(&scattered, world, depth - 1)) / pdf;
         return color_from_emit + color_from_scatter;
 
         /*if let Some((payload, material)) = world.hit(ray, Interval::new(0.001, f64::INFINITY)) {

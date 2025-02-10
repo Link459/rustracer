@@ -18,7 +18,7 @@ pub enum MaterialStorage {
 
 impl Material for MaterialStorage {
     #[inline]
-    fn scatter(&self, ray: &Ray, payload: &HitPayload) -> Option<(Ray, Vec3)> {
+    fn scatter(&self, ray: &Ray, payload: &HitPayload) -> Option<(Ray, Vec3, f64)> {
         match self {
             MaterialStorage::Lambertian(ref m) => m.scatter(ray, payload),
             MaterialStorage::Metal(ref m) => m.scatter(ray, payload),
@@ -29,9 +29,9 @@ impl Material for MaterialStorage {
     }
 
     #[inline]
-    fn emitted(&self, u: f64, v: f64, p: &Vec3) -> Vec3 {
+    fn emitted(&self, ray: &Ray, payload: &HitPayload, u: f64, v: f64, p: &Vec3) -> Vec3 {
         match self {
-            MaterialStorage::DiffuseLight(ref m) => m.emitted(u, v, p),
+            MaterialStorage::DiffuseLight(ref m) => m.emitted(ray, payload, u, v, p),
             _ => Vec3::ZERO,
         }
     }

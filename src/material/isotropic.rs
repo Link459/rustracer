@@ -1,3 +1,5 @@
+use core::f64;
+
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -29,9 +31,14 @@ impl From<Vec3> for Isotropic {
 }
 
 impl Material for Isotropic {
-    fn scatter(&self, ray: &Ray, payload: &HitPayload) -> Option<(Ray, Vec3)> {
+    fn scatter(&self, ray: &Ray, payload: &HitPayload) -> Option<(Ray, Vec3, f64)> {
         let scattered = Ray::new(payload.p, random_unit_vector(), ray.time);
         let attenuation = self.albedo.value(payload.u, payload.v, &payload.p);
-        return Some((scattered, attenuation));
+        let pdf = 1.0 / (4.0 * f64::consts::PI);
+        return Some((scattered, attenuation, pdf));
+    }
+
+    fn scattering_pdf(&self, _incoming: &Ray, _payload: &HitPayload, _scattered: &Ray) -> f64 {
+        return 1.0 / (4.0 * f64::consts::PI);
     }
 }

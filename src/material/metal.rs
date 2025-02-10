@@ -20,7 +20,7 @@ impl Metal {
 
 impl Material for Metal {
     #[inline]
-    fn scatter(&self, ray: &Ray, payload: &HitPayload) -> Option<(Ray, Vec3)> {
+    fn scatter(&self, ray: &Ray, payload: &HitPayload) -> Option<(Ray, Vec3, f64)> {
         let reflected = ray.dir.normalize().reflect(&payload.normal);
         let scattered = Ray::new(
             payload.p,
@@ -28,7 +28,7 @@ impl Material for Metal {
             ray.time,
         );
         if Vec3::dot(&scattered.dir, &payload.normal) > 0.0 {
-            return Some((scattered, self.albedo));
+            return Some((scattered, self.albedo, 0.0));
         }
 
         return None;

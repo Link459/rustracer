@@ -1,3 +1,6 @@
+use core::{f32, f64};
+
+use rand::{thread_rng, Rng};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -20,6 +23,7 @@ pub struct Quad {
     normal: Vec3,
     d: f64,
     w: Vec3,
+    area: f64,
 }
 
 impl Quad {
@@ -30,6 +34,7 @@ impl Quad {
 
         let bbox = AABB::from((q, q + u + v)).pad();
         let w = n / n.dot(&n);
+        let area = n.length();
 
         return Self {
             q,
@@ -40,6 +45,7 @@ impl Quad {
             normal,
             d,
             w,
+            area,
         };
     }
 
@@ -89,5 +95,22 @@ impl Hittable for Quad {
     fn bounding_box(&self) -> AABB {
         let bbox = AABB::from((self.q, self.q + self.u + self.v)).pad();
         return bbox;
+    }
+
+    fn pdf_value(&self, origin: &Vec3, dir: &Vec3) -> f64 {
+        let ray = Ray::new(*origin, *dir, 0.0);
+        let Some((payload, _material)) = self.hit(&ray, Interval::new(0.001, f64::INFINITY)) else {
+            return 0.0;
+        };
+
+        let distance_sq = payload.t * payload.t * dir.length_squared();
+        let cosine = dir.dot(&payload.normal).abs() / dir.length();
+        return distance_sq / (cosine * self.area);
+    }
+
+    fn random(&self, origin: &Vec3) -> Vec3 {
+        let mut rng = thread_rng();
+        let p = self.q + (rng.gen_range(0.0..1.0) * self.u) + (rng.gen_range(0.0..1.0) * self.v);
+        return p - origin;
     }
 }

@@ -2,8 +2,19 @@ use serde::{Deserialize, Serialize};
 
 use crate::{camera::CameraConfig, world::World};
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Default, Clone, Serialize, Deserialize)]
 pub struct Scene {
-    pub camera_config: CameraConfig,
+    pub camera: CameraConfig,
     pub world: World,
+    pub lights: World,
+}
+
+impl From<(World, CameraConfig)> for Scene {
+    fn from(value: (World, CameraConfig)) -> Self {
+        return Self {
+            camera: value.1,
+            world: value.0,
+            ..Default::default()
+        };
+    }
 }

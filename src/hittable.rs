@@ -6,8 +6,7 @@ use std::{
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    aabb::AABB, interval::Interval, material::MaterialStorage, model::Model, ray::Ray,
-    vec3::Vec3,
+    aabb::AABB, interval::Interval, material::MaterialStorage, model::Model, ray::Ray, vec3::Vec3,
 };
 
 #[derive(Default, Debug)]
@@ -56,6 +55,12 @@ impl Display for HitPayload {
 pub trait Hittable: Send + Sync {
     fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<(HitPayload, MaterialStorage)>;
     fn bounding_box(&self) -> AABB;
+    fn pdf_value(&self, _origin: &Vec3, _dir: &Vec3) -> f64 {
+        return 0.0;
+    }
+    fn random(&self, _origin: &Vec3) -> Vec3 {
+        return Vec3::new(1.0, 0.0, 0.0);
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

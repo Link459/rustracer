@@ -7,7 +7,6 @@ use camera::Camera;
 use present::Presentation;
 use scene::Scene;
 use std::{env, time::Instant};
-use utils::serialize_scene;
 
 mod aabb;
 mod bvh;
@@ -18,6 +17,8 @@ mod interval;
 mod material;
 mod model;
 mod moving_sphere;
+mod onb;
+mod pdf;
 mod perlin;
 mod present;
 mod ray;
@@ -37,11 +38,8 @@ fn main() -> Result<()> {
     }
 
     if args.len() == 2 && args[0] == "--save" {
-        let (world, camera_config) = world_options::choose_scene();
-        let scene = Scene {
-            camera_config,
-            world,
-        };
+        let scene = world_options::choose_scene();
+
         utils::serialize_scene(&scene, &args[1])?;
         return Ok(());
     }
@@ -49,17 +47,15 @@ fn main() -> Result<()> {
     let scene = if args.len() == 1 {
         utils::deserialize_scene(&args[0])?
     } else {
-        let (world, camera_config) = world_options::choose_scene();
-        Scene {
-            camera_config,
-            world,
-        }
+        world_options::choose_scene()
     };
 
     let Scene {
-        camera_config,
+        camera,
         world,
+        lights,
     } = scene;
+    let camera_config = camera;
 
     let now = Instant::now();
     let world = BvhNode::from_world(world);
@@ -67,7 +63,7 @@ fn main() -> Result<()> {
 
     let camera = Camera::from_camera_config(camera_config);
     let config = camera.get_config().clone();
-    let rays_to_trace = config.width * config.height ;
+    let rays_to_trace = config.width * config.height;
     let ray_time = utils::get_time_prediction(rays_to_trace, &camera, &world);
     let rays_to_trace = utils::number_with_decimals(rays_to_trace as usize);
     println!("rays to be traced: {rays_to_trace}");
