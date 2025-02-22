@@ -7,7 +7,9 @@ use crate::{
     camera::CameraConfig,
     hittable::{RotateY, Translate},
     interval::Interval,
-    material::{Dielectric, DiffuseLight, Lambertian, MaterialStorage, Metal},
+    material::{
+        DefaultMaterial, Dielectric, DiffuseLight, Lambertian, Material, MaterialStorage, Metal,
+    },
     model::{quad::Quad, sphere::Sphere, Model},
     moving_sphere::MovingSphere,
     render::{Background, RenderConfig},
@@ -311,9 +313,12 @@ pub fn quads() -> Scene {
 #[inline]
 pub fn simple_light() -> Scene {
     let mut world = World::default();
+    let mut lights = World::default();
+
     let pertext = NoiseTexture::new(4.0);
     let difflight = DiffuseLight::new(SolidColor::new(Vec3::new(4.0, 4.0, 4.0)));
-    world.add(Sphere::new(
+
+    lights.add(Sphere::new(
         Vec3::new(0.0, 7.0, 0.0),
         2.0,
         difflight.clone(),
@@ -329,7 +334,7 @@ pub fn simple_light() -> Scene {
         Lambertian::new(pertext),
     ));
 
-    world.add(Quad::new(
+    lights.add(Quad::new(
         Vec3::new(3.0, 1.0, -2.0),
         Vec3::new(2.0, 0.0, 0.0),
         Vec3::new(0.0, 2.0, 0.0),
@@ -350,7 +355,11 @@ pub fn simple_light() -> Scene {
         config,
     };
 
-    return (world, cam).into();
+    return Scene {
+        camera: cam,
+        world,
+        lights,
+    };
 }
 
 pub fn simple_skybox() -> Scene {
@@ -454,6 +463,7 @@ fn box_of_quads(a: &Vec3, b: &Vec3, mat: impl Into<MaterialStorage> + Clone) -> 
 #[inline]
 pub fn cornell_box() -> Scene {
     let mut world = World::default();
+    let mut lights = World::default();
     let red = Lambertian::new(SolidColor::new(Vec3::new(0.65, 0.05, 0.05)));
     let white = Lambertian::new(SolidColor::new(Vec3::new(0.73, 0.73, 0.73)));
     let green = Lambertian::new(SolidColor::new(Vec3::new(0.12, 0.45, 0.15)));
@@ -471,12 +481,15 @@ pub fn cornell_box() -> Scene {
         Vec3::new(0.0, 0.0, 555.0),
         red,
     ));
-    world.add(Quad::new(
+    let empty = DefaultMaterial::new();
+    lights.add(Quad::new(
         Vec3::new(343.0, 554.0, 332.0),
         Vec3::new(-130.0, 0.0, 0.0),
         Vec3::new(0.0, 0.0, -105.0),
+        //empty,
         light,
     ));
+
     world.add(Quad::new(
         Vec3::new(0.0, 0.0, 0.0),
         Vec3::new(555.0, 0.0, 0.0),
@@ -533,12 +546,17 @@ pub fn cornell_box() -> Scene {
         config,
     };
 
-    return (world, cam).into();
+    return Scene {
+        camera: cam,
+        world,
+        lights,
+    };
 }
 
 #[inline]
 pub fn cornell_smoke() -> Scene {
     let mut world = World::default();
+    let mut lights = World::default();
     let red = Lambertian::new(SolidColor::new(Vec3::new(0.65, 0.05, 0.05)));
     let white = Lambertian::new(SolidColor::new(Vec3::new(0.73, 0.73, 0.73)));
     let green = Lambertian::new(SolidColor::new(Vec3::new(0.12, 0.45, 0.15)));
@@ -556,7 +574,7 @@ pub fn cornell_smoke() -> Scene {
         Vec3::new(0.0, 0.0, 555.0),
         red,
     ));
-    world.add(Quad::new(
+    lights.add(Quad::new(
         Vec3::new(113.0, 554.0, 127.0),
         Vec3::new(330.0, 0.0, 0.0),
         Vec3::new(0.0, 0.0, 305.0),
@@ -617,11 +635,16 @@ pub fn cornell_smoke() -> Scene {
         config,
     };
 
-    return (world, cam).into();
+    return Scene {
+        camera: cam,
+        world,
+        lights,
+    };
 }
 
 pub fn final_world() -> Scene {
     let mut box_world = World::new();
+    let mut lights = World::new();
     let ground = Lambertian::new(SolidColor::new(Vec3::new(0.48, 0.83, 0.53)));
     let box_per_side = 20;
     for i in 0..box_per_side {
@@ -645,7 +668,7 @@ pub fn final_world() -> Scene {
     world.add(BvhNode::from_world(box_world));
 
     let light = DiffuseLight::new(SolidColor::new(Vec3::new(7.0, 7.0, 7.0)));
-    world.add(Quad::new(
+    lights.add(Quad::new(
         Vec3::new(123.0, 554.0, 147.0),
         Vec3::new(300.0, 0.0, 0.0),
         Vec3::new(0.0, 0.0, 265.0),
@@ -721,7 +744,11 @@ pub fn final_world() -> Scene {
         config,
     };
 
-    return (world, cam).into();
+    return Scene {
+        camera: cam,
+        world,
+        lights,
+    };
 }
 
 macro_rules! option_pair {

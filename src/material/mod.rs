@@ -11,9 +11,15 @@ pub use isotropic::Isotropic;
 pub use lambertian::Lambertian;
 pub use material_storage::MaterialStorage;
 pub use metal::Metal;
+use serde::{Deserialize, Serialize};
 
 use crate::{hittable::HitPayload, ray::Ray, vec3::Vec3};
 
+struct Scatter {
+    scattered: Ray,
+    attenuation: Vec3,
+    pdf: f64,
+}
 pub trait Material: Send + Sync {
     /// Ray: the scattered ray,
     /// Vec3: the color attenuation
@@ -25,5 +31,20 @@ pub trait Material: Send + Sync {
 
     fn scattering_pdf(&self, _incoming: &Ray, _payload: &HitPayload, _scattered: &Ray) -> f64 {
         return 0.0;
+    }
+}
+
+#[derive(Debug,Clone, Copy,Default, Serialize, Deserialize)]
+pub struct DefaultMaterial;
+
+impl DefaultMaterial {
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
+impl Material for DefaultMaterial {
+    fn scatter(&self, _ray: &Ray, _payload: &HitPayload) -> Option<(Ray, Vec3, f64)> {
+        return None;
     }
 }

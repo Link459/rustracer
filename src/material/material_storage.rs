@@ -4,7 +4,7 @@ use crate::{hittable::HitPayload, ray::Ray, vec3::Vec3};
 
 use super::{
     dielectric::Dielectric, isotropic::Isotropic, lambertian::Lambertian, metal::Metal,
-    DiffuseLight, Material,
+    DefaultMaterial, DiffuseLight, Material,
 };
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -14,6 +14,7 @@ pub enum MaterialStorage {
     Dielectric(Dielectric),
     DiffuseLight(DiffuseLight),
     Isotropic(Isotropic),
+    Default(DefaultMaterial),
 }
 
 impl Material for MaterialStorage {
@@ -25,6 +26,7 @@ impl Material for MaterialStorage {
             MaterialStorage::Dielectric(ref m) => m.scatter(ray, payload),
             MaterialStorage::DiffuseLight(ref m) => m.scatter(ray, payload),
             MaterialStorage::Isotropic(ref m) => m.scatter(ray, payload),
+            MaterialStorage::Default(ref m) => m.scatter(ray, payload),
         }
     }
 
@@ -44,6 +46,7 @@ impl Material for MaterialStorage {
             MaterialStorage::Dielectric(ref m) => m.scattering_pdf(incoming, payload, scattered),
             MaterialStorage::DiffuseLight(ref m) => m.scattering_pdf(incoming, payload, scattered),
             MaterialStorage::Isotropic(ref m) => m.scattering_pdf(incoming, payload, scattered),
+            MaterialStorage::Default(ref m) => m.scattering_pdf(incoming, payload, scattered),
         }
     }
 }
@@ -63,3 +66,9 @@ from_mat!(Metal);
 from_mat!(Dielectric);
 from_mat!(DiffuseLight);
 from_mat!(Isotropic);
+
+impl From<DefaultMaterial> for MaterialStorage {
+    fn from(value: DefaultMaterial) -> MaterialStorage {
+        return crate::material::MaterialStorage::Default(value);
+    }
+}

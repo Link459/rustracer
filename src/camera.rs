@@ -9,7 +9,7 @@ use crate::{
     image::Image,
     interval::Interval,
     material::Material,
-    pdf::{CosinePDF, PDF},
+    pdf::{CosinePDF, HittablePDF, MixturePDF, PDF},
     present::PresentationEvent,
     ray::Ray,
     render::RenderConfig,
@@ -186,6 +186,7 @@ impl Camera {
     pub fn render(
         self,
         world: impl Hittable,
+        lights: impl Hittable,
         proxy: EventLoopProxy<PresentationEvent>,
     ) -> Result<Image> {
         println!(
@@ -198,7 +199,7 @@ impl Camera {
         let mut image = Image::from(&self.config);
         image.compute_parallel_present(
             |w, h| {
-                return self.trace_ray(w, h, &world);
+                return self.trace_ray(w, h, &world, &lights);
             },
             proxy,
         );
@@ -210,7 +211,7 @@ impl Camera {
     }
 
     #[inline(always)]
-    pub fn trace_ray(&self, w: u32, h: u32, world: &impl Hittable) -> Vec3 {
+    pub fn trace_ray(&self, w: u32, h: u32, world: &impl Hittable, lights: &impl Hittable) -> Vec3 {
         let mut rng = rand::thread_rng();
         let mut color = Vec3::ZERO;
         /*for _ in 0..self.config.samples {
@@ -220,22 +221,28 @@ impl Camera {
             color += self.ray_color(&r, world, self.config.max_depth);
         }*/
 
-        for s_i in 0..self.sqrt_samples as u64 {
-            for s_j in 0..self.sqrt_samples as u64 {
+        for _s_i in 0..self.sqrt_samples as u64 {
+            for _s_j in 0..self.sqrt_samples as u64 {
                 let u =
                     (w as f64 + rng.gen_range(0.0..1.0) as f64) / (self.config.width - 1) as f64;
                 let v =
                     (h as f64 + rng.gen_range(0.0..1.0) as f64) / (self.config.height - 1) as f64;
                 //let r = self.get_ray_stratified(u, v, s_i as f64, s_j as f64);
                 let r = self.get_ray(u, v);
-                color += self.ray_color(&r, world, self.config.max_depth);
+                color += self.ray_color(&r, world, lights, self.config.max_depth);
             }
         }
 
         return color;
     }
 
-    pub fn ray_color(&self, ray: &Ray, world: &impl Hittable, depth: u32) -> Vec3 {
+    pub fn ray_color(
+        &self,
+        ray: &Ray,
+        world: &impl Hittable,
+        lights: &impl Hittable,
+        depth: u32,
+    ) -> Vec3 {
         //depth <= 0
         if depth == 0 {
             return Vec3::ZERO;
@@ -251,41 +258,30 @@ impl Camera {
             return color_from_emit;
         };
 
+        //BUG: the light pdf is not working as expected
+        let light_pdf = HittablePDF::new(lights, payload.p);
         let surface_pdf = CosinePDF::new(&payload.normal);
+
+        let mixture_pdf = MixturePDF::new(&light_pdf, &surface_pdf);
+
+        //let scattered = Ray::new(payload.p, light_pdf.generate(), ray.time);
+        //let pdf = light_pdf.value(&scattered.dir);
 
         let scattered = Ray::new(payload.p, surface_pdf.generate(), ray.time);
         let pdf = surface_pdf.value(&scattered.dir);
 
-        /*let mut rng = thread_rng();
-        let on_light = Vec3::new(
-            rng.gen_range(213.0..343.0),
-            554.0,
-            rng.gen_range(227.0..332.0),
-        );
-
-        let to_light = on_light - payload.p;
-
-        let distance_sq = to_light.length_squared();
-        let to_light = to_light.normalize();
-
-        if to_light.dot(&payload.normal) < 0.0 {
-            return color_from_emit;
-        }
-
-        let light_area = (343.0 - 213.0) * (332.0 - 227.0);
-        let light_cosine = to_light.y.abs();
-
-        if light_cosine < 0.000001 {
-            return color_from_emit;
-        }
-
-        let pdf = distance_sq / (light_cosine * light_area);
-        let scattered = Ray::new(payload.p, to_light, ray.time);*/
+        //let scattered = Ray::new(payload.p, mixture_pdf.generate(), ray.time);
+        //let pdf = light_pdf.value(&scattered.dir);
 
         let scattering_pdf = material.scattering_pdf(ray, &payload, &scattered);
-        //let pdf = scattering_pdf;
-        let color_from_scatter =
-            (attenuation * scattering_pdf * self.ray_color(&scattered, world, depth - 1)) / pdf;
+
+        let sample_color = self.ray_color(&scattered, world, lights, depth - 1);
+        let color_from_scatter = (attenuation * scattering_pdf * sample_color) / pdf;
+
+        /*let color_from_scatter =
+        (attenuation * scattering_pdf * self.ray_color(&scattered, world, lights, depth - 1))
+            / pdf;*/
+
         return color_from_emit + color_from_scatter;
 
         /*if let Some((payload, material)) = world.hit(ray, Interval::new(0.001, f64::INFINITY)) {

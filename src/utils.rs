@@ -37,7 +37,8 @@ pub fn get_time_prediction(rays: u32, camera: &Camera, world: &impl Hittable) ->
         let w = rng.gen_range(0..width);
         let h = rng.gen_range(0..height);
         let time = Instant::now();
-        camera.trace_ray(w, h, world);
+        //TODO: fix this
+        //camera.trace_ray(w, h, world);
         elapsed += time.elapsed();
     }
     let average = elapsed / samples;

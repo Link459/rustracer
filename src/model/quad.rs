@@ -98,13 +98,13 @@ impl Hittable for Quad {
     }
 
     fn pdf_value(&self, origin: &Vec3, dir: &Vec3) -> f64 {
-        let ray = Ray::new(*origin, *dir, 0.0);
+        let ray = Ray::new(*origin, *dir, 0.001);
         let Some((payload, _material)) = self.hit(&ray, Interval::new(0.001, f64::INFINITY)) else {
             return 0.0;
         };
 
         let distance_sq = payload.t * payload.t * dir.length_squared();
-        let cosine = dir.dot(&payload.normal).abs() / dir.length();
+        let cosine = (dir.dot(&payload.normal) / dir.length()).abs();
         return distance_sq / (cosine * self.area);
     }
 

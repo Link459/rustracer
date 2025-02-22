@@ -52,9 +52,11 @@ fn main() -> Result<()> {
 
     let Scene {
         camera,
-        world,
+        mut world,
         lights,
     } = scene;
+
+    world.extend(lights.clone());
     let camera_config = camera;
 
     let now = Instant::now();
@@ -73,7 +75,7 @@ fn main() -> Result<()> {
     let proxy = event_loop.create_proxy();
 
     let handle = std::thread::spawn(move || -> Result<()> {
-        let image = camera.render(world, proxy)?;
+        let image = camera.render(world, lights, proxy)?;
 
         utils::create_ppm_file("out.ppm", &image.buffer, image.width, image.height)?;
 

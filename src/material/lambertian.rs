@@ -44,7 +44,7 @@ impl Material for Lambertian {
             scatter_direction = payload.normal;
         }*/
 
-        let scattered = Ray::new(payload.p, scatter_direction, ray.time);
+        let scattered = Ray::new(payload.p, scatter_direction.normalize(), ray.time);
         let pdf = uvw.w().dot(&scattered.dir) / f64::consts::PI;
         return Some((
             scattered,
