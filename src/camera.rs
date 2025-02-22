@@ -1,7 +1,12 @@
 use anyhow::Result;
 use rand::{thread_rng, Rng};
 use serde::{Deserialize, Serialize};
-use std::{f64, println, time::Instant};
+use std::{
+    f64,
+    fmt::{Display, Formatter},
+    println,
+    time::Instant,
+};
 use winit::event_loop::EventLoopProxy;
 
 use crate::{
@@ -16,7 +21,7 @@ use crate::{
     vec3::Vec3,
 };
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CameraConfig {
     pub lookfrom: Vec3,
     pub lookat: Vec3,
@@ -57,6 +62,19 @@ impl CameraConfig {
             config,
             ..Default::default()
         };
+    }
+}
+
+impl Display for CameraConfig {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "looking from: {}", self.lookfrom)?;
+        writeln!(f, "looking at: {}", self.lookat)?;
+        writeln!(f, "fov: {}", self.vfov)?;
+        writeln!(f, "aperture: {}", self.aperture)?;
+        writeln!(f, "focus distance: {}", self.focus_dist)?;
+        writeln!(f, "time: {}", self.time)?;
+        writeln!(f, "{}", self.config)?;
+        return Ok(());
     }
 }
 

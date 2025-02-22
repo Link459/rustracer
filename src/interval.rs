@@ -1,4 +1,4 @@
-use std::ops::Add;
+use std::{fmt::Display, ops::Add};
 
 use serde::{Deserialize, Serialize};
 
@@ -71,5 +71,13 @@ impl From<(Interval, Interval)> for Interval {
         let min = f64::min(value.0.min, value.1.min);
         let max = f64::max(value.0.max, value.1.max);
         Self { min, max }
+    }
+}
+
+impl Display for Interval {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "min: {}", self.min)?;
+        write!(f, "max: {}", self.max)?;
+        return Ok(());
     }
 }

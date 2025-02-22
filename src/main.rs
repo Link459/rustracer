@@ -44,11 +44,15 @@ fn main() -> Result<()> {
         return Ok(());
     }
 
+    println!("loading scene...");
+    let now = Instant::now();
     let scene = if args.len() == 1 {
         utils::deserialize_scene(&args[0])?
     } else {
         world_options::choose_scene()
     };
+
+    println!("loading scene took: {:?}", now.elapsed());
 
     let Scene {
         camera,
@@ -56,9 +60,17 @@ fn main() -> Result<()> {
         lights,
     } = scene;
 
+    println!(
+        "objects: {}\nlights: {}",
+        world.entities.len(),
+        lights.entities.len()
+    );
+    println!("camera:\n{}", camera);
+
     world.extend(lights.clone());
     let camera_config = camera;
 
+    println!("generating bvh...");
     let now = Instant::now();
     let world = BvhNode::from_world(world);
     println!("time to generate bvh: {:?}", now.elapsed());
@@ -69,8 +81,9 @@ fn main() -> Result<()> {
     let ray_time = utils::get_time_prediction(rays_to_trace, &camera, &world);
     let rays_to_trace = utils::number_with_decimals(rays_to_trace as usize);
     println!("rays to be traced: {rays_to_trace}");
-    println!("estimated time: {}s", ray_time.as_secs());
+    //println!("estimated time: {}s", ray_time.as_secs());
 
+    println!("starting...");
     let event_loop = present::create_present_loop()?;
     let proxy = event_loop.create_proxy();
 

@@ -1,4 +1,7 @@
-use std::f64;
+use std::{
+    f64,
+    fmt::{Display, Formatter},
+};
 
 use serde::{Deserialize, Serialize};
 
@@ -8,7 +11,7 @@ use crate::{
     vec3::Vec3,
 };
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Background {
     Sky,
     Night,
@@ -23,6 +26,17 @@ impl Background {
             Background::Night => night(ray),
             Background::Hdri(ref img) => hdri(ray, img),
         }
+    }
+}
+
+impl Display for Background {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Background::Sky => write!(f, "background: Sky")?,
+            Background::Night => write!(f, "background: Night")?,
+            Background::Hdri(_) => write!(f, "background: HDRI")?,
+        }
+        return Ok(());
     }
 }
 
@@ -46,7 +60,7 @@ pub fn hdri(ray: &Ray, hdri: &TextureStorage) -> Vec3 {
     return hdri.value(u, v, &dir);
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RenderConfig {
     pub width: u32,
     pub height: u32,
@@ -95,5 +109,16 @@ impl RenderConfig {
 impl Default for RenderConfig {
     fn default() -> Self {
         return Self::with_aspect_ratio(16.0 / 9.0, 400, 100, 50);
+    }
+}
+
+impl Display for RenderConfig {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "width: {}", self.width)?;
+        writeln!(f, "height: {}", self.height)?;
+        writeln!(f, "samples: {}", self.samples)?;
+        writeln!(f, "max depth: {}", self.max_depth)?;
+        writeln!(f, "background: {}", self.background)?;
+        return Ok(());
     }
 }
