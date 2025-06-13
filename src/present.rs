@@ -58,7 +58,15 @@ impl ApplicationHandler<PresentationEvent> for Presentation {
         );
 
         let ctx = softbuffer::Context::new(window.clone()).unwrap();
-        let surface = softbuffer::Surface::new(&ctx, window.clone()).unwrap();
+        let mut surface = softbuffer::Surface::new(&ctx, window.clone()).unwrap();
+
+        surface
+            .resize(
+                NonZeroU32::new(self.width).unwrap(),
+                NonZeroU32::new(self.height).unwrap(),
+            )
+            .unwrap();
+
         self.surface = Some(surface);
     }
 
@@ -69,20 +77,22 @@ impl ApplicationHandler<PresentationEvent> for Presentation {
             }
             WindowEvent::RedrawRequested => {
                 let surface = self.surface.as_mut().unwrap();
-                let (width, height) = { (self.width, self.height) };
-                surface
-                    .resize(
-                        NonZeroU32::new(width).unwrap(),
-                        NonZeroU32::new(height).unwrap(),
-                    )
-                    .unwrap();
 
                 let buffer = surface.buffer_mut().unwrap();
 
                 buffer.present().unwrap();
             }
+
             _ => (),
         }
+    }
+
+    fn about_to_wait(&mut self, _event_loop: &ActiveEventLoop) {
+        let surface = self.surface.as_mut().unwrap();
+
+        let buffer = surface.buffer_mut().unwrap();
+
+        buffer.present().unwrap();
     }
 
     fn user_event(&mut self, _event_loop: &ActiveEventLoop, event: PresentationEvent) {
@@ -99,23 +109,15 @@ impl ApplicationHandler<PresentationEvent> for Presentation {
         let b = (256.0 * b.clamp(0.0, 0.999)) as u32;
 
         let surface = self.surface.as_mut().unwrap();
-        let (width, height) = { (self.width, self.height) };
-        surface
-            .resize(
-                NonZeroU32::new(width).unwrap(),
-                NonZeroU32::new(height).unwrap(),
-            )
-            .unwrap();
 
         let mut buffer = surface.buffer_mut().unwrap();
 
         let color = b | (g << 8) | (r << 16);
         let area = buffer.len();
-        //TODO: flip the x
+
         let x = event.x;
-        let index = utils::linear_plane_index(area, width, event.y, x) - 1;
+        let index = utils::linear_plane_index(area, self.width, event.y, x) - 1;
         buffer[index] = color;
-        buffer.present().unwrap();
     }
 }
 

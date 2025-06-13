@@ -3,6 +3,7 @@ use std::f64::{
     consts::{FRAC_PI_2, PI},
 };
 
+use rand::{thread_rng, Rng};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -10,6 +11,7 @@ use crate::{
     hittable::{HitPayload, Hittable},
     interval::Interval,
     material::MaterialStorage,
+    onb::ONB,
     ray::Ray,
     vec3::Vec3,
 };
@@ -88,7 +90,8 @@ impl Hittable for Sphere {
 
     fn pdf_value(&self, origin: &Vec3, dir: &Vec3) -> f64 {
         let ray = Ray::new(*origin, *dir, 0.0);
-        let Some((payload, _material)) = self.hit(&ray, Interval::new(0.001, f64::INFINITY)) else {
+        let Some((_payload, _material)) = self.hit(&ray, Interval::new(0.001, f64::INFINITY))
+        else {
             return 0.0;
         };
 
@@ -98,9 +101,25 @@ impl Hittable for Sphere {
         return 1.0 / solid_angle;
     }
 
-    fn random(&self, _origin: &Vec3) -> Vec3 {
-       return Vec3::ZERO; 
+    fn random(&self, origin: &Vec3) -> Vec3 {
+        let direction = self.center.x - origin;
+        let distance_squared = direction.length_squared();
+        let uvw = ONB::new(&direction);
+        return uvw.transform(&random_to_sphere(self.radius, distance_squared));
     }
+}
+
+fn random_to_sphere(radius: f64, distance_square: f64) -> Vec3 {
+    let r1 = thread_rng().gen_range(0.0..1.0);
+    let r2 = thread_rng().gen_range(0.0..1.0);
+    let z = 1.0 + r2 * ((1.0 - radius * radius / distance_square).sqrt() - 1.0);
+
+    let phi = 2.0 * f64::consts::PI * r1;
+
+    let sq = (1.0 - z * z).sqrt();
+    let x = phi.cos() * sq;
+    let y = phi.sin() * sq;
+    return Vec3::new(x, y, z);
 }
 
 unsafe impl Send for Sphere {}

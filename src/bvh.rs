@@ -17,15 +17,77 @@ pub struct BvhNode {
     bbox: AABB,
 }
 
-impl BvhNode {
+pub struct CountedBvhNode {
+    left: usize,
+    right: usize,
+    bbox: AABB,
+}
+pub struct Bvh {
+    nodes: Vec<CountedBvhNode>,
+    models: Vec<Model>,
+}
+
+impl Bvh {
     pub fn new(mut models: Vec<Model>, start: usize, end: usize) -> Self {
         let mut bbox = AABB::EMPTY;
-        /*for i in start..end {
-            bbox = AABB::from((bbox, models[i].bounding_box()));
-        }*/
+
         for model in models.iter().take(end).skip(start) {
             bbox = AABB::from((bbox, model.bounding_box()));
         }
+
+        let axis = bbox.longest_axis();
+        let comp = match axis {
+            0 => |a: &Model, b: &Model| compare(a, b, 0),
+            1 => |a: &Model, b: &Model| compare(a, b, 1),
+            2 => |a: &Model, b: &Model| compare(a, b, 2),
+            _ => panic!(),
+        };
+
+        let nodes = Vec::new();
+
+        let span = end - start;
+
+        let node = match span {
+            1 => CountedBvhNode {
+                left: start,
+                right: start,
+                bbox,
+            },
+            2 => CountedBvhNode {
+                left: start,
+                right: start + 1,
+                bbox,
+            },
+            _ => {
+                let rest = &mut models[start..end];
+                rest.sort_unstable_by(comp);
+
+                let mid = start + span / 2;
+                let left = Self::new(models.clone(), start, mid);
+                let right = Self::new(models.clone(), mid, end);
+
+                CountedBvhNode {
+                    //left: left.into(),
+                    //right: right.into(),
+                    left: 0,
+                    right: 0,
+                    bbox,
+                }
+            }
+        };
+
+        return Bvh { nodes, models };
+    }
+}
+
+impl BvhNode {
+    pub fn new(mut models: Vec<Model>, start: usize, end: usize) -> Self {
+        let mut bbox = AABB::EMPTY;
+
+        for model in models.iter().take(end).skip(start) {
+            bbox = AABB::from((bbox, model.bounding_box()));
+        }
+
         let axis = bbox.longest_axis();
         let comp = match axis {
             0 => |a: &Model, b: &Model| compare(a, b, 0),
@@ -63,10 +125,6 @@ impl BvhNode {
             }
         };
 
-        /*node.bbox = AABB::from((
-            node.left.bounding_box().to_owned(),
-            node.right.bounding_box().to_owned(),
-        ));*/
         return node;
     }
 

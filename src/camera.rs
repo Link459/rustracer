@@ -261,7 +261,6 @@ impl Camera {
         lights: &impl Hittable,
         depth: u32,
     ) -> Vec3 {
-        //depth <= 0
         if depth == 0 {
             return Vec3::ZERO;
         }
@@ -276,8 +275,11 @@ impl Camera {
             return color_from_emit;
         };
 
+        let color_from_scatter = attenuation * self.ray_color(&scattered, world, lights, depth - 1);
+        return color_from_emit + color_from_scatter;
+
         //BUG: the light pdf is not working as expected
-        let light_pdf = HittablePDF::new(lights, payload.p);
+        /*let light_pdf = HittablePDF::new(lights, payload.p);
         let surface_pdf = CosinePDF::new(&payload.normal);
 
         let mixture_pdf = MixturePDF::new(&light_pdf, &surface_pdf);
@@ -300,18 +302,7 @@ impl Camera {
         (attenuation * scattering_pdf * self.ray_color(&scattered, world, lights, depth - 1))
             / pdf;*/
 
-        return color_from_emit + color_from_scatter;
-
-        /*if let Some((payload, material)) = world.hit(ray, Interval::new(0.001, f64::INFINITY)) {
-            let color_from_emit = material.emitted(payload.u, payload.v, &payload.p);
-            if let Some((scattered, attenuation)) = material.scatter(ray, &payload) {
-                let color_from_scatter = attenuation * self.ray_color(&scattered, world, depth - 1);
-                return color_from_emit + color_from_scatter;
-            }
-            return color_from_emit;
-        }
-
-        return self.config.background.call(ray);*/
+        return color_from_emit + color_from_scatter;*/
     }
 
     pub fn sample_square(&self) -> Vec3 {
