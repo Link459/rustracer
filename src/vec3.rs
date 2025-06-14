@@ -109,6 +109,15 @@ impl Vec3 {
         return (self.x.abs() < S) && (self.y.abs() < S) && (self.z.abs() < S);
     }
 
+    pub fn axis(&self, axis: usize) -> f64 {
+        return match axis {
+            0 => self.x,
+            1 => self.y,
+            2 => self.z,
+            _ => panic!(),
+        };
+    }
+
     #[inline(always)]
     pub fn reflect(&self, n: &Vec3) -> Vec3 {
         return self - 2.0 * Vec3::dot(self, n) * n;

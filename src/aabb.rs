@@ -94,6 +94,7 @@ impl AABB {
         return true;
     }
 
+    /// extends an AABB by another one
     pub fn surrounding_box(&self, box0: &Self) -> Self {
         let min = Vec3::new(
             f64::min(self.x.min, box0.x.min),
@@ -136,6 +137,17 @@ impl AABB {
             return 1;
         }
         return 2;
+    }
+
+    pub fn diagonal(&self) -> Vec3 {
+        let min = Vec3::new(self.x.min, self.y.min, self.z.min);
+        let max = Vec3::new(self.x.max, self.y.max, self.z.max);
+        return max - min;
+    }
+
+    pub fn half_area(&self) -> f64 {
+        let d = self.diagonal();
+        return (d.x + d.y) * d.z + d.x * d.y;
     }
 }
 
