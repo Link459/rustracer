@@ -53,7 +53,7 @@ impl Material for Lambertian {
         ));
     }
 
-    fn scattering_pdf(&self, _incoming: &Ray, payload: &HitPayload, scattered: &Ray) -> f64 {
+    fn scattering_pdf(&self, _incoming: &Ray, _payload: &HitPayload, _scattered: &Ray) -> f64 {
         //let cos_theta = payload.normal.dot(&scattered.dir.normalize());
         //account for minimal error so that there won't be a divide by 0
         //let error = 1e-5;

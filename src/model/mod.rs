@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     aabb::AABB,
-    bvh::BvhNode,
+    bvh::{Bvh, BvhNode},
     hittable::{HitPayload, Hittable, RotateY, Translate},
     interval::Interval,
     material::MaterialStorage,
@@ -27,7 +27,9 @@ pub enum Model {
     Quad(Quad),
     ConstantMedium(ConstantMedium),
     #[serde(skip)]
-    Bvh(Box<BvhNode>),
+    BvhNode(Box<BvhNode>),
+    #[serde(skip)]
+    Bvh(Bvh),
     World(World),
     Translate(Translate),
     RotateY(RotateY),
@@ -67,12 +69,13 @@ impl Hittable for Model {
             Model::Sphere(ref m) => m.hit(ray, ray_t),
             Model::MovingSphere(ref m) => m.hit(ray, ray_t),
             Model::Quad(ref m) => m.hit(ray, ray_t),
-            Model::Bvh(ref m) => m.hit(ray, ray_t),
+            Model::BvhNode(ref m) => m.hit(ray, ray_t),
             Model::World(ref m) => m.hit(ray, ray_t),
             Model::Translate(ref m) => m.hit(ray, ray_t),
             Model::RotateY(ref m) => m.hit(ray, ray_t),
             Model::ConstantMedium(ref m) => m.hit(ray, ray_t),
             Model::Shared(ref m) => m.hit(ray, ray_t),
+            Model::Bvh(ref m) => m.hit(ray, ray_t),
         }
     }
 
@@ -81,12 +84,13 @@ impl Hittable for Model {
             Model::Sphere(ref m) => m.bounding_box(),
             Model::MovingSphere(ref m) => m.bounding_box(),
             Model::Quad(ref m) => m.bounding_box(),
-            Model::Bvh(ref m) => m.bounding_box(),
+            Model::BvhNode(ref m) => m.bounding_box(),
             Model::World(ref m) => m.bounding_box(),
             Model::Translate(ref m) => m.bounding_box(),
             Model::RotateY(ref m) => m.bounding_box(),
             Model::ConstantMedium(ref m) => m.bounding_box(),
             Model::Shared(ref m) => m.bounding_box(),
+            Model::Bvh(ref m) => m.bounding_box(),
         }
     }
 
@@ -95,12 +99,13 @@ impl Hittable for Model {
             Model::Sphere(ref m) => m.pdf_value(origin, dir),
             Model::MovingSphere(ref m) => m.pdf_value(origin, dir),
             Model::Quad(ref m) => m.pdf_value(origin, dir),
-            Model::Bvh(ref m) => m.pdf_value(origin, dir),
+            Model::BvhNode(ref m) => m.pdf_value(origin, dir),
             Model::World(ref m) => m.pdf_value(origin, dir),
             Model::Translate(ref m) => m.pdf_value(origin, dir),
             Model::RotateY(ref m) => m.pdf_value(origin, dir),
             Model::ConstantMedium(ref m) => m.pdf_value(origin, dir),
             Model::Shared(ref m) => m.pdf_value(origin, dir),
+            _ => 0.0,
         }
     }
 
@@ -109,12 +114,13 @@ impl Hittable for Model {
             Model::Sphere(ref m) => m.random(origin),
             Model::MovingSphere(ref m) => m.random(origin),
             Model::Quad(ref m) => m.random(origin),
-            Model::Bvh(ref m) => m.random(origin),
+            Model::BvhNode(ref m) => m.random(origin),
             Model::World(ref m) => m.random(origin),
             Model::Translate(ref m) => m.random(origin),
             Model::RotateY(ref m) => m.random(origin),
             Model::ConstantMedium(ref m) => m.random(origin),
             Model::Shared(ref m) => m.random(origin),
+            _ => Vec3::new(1.0, 0.0, 0.0),
         }
     }
 }
@@ -142,7 +148,13 @@ impl From<Quad> for Model {
 
 impl From<BvhNode> for Model {
     fn from(value: BvhNode) -> Self {
-        return Self::Bvh(Box::new(value));
+        return Self::BvhNode(Box::new(value));
+    }
+}
+
+impl From<Bvh> for Model {
+    fn from(value: Bvh) -> Self {
+        return Self::Bvh(value);
     }
 }
 

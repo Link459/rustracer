@@ -26,7 +26,7 @@ pub fn deserialize_scene(path: &str) -> Result<Scene> {
     return Ok(world);
 }
 
-pub fn get_time_prediction(rays: u32, camera: &Camera, world: &impl Hittable) -> Duration {
+pub fn get_time_prediction(rays: u32, camera: &Camera, _world: &impl Hittable) -> Duration {
     let width = camera.get_config().width;
     let height = camera.get_config().height;
     let samples = 100;
@@ -34,8 +34,8 @@ pub fn get_time_prediction(rays: u32, camera: &Camera, world: &impl Hittable) ->
     let mut rng = thread_rng();
     let mut elapsed = Duration::default();
     for _ in 0..samples {
-        let w = rng.gen_range(0..width);
-        let h = rng.gen_range(0..height);
+        let _w = rng.gen_range(0..width);
+        let _h = rng.gen_range(0..height);
         let time = Instant::now();
         //TODO: fix this
         //camera.trace_ray(w, h, world);

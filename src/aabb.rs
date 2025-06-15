@@ -110,11 +110,19 @@ impl AABB {
         return Self::from((min, max));
     }
 
-    pub fn min(&self, axis: usize) -> f64 {
+    pub fn min(&self) -> Vec3 {
+        return Vec3::new(self.x.min, self.y.min, self.z.min);
+    }
+
+    pub fn max(&self) -> Vec3 {
+        return Vec3::new(self.x.max, self.y.max, self.z.max);
+    }
+
+    pub fn min_axis(&self, axis: usize) -> f64 {
         return self.axis(axis).min;
     }
 
-    pub fn max(&self, axis: usize) -> f64 {
+    pub fn max_axis(&self, axis: usize) -> f64 {
         return self.axis(axis).max;
     }
 
@@ -148,6 +156,11 @@ impl AABB {
     pub fn half_area(&self) -> f64 {
         let d = self.diagonal();
         return (d.x + d.y) * d.z + d.x * d.y;
+    }
+
+    pub fn center(&self) -> Vec3 {
+        let half_point = |i: Interval| (i.max - i.min).abs() / 2.0;
+        return Vec3::new(half_point(self.x), half_point(self.y), half_point(self.z));
     }
 }
 

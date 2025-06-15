@@ -1,4 +1,4 @@
-use core::{f32, f64};
+use core::f64;
 
 use rand::{thread_rng, Rng};
 use serde::{Deserialize, Serialize};

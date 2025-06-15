@@ -1,8 +1,7 @@
-use std::{cmp::Ordering, slice::Iter};
+use std::{cmp::Ordering, collections::VecDeque};
 
 use crate::{
     aabb::AABB,
-    bvh,
     hittable::{HitPayload, Hittable},
     interval::Interval,
     material::MaterialStorage,
@@ -28,7 +27,7 @@ impl Default for BvhBuildConfig {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Debug, Clone, Copy)]
 pub struct Node {
     bbox: AABB,
     primitive_count: u32,
@@ -61,8 +60,8 @@ impl Bin {
 const BIN_COUNT: usize = 16;
 
 fn bin_index(axis: usize, bbox: AABB, center: Vec3) -> usize {
-    let index = (center.axis(axis) - bbox.min(axis))
-        * (BIN_COUNT as f64 / (bbox.max(axis) - bbox.min(axis)));
+    let index = (center.axis(axis) - bbox.min_axis(axis))
+        * (BIN_COUNT as f64 / (bbox.max_axis(axis) - bbox.min_axis(axis)));
     return (BIN_COUNT - 1).min((0f64.max(index)) as usize);
 }
 
@@ -73,15 +72,15 @@ struct Split {
 }
 
 impl Split {
-    pub fn find_best_split(axis: usize, bvh: &Bvh, node: &Node) -> Split {
+    pub fn find_best_split(axis: usize, bvh: &Bvh, node_idx: usize) -> Split {
+        let node = &bvh.nodes[node_idx];
         let mut bins = [Bin::default(); BIN_COUNT];
 
         for i in 0..node.primitive_count {
             let prim_idx = node.first_idx + i;
-            //TODO: get the center in there
-            let bin = &mut bins[bin_index(axis, node.bbox, Vec3::ZERO)];
+            let bin = &mut bins[bin_index(axis, node.bbox, node.bbox.center())];
 
-            let model = &bvh.models[prim_idx as usize];
+            let model = &bvh.models[bvh.prim_indices[prim_idx as usize]];
             bin.bbox = AABB::from((bin.bbox, model.bounding_box()));
             bin.primitive_count += 1;
         }
@@ -114,6 +113,7 @@ impl Split {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct Bvh {
     nodes: Vec<Node>,
     prim_indices: Vec<usize>,
@@ -121,14 +121,18 @@ pub struct Bvh {
 }
 
 impl Bvh {
-    pub fn new(mut models: Vec<Model>) -> Self {
-        let mut nodes = Vec::new();
+    pub fn new(models: Vec<Model>) -> Self {
+        let primitive_count = models.len();
+        let nodes = Vec::new();
         let prim_indices = Vec::new();
-        return Bvh {
+        let mut bvh = Bvh {
             nodes,
             prim_indices,
             models,
         };
+
+        bvh.build(primitive_count);
+        return bvh;
     }
 
     fn build(&mut self, prim_count: usize) {
@@ -144,18 +148,20 @@ impl Bvh {
     }
 
     fn build_recursive(&mut self, node_idx: usize, node_count: &mut usize) {
-        let node = &mut self.nodes[node_idx];
-        assert!(node.is_leaf());
+        {
+            let node = &mut self.nodes[node_idx];
+            assert!(node.is_leaf());
 
-        node.bbox = AABB::EMPTY;
+            node.bbox = AABB::EMPTY;
 
-        if node.primitive_count <= 2 {
-            return;
-        }
+            if node.primitive_count <= 2 {
+                return;
+            }
 
-        for i in 0..node.primitive_count {
-            let model = &self.models[(node.first_idx + i) as usize];
-            node.bbox = AABB::from((node.bbox, model.bounding_box()));
+            for i in 0..node.primitive_count {
+                let model = &self.models[self.prim_indices[(node.first_idx + i) as usize]];
+                node.bbox = AABB::from((node.bbox, model.bounding_box()));
+            }
         }
 
         let mut min_split = Split {
@@ -165,56 +171,102 @@ impl Bvh {
         };
 
         for axis in 0..3 {
-            //we need that otherwise we'd have a mut and a immut borrow at the same time
-
-            //let node = &self.nodes[node_idx];
-
-            //let best_split = Split::find_best_split(axis, &self, &node);
-            //if min_split.cost < best_split.cost {
-            // min_split = best_split;
-            //}
+            let best_split = Split::find_best_split(axis, &self, node_idx);
+            if min_split.cost < best_split.cost {
+                min_split = best_split;
+            }
         }
 
-        /*
+        let node = &mut self.nodes[node_idx];
         //config.traversal_cost
         let leaf_cost = node.bbox.half_area() * (node.primitive_count - 1) as f64;
-        let first_right = 0;
+        let mut first_right = 0;
 
         if min_split.right_bin == 0 || min_split.cost >= leaf_cost {
             //config.max_primitives
             if node.primitive_count > 8 {
-                let axis = node.bbox.longest_axis();
+                /*let axis = node.bbox.longest_axis();
                 //sort primitives
+                let start = node.first_idx as usize;
+                let end = start + node.primitive_count as usize;
+
+                let rest = &mut self.prim_indices[start..end];
+                let get_center = |u: usize| self.nodes[u].bbox.center().axis(axis);
+                rest.sort_unstable_by(|a, b| get_center(*a).partial_cmp(&get_center(*b)).unwrap());*/
+
+                first_right = node.first_idx + node.primitive_count / 2;
             } else {
+                //Terminate as it's a leaf
                 return;
             }
         } else {
-              first_right = std::partition(
-            bvh.prim_indices.begin() + node.first_index,
-            bvh.prim_indices.begin() + node.first_index + node.prim_count,
-            [&] (size_t i) { return bin_index(min_split.axis, node.bbox, centers[i]) < min_split.right_bin; })
-            - bvh.prim_indices.begin();
-        }*/
-        let axis = node.bbox.longest_axis();
-        let comp = match axis {
-            0 => |a: &Model, b: &Model| compare(a, b, 0),
-            1 => |a: &Model, b: &Model| compare(a, b, 1),
-            2 => |a: &Model, b: &Model| compare(a, b, 2),
-            _ => panic!(),
-        };
+            // good split, partition the primitives
 
-        let rest = &mut self.prim_indices
-            [node.first_idx as usize..(node.first_idx + node.primitive_count) as usize];
-        rest.sort_unstable_by(|a, b| {
-            return comp(&self.models[*a], &self.models[*b]);
-        });
+            /*let start = node.first_idx as usize;
+            let end = start + node.primitive_count as usize;
+
+            let rest = &mut self.prim_indices[start..end];
+            rest.iter_mut().partition_in_place(|i| {
+                let center = self.nodes[*i].bbox.center();
+                bin_index(min_split.axis, node.bbox, center) < min_split.right_bin
+            });*/
+        }
 
         let first_child = *node_count;
-        let left = &self.nodes[first_child];
-        let right = &self.nodes[first_child + 1];
 
-        //let left_prim_count = first_right;
         *node_count += 2;
+
+        let left_prim_count = first_right - node.first_idx;
+        let right_prim_count = node.primitive_count - left_prim_count;
+
+        let left_first_index = node.first_idx;
+        let right_first_index = first_right;
+
+        let left = &mut self.nodes[first_child];
+        left.primitive_count = left_prim_count;
+        left.first_idx = left_first_index;
+
+        let right = &mut self.nodes[first_child + 1];
+        right.primitive_count = right_prim_count;
+        right.first_idx = right_first_index;
+
+        self.build_recursive(first_child, node_count);
+        self.build_recursive(first_child + 1, node_count);
+    }
+}
+
+impl Hittable for Bvh {
+    fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<(HitPayload, MaterialStorage)> {
+        let mut stack = VecDeque::new();
+        stack.push_back(0);
+
+        while !stack.is_empty() {
+            let node = &self.nodes[*stack.front().unwrap()];
+            stack.pop_front();
+
+            if !node.bbox.hit(ray, ray_t) {
+                continue;
+            }
+
+            if node.is_leaf() {
+                for i in 0..node.primitive_count {
+                    let prim_index = self.prim_indices[(node.first_idx + i) as usize];
+
+                    let model = &self.models[prim_index];
+
+                    if let Some((payload, material)) = model.hit(ray, ray_t) {
+                        return Some((payload, material));
+                    }
+                }
+            } else {
+                stack.push_back(node.first_idx as usize);
+                stack.push_back(node.first_idx as usize + 1);
+            }
+        }
+        None
+    }
+    fn bounding_box(&self) -> AABB {
+        return AABB::EMPTY;
     }
 }
 

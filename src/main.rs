@@ -1,3 +1,4 @@
+#![feature(iter_partition_in_place)]
 #![allow(dead_code)]
 #![allow(clippy::needless_return)]
 
@@ -81,7 +82,7 @@ fn main() -> Result<()> {
     let ray_time = utils::get_time_prediction(rays_to_trace, &camera, &world);
     let rays_to_trace = utils::number_with_decimals(rays_to_trace as usize);
     println!("rays to be traced: {rays_to_trace}");
-    //println!("estimated time: {}s", ray_time.as_secs());
+    println!("estimated time: {}s", ray_time.as_secs());
 
     println!("starting...");
     let event_loop = present::create_present_loop()?;

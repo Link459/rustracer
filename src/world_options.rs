@@ -7,9 +7,7 @@ use crate::{
     camera::CameraConfig,
     hittable::{RotateY, Translate},
     interval::Interval,
-    material::{
-        DefaultMaterial, Dielectric, DiffuseLight, Lambertian, Material, MaterialStorage, Metal,
-    },
+    material::{DefaultMaterial, Dielectric, DiffuseLight, Lambertian, MaterialStorage, Metal},
     model::{quad::Quad, sphere::Sphere, Model},
     moving_sphere::MovingSphere,
     render::{Background, RenderConfig},
@@ -481,7 +479,7 @@ pub fn cornell_box() -> Scene {
         Vec3::new(0.0, 0.0, 555.0),
         red,
     ));
-    let empty = DefaultMaterial::new();
+
     lights.add(Quad::new(
         Vec3::new(343.0, 554.0, 332.0),
         Vec3::new(-130.0, 0.0, 0.0),

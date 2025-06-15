@@ -45,6 +45,6 @@ mod tests {
     #[test]
     fn access() {
         let n = Vec3::new(0.6, 0.1, 21.9);
-        let onb = ONB::new(&n);
+        let _onb = ONB::new(&n);
     }
 }
