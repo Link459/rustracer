@@ -230,6 +230,20 @@ pub fn two_perlin_spheres() -> Scene {
     return (world, CameraConfig::default()).into();
 }
 
+pub fn overlapping() -> Scene {
+    let mut world = World::new();
+    let earth = ImageTexture::new("assets/earthmap.jpg");
+    let earth_surface = Lambertian::new(earth);
+    let globe = Sphere::new(Vec3::ZERO, 2.0, earth_surface);
+    world.add(globe);
+    let solid = Lambertian::new(SolidColor::new(Vec3::new(0.5, 0.3, 0.1)));
+    let sphere = Sphere::new(Vec3::new(0.5, 0.5, 0.5), 2.0, solid);
+    world.add(sphere);
+
+    let config = RenderConfig::with_aspect_ratio(16.0 / 9.0, 200, 50, 50);
+    return (world, CameraConfig::from_config(config)).into();
+}
+
 #[inline]
 pub fn earth() -> Scene {
     let mut world = World::new();
@@ -761,6 +775,7 @@ pub fn choose_scene() -> Scene {
         option_pair!("random_world_moving", random_world_moving),
         option_pair!("two_chess_spheres", two_chess_spheres),
         option_pair!("two_perlin_spheres", two_perlin_spheres),
+        option_pair!("overlapping", overlapping),
         option_pair!("earth", earth),
         option_pair!("quads", quads),
         option_pair!("simple_light", simple_light),

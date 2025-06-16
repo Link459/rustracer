@@ -1,4 +1,7 @@
-use std::{fmt, sync::Arc};
+use std::{
+    fmt::{self, Debug},
+    sync::Arc,
+};
 
 use crate::{image::Image, perlin::Perlin, vec3::Vec3};
 use image::{open, GenericImageView};
@@ -117,12 +120,20 @@ impl Texture for NoiseTexture {
     }
 }
 
-#[derive(Debug)]
 pub struct ImageTexture {
     buffer: Arc<Vec<u8>>,
     nx: u32,
     ny: u32,
     path: String,
+}
+
+impl Debug for ImageTexture {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        writeln!(f,"width: {}",self.nx);
+        writeln!(f,"height: {}",self.ny);
+        writeln!(f,"path: {}",self.path);
+        return Ok(());
+    }
 }
 
 impl ImageTexture {

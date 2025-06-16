@@ -1,4 +1,4 @@
-use std::{cmp::Ordering, collections::VecDeque};
+use std::{cmp::Ordering, collections::VecDeque, fmt::Display, usize};
 
 use crate::{
     aabb::AABB,
@@ -135,103 +135,80 @@ impl Bvh {
         return bvh;
     }
 
+    pub fn from_world(world: World) -> Self {
+        return Self::new(world.entities);
+    }
+
     fn build(&mut self, prim_count: usize) {
         self.prim_indices = (0..prim_count).collect::<Vec<_>>();
 
         let node_count = 2 * prim_count - 1;
         self.nodes.resize_with(node_count, || Node::default());
-        self.nodes[0].primitive_count = prim_count as u32;
-        self.nodes[0].first_idx = 0;
+        let root = &mut self.nodes[0];
+        root.primitive_count = prim_count as u32;
+        root.first_idx = 0;
 
         let mut node_count = 1;
         self.build_recursive(0, &mut node_count);
     }
 
     fn build_recursive(&mut self, node_idx: usize, node_count: &mut usize) {
-        {
-            let node = &mut self.nodes[node_idx];
-            assert!(node.is_leaf());
-
-            node.bbox = AABB::EMPTY;
-
-            if node.primitive_count <= 2 {
-                return;
-            }
-
-            for i in 0..node.primitive_count {
-                let model = &self.models[self.prim_indices[(node.first_idx + i) as usize]];
-                node.bbox = AABB::from((node.bbox, model.bounding_box()));
-            }
-        }
-
-        let mut min_split = Split {
-            axis: 0,
-            cost: f64::MAX,
-            right_bin: 0,
-        };
-
-        for axis in 0..3 {
-            let best_split = Split::find_best_split(axis, &self, node_idx);
-            if min_split.cost < best_split.cost {
-                min_split = best_split;
-            }
-        }
-
         let node = &mut self.nodes[node_idx];
-        //config.traversal_cost
-        let leaf_cost = node.bbox.half_area() * (node.primitive_count - 1) as f64;
-        let mut first_right = 0;
 
-        if min_split.right_bin == 0 || min_split.cost >= leaf_cost {
-            //config.max_primitives
-            if node.primitive_count > 8 {
-                /*let axis = node.bbox.longest_axis();
-                //sort primitives
-                let start = node.first_idx as usize;
-                let end = start + node.primitive_count as usize;
+        node.bbox = AABB::EMPTY;
 
-                let rest = &mut self.prim_indices[start..end];
-                let get_center = |u: usize| self.nodes[u].bbox.center().axis(axis);
-                rest.sort_unstable_by(|a, b| get_center(*a).partial_cmp(&get_center(*b)).unwrap());*/
-
-                first_right = node.first_idx + node.primitive_count / 2;
-            } else {
-                //Terminate as it's a leaf
-                return;
-            }
-        } else {
-            // good split, partition the primitives
-
-            /*let start = node.first_idx as usize;
-            let end = start + node.primitive_count as usize;
-
-            let rest = &mut self.prim_indices[start..end];
-            rest.iter_mut().partition_in_place(|i| {
-                let center = self.nodes[*i].bbox.center();
-                bin_index(min_split.axis, node.bbox, center) < min_split.right_bin
-            });*/
+        if node.primitive_count <= 2 {
+            return;
         }
 
-        let first_child = *node_count;
+        dbg!(node.primitive_count);
 
+        for i in 0..node.primitive_count {
+            let model = &self.models[self.prim_indices[(node.first_idx + i) as usize]];
+            node.bbox = AABB::from((node.bbox, model.bounding_box()));
+            dbg!(node.bbox);
+        }
+
+        let axis = node.bbox.longest_axis();
+
+        let start = node.first_idx as usize;
+        let end = start + node.primitive_count as usize;
+
+        let sorted = &mut self.prim_indices[start..end];
+        sorted.sort_unstable_by(|a, b| {
+            let a_center = self.models[*a].bounding_box().center().axis(axis);
+            let b_center = self.models[*b].bounding_box().center().axis(axis);
+
+            return a_center.total_cmp(&b_center);
+        });
+
+        let left_count = start - node.first_idx as usize;
+
+        //no split possible
+        if left_count == 0 || left_count == node.primitive_count as usize {
+            return;
+        }
+
+        let left_child_idx = *node_count + 0;
+        let right_child_idx = *node_count + 1;
         *node_count += 2;
 
-        let left_prim_count = first_right - node.first_idx;
-        let right_prim_count = node.primitive_count - left_prim_count;
+        let node = &self.nodes[node_idx];
+        let first_idx = node.first_idx;
+        let primitive_count = node.primitive_count;
 
-        let left_first_index = node.first_idx;
-        let right_first_index = first_right;
+        //setup split
+        self.nodes[left_child_idx].first_idx = first_idx;
+        self.nodes[left_child_idx].primitive_count = left_count as u32;
+        self.nodes[right_child_idx].first_idx = start as u32;
+        self.nodes[right_child_idx].primitive_count = primitive_count - left_count as u32;
 
-        let left = &mut self.nodes[first_child];
-        left.primitive_count = left_prim_count;
-        left.first_idx = left_first_index;
+        //add leaf
+        self.nodes[node_idx].primitive_count = 0;
+        self.nodes[node_idx].first_idx = left_child_idx as u32;
 
-        let right = &mut self.nodes[first_child + 1];
-        right.primitive_count = right_prim_count;
-        right.first_idx = right_first_index;
-
-        self.build_recursive(first_child, node_count);
-        self.build_recursive(first_child + 1, node_count);
+        self.build_recursive(left_child_idx, node_count);
+        self.build_recursive(right_child_idx, node_count);
     }
 }
 
@@ -241,8 +218,7 @@ impl Hittable for Bvh {
         stack.push_back(0);
 
         while !stack.is_empty() {
-            let node = &self.nodes[*stack.front().unwrap()];
-            stack.pop_front();
+            let node = &self.nodes[stack.pop_front().unwrap()];
 
             if !node.bbox.hit(ray, ray_t) {
                 continue;
@@ -265,8 +241,36 @@ impl Hittable for Bvh {
         }
         None
     }
+
     fn bounding_box(&self) -> AABB {
-        return AABB::EMPTY;
+        return self.nodes[0].bbox;
+    }
+}
+
+impl Display for Bvh {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut stack = VecDeque::new();
+        stack.push_back(0);
+
+        while !stack.is_empty() {
+            let node = &self.nodes[stack.pop_front().unwrap()];
+
+            if node.is_leaf() {
+                for i in 0..node.primitive_count {
+                    let prim_index = self.prim_indices[(node.first_idx + i) as usize];
+
+                    let model = &self.models[prim_index];
+                    writeln!(f, "{:?}", model)?;
+                }
+            } else {
+                writeln!(f, "left: {}", node.first_idx)?;
+                writeln!(f, "right: {}", node.first_idx + 1)?;
+
+                stack.push_back(node.first_idx as usize);
+                stack.push_back(node.first_idx as usize + 1);
+            }
+        }
+        return Ok(());
     }
 }
 

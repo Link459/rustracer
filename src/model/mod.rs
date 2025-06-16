@@ -20,6 +20,7 @@ use crate::{
     world::World,
 };
 
+//TODO: improve the size of this, bvh,world etc. don't need to be in here
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Model {
     Sphere(Sphere),

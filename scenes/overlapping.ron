@@ -1,0 +1,69 @@
+#![enable(unwrap_variant_newtypes)]
+(
+ camera_config: (
+     lookfrom: (
+         x: 13.0,
+         y: 2.0,
+         z: 3.0,
+         ),
+     lookat: (
+         x: 0.0,
+         y: 0.0,
+         z: 0.0,
+         ),
+     vup: (
+         x: 0.0,
+         y: 1.0,
+         z: 0.0,
+         ),
+     vfov: 20.0,
+     aspect_ratio: 1.7777777777777777,
+     aperture: 0.0,
+     focus_dist: 10.0,
+     time: (
+         min: 0.0,
+         max: 1.0,
+         ),
+     config: (
+             width: 200,
+             height: 112,
+             samples: 50,
+             max_depth: 50,
+             background: Sky,
+             ),
+     ),
+     world: (
+             entities: [
+             Sphere(
+                 center: (
+                     x: 0.0,
+                     y: 0.0,
+                     z: 0.0,
+                     ),
+                 radius: 2.0,
+                 material: Lambertian(
+                     albedo: Image(
+                         path: "assets/earthmap.jpg",
+                         ),
+                     ),
+                 ),
+             Sphere(
+                 center: (
+                     x: 0.5,
+                     y: 0.5,
+                     z: -2.0,
+                     ),
+                 radius: 2.0,
+                 material: Lambertian(
+                     albedo: SolidColor((
+                            color_value: (
+                                x: 0.9,
+                                y: 0.9,
+                                z: 0.9,
+                            ),
+                        )),
+                     ),
+                 )
+             ],
+             ),
+             )

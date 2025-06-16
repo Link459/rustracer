@@ -159,7 +159,7 @@ impl AABB {
     }
 
     pub fn center(&self) -> Vec3 {
-        let half_point = |i: Interval| (i.max - i.min).abs() / 2.0;
+        let half_point = |i: Interval| (i.max + i.min).abs() / 2.0;
         return Vec3::new(half_point(self.x), half_point(self.y), half_point(self.z));
     }
 }
