@@ -116,7 +116,8 @@ impl ApplicationHandler<PresentationEvent> for Presentation {
         let area = buffer.len();
 
         let x = event.x;
-        let index = utils::linear_plane_index(area, self.width, event.y, x) - 1;
+        let index = utils::linear_plane_index(area, self.width, event.y, self.width - x);
+        //let index = utils::linear_plane_index(area, self.width, event.y, x) - 1;
         buffer[index] = color;
     }
 }

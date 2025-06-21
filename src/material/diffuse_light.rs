@@ -1,10 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    hittable::HitPayload,
-    ray::Ray,
-    texture::{Texture, TextureStorage},
-    vec3::Vec3,
+    hittable::HitPayload, material::ScatterPayload, ray::Ray, texture::{Texture, TextureStorage}, vec3::Vec3
 };
 
 use super::Material;
@@ -21,7 +18,7 @@ impl DiffuseLight {
 }
 
 impl Material for DiffuseLight {
-    fn scatter(&self, _ray: &Ray, _payload: &HitPayload) -> Option<(Ray, Vec3, f64)> {
+    fn scatter(&self, _ray: &Ray, _payload: &HitPayload) -> Option<ScatterPayload> {
         return None;
     }
 

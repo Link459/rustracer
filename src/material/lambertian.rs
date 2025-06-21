@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     hittable::HitPayload,
+    material::ScatterPayload,
     onb::ONB,
     ray::Ray,
     texture::{SolidColor, Texture, TextureStorage},
@@ -34,7 +35,7 @@ impl From<Vec3> for Lambertian {
 
 impl Material for Lambertian {
     #[inline]
-    fn scatter(&self, ray: &Ray, payload: &HitPayload) -> Option<(Ray, Vec3, f64)> {
+    fn scatter(&self, ray: &Ray, payload: &HitPayload) -> Option<ScatterPayload> {
         //let mut scatter_direction = payload.normal + random_unit_vector();
         //let mut scatter_direction = random_on_hemisphere(&payload.normal);
         let uvw = ONB::new(&payload.normal);
@@ -46,7 +47,7 @@ impl Material for Lambertian {
 
         let scattered = Ray::new(payload.p, scatter_direction.normalize(), ray.time);
         let pdf = uvw.w().dot(&scattered.dir) / f64::consts::PI;
-        return Some((
+        return Some(ScatterPayload::new(
             scattered,
             self.albedo.value(payload.u, payload.v, &payload.p),
             pdf,

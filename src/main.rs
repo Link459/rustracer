@@ -9,7 +9,6 @@ use present::Presentation;
 use scene::Scene;
 use std::{env, time::Instant};
 
-use crate::bvh::Bvh;
 
 mod aabb;
 mod bvh;
@@ -75,9 +74,9 @@ fn main() -> Result<()> {
 
     println!("generating bvh...");
     let now = Instant::now();
-    //let world = BvhNode::from_world(world);
-    let world = Bvh::from_world(world);
-    println!("{}", world);
+    let world = BvhNode::from_world(world);
+    //let world = Bvh::from_world(world);
+    //println!("{}", world);
     println!("{:?}", world);
     println!("time to generate bvh: {:?}", now.elapsed());
 

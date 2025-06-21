@@ -129,9 +129,9 @@ pub struct ImageTexture {
 
 impl Debug for ImageTexture {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        writeln!(f,"width: {}",self.nx);
-        writeln!(f,"height: {}",self.ny);
-        writeln!(f,"path: {}",self.path);
+        writeln!(f, "width: {}", self.nx)?;
+        writeln!(f, "height: {}", self.ny)?;
+        writeln!(f, "path: {}", self.path)?;
         return Ok(());
     }
 }

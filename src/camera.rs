@@ -13,8 +13,7 @@ use crate::{
     hittable::Hittable,
     image::Image,
     interval::Interval,
-    material::Material,
-    pdf::{CosinePDF, HittablePDF, MixturePDF, PDF},
+    material::{Material, ScatterPayload},
     present::PresentationEvent,
     ray::Ray,
     render::RenderConfig,
@@ -271,9 +270,15 @@ impl Camera {
 
         let color_from_emit = material.emitted(&ray, &payload, payload.u, payload.v, &payload.p);
 
-        let Some((scattered, attenuation, pdf)) = material.scatter(ray, &payload) else {
+        let Some(scatter_payload) = material.scatter(ray, &payload) else {
             return color_from_emit;
         };
+
+        let ScatterPayload {
+            scattered,
+            attenuation,
+            pdf: _pdf,
+        } = scatter_payload;
 
         let color_from_scatter = attenuation * self.ray_color(&scattered, world, lights, depth - 1);
         return color_from_emit + color_from_scatter;

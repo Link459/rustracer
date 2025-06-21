@@ -7,7 +7,7 @@ use crate::{
     camera::CameraConfig,
     hittable::{RotateY, Translate},
     interval::Interval,
-    material::{DefaultMaterial, Dielectric, DiffuseLight, Lambertian, MaterialStorage, Metal},
+    material::{Dielectric, DiffuseLight, Lambertian, MaterialStorage, Metal},
     model::{quad::Quad, sphere::Sphere, Model},
     moving_sphere::MovingSphere,
     render::{Background, RenderConfig},
@@ -485,13 +485,13 @@ pub fn cornell_box() -> Scene {
         Vec3::new(555.0, 0.0, 0.0),
         Vec3::new(0.0, 555.0, 0.0),
         Vec3::new(0.0, 0.0, 555.0),
-        green,
+        red,
     ));
     world.add(Quad::new(
         Vec3::new(0.0, 0.0, 0.0),
         Vec3::new(0.0, 555.0, 0.0),
         Vec3::new(0.0, 0.0, 555.0),
-        red,
+        green,
     ));
 
     lights.add(Quad::new(
@@ -578,13 +578,13 @@ pub fn cornell_smoke() -> Scene {
         Vec3::new(555.0, 0.0, 0.0),
         Vec3::new(0.0, 555.0, 0.0),
         Vec3::new(0.0, 0.0, 555.0),
-        green,
+        red,
     ));
     world.add(Quad::new(
         Vec3::new(0.0, 0.0, 0.0),
         Vec3::new(0.0, 555.0, 0.0),
         Vec3::new(0.0, 0.0, 555.0),
-        red,
+        green,
     ));
     lights.add(Quad::new(
         Vec3::new(113.0, 554.0, 127.0),

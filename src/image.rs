@@ -101,6 +101,7 @@ impl Image {
 
     pub fn index(&self, row: u32, column: u32) -> usize {
         let column = self.width - column;
+
         self.buffer.len() - 3 * (row * self.width + column) as usize
     }
 

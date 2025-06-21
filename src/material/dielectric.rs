@@ -1,7 +1,7 @@
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 
-use crate::{hittable::HitPayload, ray::Ray, vec3::Vec3};
+use crate::{hittable::HitPayload, material::ScatterPayload, ray::Ray, vec3::Vec3};
 
 use super::Material;
 
@@ -24,7 +24,7 @@ impl Dielectric {
 
 impl Material for Dielectric {
     #[inline]
-    fn scatter(&self, ray: &Ray, payload: &HitPayload) -> Option<(Ray, Vec3,f64)> {
+    fn scatter(&self, ray: &Ray, payload: &HitPayload) -> Option<ScatterPayload> {
         let refraction_ratio = if payload.front_face {
             1.0 / self.ir
         } else {
@@ -48,6 +48,6 @@ impl Material for Dielectric {
 
         let scattered = Ray::new(payload.p, direction, ray.time);
 
-        return Some((scattered, Vec3::new(1.0, 1.0, 1.0),0.0));
+        return Some(ScatterPayload::new(scattered, Vec3::new(1.0, 1.0, 1.0),0.0));
     }
 }

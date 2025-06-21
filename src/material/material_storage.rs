@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{hittable::HitPayload, ray::Ray, vec3::Vec3};
+use crate::{hittable::HitPayload, material::ScatterPayload, ray::Ray, vec3::Vec3};
 
 use super::{
     dielectric::Dielectric, isotropic::Isotropic, lambertian::Lambertian, metal::Metal,
@@ -19,7 +19,7 @@ pub enum MaterialStorage {
 
 impl Material for MaterialStorage {
     #[inline]
-    fn scatter(&self, ray: &Ray, payload: &HitPayload) -> Option<(Ray, Vec3, f64)> {
+    fn scatter(&self, ray: &Ray, payload: &HitPayload) -> Option<ScatterPayload> {
         match self {
             MaterialStorage::Lambertian(ref m) => m.scatter(ray, payload),
             MaterialStorage::Metal(ref m) => m.scatter(ray, payload),

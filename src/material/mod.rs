@@ -15,16 +15,28 @@ use serde::{Deserialize, Serialize};
 
 use crate::{hittable::HitPayload, ray::Ray, vec3::Vec3};
 
-struct Scatter {
-    scattered: Ray,
-    attenuation: Vec3,
-    pdf: f64,
+pub struct ScatterPayload {
+    pub scattered: Ray,
+    pub attenuation: Vec3,
+    pub pdf: f64,
 }
+
+impl ScatterPayload {
+    pub fn new(scattered: Ray, attenuation: Vec3, pdf: f64) -> Self {
+        Self {
+            scattered,
+            attenuation,
+            pdf,
+        }
+    }
+}
+
 pub trait Material: Send + Sync {
     /// Ray: the scattered ray,
     /// Vec3: the color attenuation
     /// f64: the pdf value
-    fn scatter(&self, ray: &Ray, payload: &HitPayload) -> Option<(Ray, Vec3, f64)>;
+    //fn scatter(&self, ray: &Ray, payload: &HitPayload) -> Option<(Ray, Vec3, f64)>;
+    fn scatter(&self, ray: &Ray, payload: &HitPayload) -> Option<ScatterPayload>;
     fn emitted(&self, _ray: &Ray, _payload: &HitPayload, _u: f64, _v: f64, _p: &Vec3) -> Vec3 {
         return Vec3::ZERO;
     }
@@ -34,7 +46,7 @@ pub trait Material: Send + Sync {
     }
 }
 
-#[derive(Debug,Clone, Copy,Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize)]
 pub struct DefaultMaterial;
 
 impl DefaultMaterial {
@@ -44,7 +56,7 @@ impl DefaultMaterial {
 }
 
 impl Material for DefaultMaterial {
-    fn scatter(&self, _ray: &Ray, _payload: &HitPayload) -> Option<(Ray, Vec3, f64)> {
+    fn scatter(&self, _ray: &Ray, _payload: &HitPayload) -> Option<ScatterPayload> {
         return None;
     }
 }
