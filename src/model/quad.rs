@@ -98,7 +98,7 @@ impl Hittable for Quad {
     }
 
     fn pdf_value(&self, origin: &Vec3, dir: &Vec3) -> f64 {
-        let ray = Ray::new(*origin, *dir, 0.001);
+        let ray = Ray::new(*origin, *dir, 1.0);
         let Some((payload, _material)) = self.hit(&ray, Interval::new(0.001, f64::INFINITY)) else {
             return 0.0;
         };

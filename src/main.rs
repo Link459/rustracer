@@ -9,7 +9,6 @@ use present::Presentation;
 use scene::Scene;
 use std::{env, time::Instant};
 
-
 mod aabb;
 mod bvh;
 mod camera;
@@ -77,7 +76,6 @@ fn main() -> Result<()> {
     let world = BvhNode::from_world(world);
     //let world = Bvh::from_world(world);
     //println!("{}", world);
-    println!("{:?}", world);
     println!("time to generate bvh: {:?}", now.elapsed());
 
     let camera = Camera::from_camera_config(camera_config);

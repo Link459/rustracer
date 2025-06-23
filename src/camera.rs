@@ -1,8 +1,8 @@
 use anyhow::Result;
+use core::f64;
 use rand::{thread_rng, Rng};
 use serde::{Deserialize, Serialize};
 use std::{
-    f64,
     fmt::{Display, Formatter},
     println,
     time::Instant,
@@ -14,6 +14,7 @@ use crate::{
     image::Image,
     interval::Interval,
     material::{Material, ScatterPayload},
+    pdf::{CosinePDF, HittablePDF, MixturePDF, PDF},
     present::PresentationEvent,
     ray::Ray,
     render::RenderConfig,
@@ -231,12 +232,6 @@ impl Camera {
     pub fn trace_ray(&self, w: u32, h: u32, world: &impl Hittable, lights: &impl Hittable) -> Vec3 {
         let mut rng = rand::thread_rng();
         let mut color = Vec3::ZERO;
-        /*for _ in 0..self.config.samples {
-            let u = (w as f64 + rng.gen_range(0.0..1.0) as f64) / (self.config.width - 1) as f64;
-            let v = (h as f64 + rng.gen_range(0.0..1.0) as f64) / (self.config.height - 1) as f64;
-            let r = self.get_ray(u, v);
-            color += self.ray_color(&r, world, self.config.max_depth);
-        }*/
 
         for _s_i in 0..self.sqrt_samples as u64 {
             for _s_j in 0..self.sqrt_samples as u64 {
@@ -280,34 +275,38 @@ impl Camera {
             pdf: _pdf,
         } = scatter_payload;
 
-        let color_from_scatter = attenuation * self.ray_color(&scattered, world, lights, depth - 1);
-        return color_from_emit + color_from_scatter;
+        /*let color_from_scatter = attenuation * self.ray_color(&scattered, world, lights, depth - 1);
+        return color_from_emit + color_from_scatter;*/
 
-        //BUG: the light pdf is not working as expected
-        /*let light_pdf = HittablePDF::new(lights, payload.p);
         let surface_pdf = CosinePDF::new(&payload.normal);
 
-        let mixture_pdf = MixturePDF::new(&light_pdf, &surface_pdf);
+        //There's a NaN in here so we must find it
+        let light_pdf = HittablePDF::new(lights, payload.p);
+        let mixture_pdf = MixturePDF::new(&surface_pdf, &light_pdf);
 
-        //let scattered = Ray::new(payload.p, light_pdf.generate(), ray.time);
-        //let pdf = light_pdf.value(&scattered.dir);
+        let scattered = Ray::new(payload.p, mixture_pdf.generate(), ray.time);
+        let mut pdf_value = mixture_pdf.value(&scattered.dir);
 
-        let scattered = Ray::new(payload.p, surface_pdf.generate(), ray.time);
-        let pdf = surface_pdf.value(&scattered.dir);
-
-        //let scattered = Ray::new(payload.p, mixture_pdf.generate(), ray.time);
-        //let pdf = light_pdf.value(&scattered.dir);
+        /*let scattered = Ray::new(payload.p, light_pdf.generate(), ray.time);
+        let mut pdf_value = light_pdf.value(&scattered.dir);*/
 
         let scattering_pdf = material.scattering_pdf(ray, &payload, &scattered);
 
         let sample_color = self.ray_color(&scattered, world, lights, depth - 1);
-        let color_from_scatter = (attenuation * scattering_pdf * sample_color) / pdf;
 
-        /*let color_from_scatter =
-        (attenuation * scattering_pdf * self.ray_color(&scattered, world, lights, depth - 1))
-            / pdf;*/
+        if pdf_value == 0.0 {
+            pdf_value = f64::EPSILON;
+        }
 
-        return color_from_emit + color_from_scatter;*/
+        let color_from_scatter = (attenuation * scattering_pdf * sample_color) / pdf_value;
+
+        let color = color_from_emit + color_from_scatter;
+
+        if color.is_nan() {
+            panic!("color is nan");
+        }
+
+        return color;
     }
 
     pub fn sample_square(&self) -> Vec3 {

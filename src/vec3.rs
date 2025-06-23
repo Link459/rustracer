@@ -109,6 +109,10 @@ impl Vec3 {
         return (self.x.abs() < S) && (self.y.abs() < S) && (self.z.abs() < S);
     }
 
+    pub fn is_nan(&self) -> bool {
+        return self.x.is_nan() || self.y.is_nan() || self.z.is_nan();
+    }
+
     pub fn axis(&self, axis: usize) -> f64 {
         return match axis {
             0 => self.x,
