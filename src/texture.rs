@@ -15,7 +15,7 @@ use serde::{
 pub enum TextureStorage {
     SolidColor(SolidColor),
     Chess(ChessTexture),
-    Noise(Box<NoiseTexture>),
+    Noise(NoiseTexture),
     Image(ImageTexture),
 }
 
@@ -42,7 +42,7 @@ impl From<ChessTexture> for TextureStorage {
 }
 impl From<NoiseTexture> for TextureStorage {
     fn from(value: NoiseTexture) -> Self {
-        return Self::Noise(Box::new(value));
+        return Self::Noise(value);
     }
 }
 impl From<ImageTexture> for TextureStorage {
@@ -101,14 +101,14 @@ impl Texture for ChessTexture {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct NoiseTexture {
     #[serde(skip)]
-    perlin: Perlin,
+    perlin: Arc<Perlin>,
     scale: f64,
 }
 
 impl NoiseTexture {
     pub fn new(scale: f64) -> Self {
         return Self {
-            perlin: Perlin::new(),
+            perlin: Arc::new(Perlin::new()),
             scale,
         };
     }
@@ -116,7 +116,7 @@ impl NoiseTexture {
 
 impl Texture for NoiseTexture {
     fn value(&self, _u: f64, _v: f64, p: &Vec3) -> Vec3 {
-        return Vec3::ONE * 0.5 * (1.0 + (self.scale * p.x + 10.0 * self.perlin.turb(p, 7)).sin());
+        return Vec3::ONE * 0.5 * (1.0 + (self.scale * p.z + 10.0 * self.perlin.turb(p, 7)).sin());
     }
 }
 

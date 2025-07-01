@@ -1,7 +1,11 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    hittable::HitPayload, material::ScatterPayload, ray::Ray, texture::{Texture, TextureStorage}, vec3::Vec3
+    hittable::HitPayload,
+    material::ScatterPayload,
+    ray::Ray,
+    texture::{Texture, TextureStorage},
+    vec3::Vec3,
 };
 
 use super::Material;

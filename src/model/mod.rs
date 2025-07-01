@@ -1,5 +1,8 @@
 pub mod quad;
 pub mod sphere;
+pub mod transform;
+pub mod triangle;
+pub mod volume;
 
 use core::panic;
 use std::rc::Rc;
@@ -9,18 +12,23 @@ use serde::{Deserialize, Serialize};
 use crate::{
     aabb::AABB,
     bvh::{Bvh, BvhNode},
-    hittable::{HitPayload, Hittable, RotateY, Translate},
+    hittable::{HitPayload, Hittable},
     interval::Interval,
     material::MaterialStorage,
-    model::{quad::Quad, sphere::Sphere},
+    model::{
+        quad::Quad,
+        sphere::Sphere,
+        transform::{RotateY, Translate},
+    volume::ConstantMedium,
+    },
     moving_sphere::MovingSphere,
     ray::Ray,
     vec3::Vec3,
-    volume::ConstantMedium,
     world::World,
 };
 
-//TODO: improve the size of this, bvh,world etc. don't need to be in here
+//TODO: improve the size of this, bvh,world etc. don't need to be in here. Quad is also really big,
+//might be the main culprit
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Model {
     Sphere(Sphere),
@@ -30,7 +38,7 @@ pub enum Model {
     #[serde(skip)]
     BvhNode(Box<BvhNode>),
     #[serde(skip)]
-    Bvh(Bvh),
+    Bvh(Box<Bvh>),
     World(World),
     Translate(Translate),
     RotateY(RotateY),
@@ -155,7 +163,7 @@ impl From<BvhNode> for Model {
 
 impl From<Bvh> for Model {
     fn from(value: Bvh) -> Self {
-        return Self::Bvh(value);
+        return Self::Bvh(Box::new(value));
     }
 }
 

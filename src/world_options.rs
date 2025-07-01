@@ -5,17 +5,16 @@ use rand::{thread_rng, Rng};
 use crate::{
     bvh::BvhNode,
     camera::CameraConfig,
-    hittable::{RotateY, Translate},
     interval::Interval,
     material::{DefaultMaterial, Dielectric, DiffuseLight, Lambertian, MaterialStorage, Metal},
-    model::{quad::Quad, sphere::Sphere, Model},
+    model::transform::{RotateY, Translate},
+    model::{quad::Quad, sphere::Sphere, Model,volume::ConstantMedium},
     moving_sphere::MovingSphere,
     render::{Background, RenderConfig},
     scene::Scene,
     texture::{ChessTexture, ImageTexture, NoiseTexture, SolidColor, TextureStorage},
     utils::load_hdri,
     vec3::Vec3,
-    volume::ConstantMedium,
     world::World,
 };
 

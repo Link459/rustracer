@@ -170,7 +170,6 @@ impl Camera {
 
         Ray::new(
             origin,
-            //origin + offset,
             dir,
             rand::thread_rng().gen_range(self.time.min..self.time.max),
         )
@@ -178,8 +177,8 @@ impl Camera {
 
     #[inline(always)]
     pub fn get_ray_stratified(&self, s: f64, t: f64, s_i: f64, s_j: f64) -> Ray {
-        let offset = self.sample_square_stratified(s_i,s_j);
-		let origin = if self.lens_radius <= 0.0 {
+        let offset = self.sample_square_stratified(s_i, s_j);
+        let origin = if self.lens_radius <= 0.0 {
             self.origin
         } else {
             self.origin + offset
@@ -282,8 +281,6 @@ impl Camera {
 
         let scattered = Ray::new(payload.p, surface_pdf.generate(), ray.time);
         let mut pdf_value = surface_pdf.value(&scattered.dir);
-
-        
 
         /*let scattered = Ray::new(payload.p, light_pdf.generate(), ray.time);
         let mut pdf_value = light_pdf.value(&scattered.dir);*/

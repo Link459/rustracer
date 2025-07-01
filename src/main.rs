@@ -28,7 +28,6 @@ mod scene;
 mod texture;
 mod utils;
 mod vec3;
-mod volume;
 mod world;
 mod world_options;
 
@@ -94,6 +93,7 @@ fn main() -> Result<()> {
         let image = camera.render(world, lights, proxy)?;
 
         utils::create_ppm_file("out.ppm", &image.buffer, image.width, image.height)?;
+        utils::create_image_file("out.png", &image.buffer, image.width, image.height)?;
 
         return Ok(());
     });

@@ -48,6 +48,10 @@ impl Material for Dielectric {
 
         let scattered = Ray::new(payload.p, direction, ray.time);
 
-        return Some(ScatterPayload::new(scattered, Vec3::new(1.0, 1.0, 1.0),0.0));
+        return Some(ScatterPayload::new(
+            scattered,
+            Vec3::new(1.0, 1.0, 1.0),
+            0.0,
+        ));
     }
 }
