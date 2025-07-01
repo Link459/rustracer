@@ -6,7 +6,7 @@ use crate::{
     bvh::BvhNode,
     camera::CameraConfig,
     interval::Interval,
-    material::{DefaultMaterial, Dielectric, DiffuseLight, Lambertian, MaterialStorage, Metal},
+    material::{Dielectric, DiffuseLight, Lambertian, MaterialStorage, Metal},
     model::transform::{RotateY, Translate},
     model::{quad::Quad, sphere::Sphere, Model,volume::ConstantMedium},
     moving_sphere::MovingSphere,

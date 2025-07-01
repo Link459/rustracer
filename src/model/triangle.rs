@@ -24,7 +24,7 @@ impl Hittable for Triangle {
         let a = edge1.dot(&h);
 
         //ray is parallel to the triangle
-        if (a > -0.00001 && a < 0.0001) {
+        if a > -0.00001 && a < 0.0001 {
             return None;
         }
 

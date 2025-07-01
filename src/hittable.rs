@@ -3,10 +3,9 @@ use std::{
     write,
 };
 
-use serde::{Deserialize, Serialize};
 
 use crate::{
-    aabb::AABB, interval::Interval, material::MaterialStorage, model::Model, ray::Ray, vec3::Vec3,
+    aabb::AABB, interval::Interval, material::MaterialStorage, ray::Ray, vec3::Vec3,
 };
 
 #[derive(Default, Debug)]
