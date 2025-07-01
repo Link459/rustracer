@@ -7,6 +7,8 @@ use crate::{hittable::HitPayload, ray::Ray};
 
 use super::{lambertian::random_unit_sphere, Material};
 
+/// A metallic material like, Aluminium. The 'fuzz' controls how 'rough' the surface is, the higher
+/// the fuzz the less reflective the material is
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct Metal {
     albedo: Vec3,

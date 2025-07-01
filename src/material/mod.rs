@@ -18,6 +18,8 @@ use crate::{hittable::HitPayload, ray::Ray, vec3::Vec3};
 pub struct ScatterPayload {
     pub scattered: Ray,
     pub attenuation: Vec3,
+    pub skip_pdf: bool,
+    //pub pdf: Box<PDF>,
     pub pdf: f64,
 }
 

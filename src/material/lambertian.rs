@@ -14,6 +14,8 @@ use crate::{
 
 use super::Material;
 
+/// A perfectly diffuse ("matte") material. The apparent brightness remains the same, regardless of
+/// the viewing angle.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Lambertian {
     albedo: TextureStorage,

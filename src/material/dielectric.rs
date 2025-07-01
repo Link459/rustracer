@@ -5,6 +5,7 @@ use crate::{hittable::HitPayload, material::ScatterPayload, ray::Ray, vec3::Vec3
 
 use super::Material;
 
+/// A Dielectric material, like glass (ior of ~1.5)
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct Dielectric {
     ir: f64,
@@ -12,7 +13,7 @@ pub struct Dielectric {
 
 impl Dielectric {
     pub fn new(ir: f64) -> Self {
-        return Self { ir };
+       return Self { ir };
     }
 
     fn reflectance(cosine: f64, ref_idx: f64) -> f64 {

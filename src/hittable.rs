@@ -10,10 +10,14 @@ use crate::{
 
 #[derive(Default, Debug)]
 pub struct HitPayload {
+    ///The position where the hit occured
     pub p: Vec3,
+    /// the surface normal
     pub normal: Vec3,
     pub t: f64,
+    /// The interpolated u coordinate between [0,1] (used for texture sampling)
     pub u: f64,
+    /// The interpolated v coordinate between [0,1] (used for texture sampling)
     pub v: f64,
     pub front_face: bool,
 }

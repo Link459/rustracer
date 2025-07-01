@@ -12,6 +12,7 @@ use crate::{
 
 use super::{lambertian::random_unit_vector, Material};
 
+/// An Isotropic material used for things like Volumes
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Isotropic {
     albedo: TextureStorage,

@@ -96,7 +96,6 @@ fn trilinear_interp(c: &[[[Vec3; 2]; 2]; 2], u: f64, v: f64, w: f64) -> f64 {
     let vv = v * v * (3.0 - 2.0 * v);
     let ww = w * w * (3.0 - 2.0 * w);
     let mut accum = 0.0;
-    #[allow(clippy::needless_range_loop)]
     for i in 0..2 {
         for j in 0..2 {
             for k in 0..2 {
