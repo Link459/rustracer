@@ -178,24 +178,17 @@ impl Camera {
 
     #[inline(always)]
     pub fn get_ray_stratified(&self, s: f64, t: f64, s_i: f64, s_j: f64) -> Ray {
-        let origin = if self.lens_radius <= 0.0 {
+        let offset = self.sample_square_stratified(s_i,s_j);
+		let origin = if self.lens_radius <= 0.0 {
             self.origin
         } else {
-            let rd = self.lens_radius * random_in_unit_disk();
-            self.origin + self.cu * rd.x + self.cv * rd.y
+            self.origin + offset
         };
 
-        let offset = self.sample_square_stratification(s_i, s_j);
+        let dir = self.lower_left_corner + s * self.horizontal + t * self.vertical - self.origin;
 
-        //let pixel_sample = self.lower_left_corner + s * self.horizontal + t * self.vertical;
-        let pixel_sample = self.lower_left_corner
-            + (s + offset.x * self.pixel_delta_u) * self.horizontal
-            + (t + offset.y * self.pixel_delta_v) * self.vertical;
-
-        //let dir = pixel_sample - (origin + offset);
-        let dir = pixel_sample - origin;
         Ray::new(
-            origin + offset,
+            origin,
             dir,
             rand::thread_rng().gen_range(self.time.min..self.time.max),
         )
@@ -233,14 +226,14 @@ impl Camera {
         let mut rng = rand::thread_rng();
         let mut color = Vec3::ZERO;
 
-        for _s_i in 0..self.sqrt_samples as u64 {
-            for _s_j in 0..self.sqrt_samples as u64 {
+        for s_i in 0..self.sqrt_samples as u64 {
+            for s_j in 0..self.sqrt_samples as u64 {
                 let u =
                     (w as f64 + rng.gen_range(0.0..1.0) as f64) / (self.config.width - 1) as f64;
                 let v =
                     (h as f64 + rng.gen_range(0.0..1.0) as f64) / (self.config.height - 1) as f64;
-                //let r = self.get_ray_stratified(u, v, s_i as f64, s_j as f64);
-                let r = self.get_ray(u, v);
+                let r = self.get_ray_stratified(u, v, s_i as f64, s_j as f64);
+                //let r = self.get_ray(u, v);
                 color += self.ray_color(&r, world, lights, self.config.max_depth);
             }
         }
@@ -284,8 +277,13 @@ impl Camera {
         let light_pdf = HittablePDF::new(lights, payload.p);
         let mixture_pdf = MixturePDF::new(&surface_pdf, &light_pdf);
 
-        let scattered = Ray::new(payload.p, mixture_pdf.generate(), ray.time);
-        let mut pdf_value = mixture_pdf.value(&scattered.dir);
+        /*let scattered = Ray::new(payload.p, mixture_pdf.generate(), ray.time);
+        let mut pdf_value = mixture_pdf.value(&scattered.dir);*/
+
+        let scattered = Ray::new(payload.p, surface_pdf.generate(), ray.time);
+        let mut pdf_value = surface_pdf.value(&scattered.dir);
+
+        
 
         /*let scattered = Ray::new(payload.p, light_pdf.generate(), ray.time);
         let mut pdf_value = light_pdf.value(&scattered.dir);*/
@@ -314,7 +312,7 @@ impl Camera {
         return Vec3::new(rng.gen_range(-0.5..0.5), rng.gen_range(-0.5..0.5), 0.0);
     }
 
-    pub fn sample_square_stratification(&self, s_i: f64, s_j: f64) -> Vec3 {
+    pub fn sample_square_stratified(&self, s_i: f64, s_j: f64) -> Vec3 {
         let mut rng = thread_rng();
         let px = ((s_i + rng.gen_range(0.0..1.0)) * self.recip_sqrt_samples) - 0.5;
         let py = ((s_j + rng.gen_range(0.0..1.0)) * self.recip_sqrt_samples) - 0.5;
