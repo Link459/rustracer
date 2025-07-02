@@ -56,7 +56,7 @@ fn main() -> Result<()> {
 
     let Scene {
         camera,
-        mut world,
+        world,
         lights,
     } = scene;
 
@@ -67,7 +67,7 @@ fn main() -> Result<()> {
     );
     println!("camera:\n{}", camera);
 
-    world.extend(lights.clone());
+    //world.extend(lights.clone());
     let camera_config = camera;
 
     println!("generating bvh...");

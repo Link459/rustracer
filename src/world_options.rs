@@ -6,9 +6,14 @@ use crate::{
     bvh::BvhNode,
     camera::CameraConfig,
     interval::Interval,
-    material::{Dielectric, DiffuseLight, Lambertian, MaterialStorage, Metal},
-    model::transform::{RotateY, Translate},
-    model::{quad::Quad, sphere::Sphere, Model,volume::ConstantMedium},
+    material::{DefaultMaterial, Dielectric, DiffuseLight, Lambertian, MaterialStorage, Metal},
+    model::{
+        quad::Quad,
+        sphere::Sphere,
+        transform::{RotateY, Translate},
+        volume::ConstantMedium,
+        Model,
+    },
     moving_sphere::MovingSphere,
     render::{Background, RenderConfig},
     scene::Scene,
@@ -479,7 +484,6 @@ pub fn cornell_box() -> Scene {
     let white = Lambertian::new(SolidColor::new(Vec3::new(0.73, 0.73, 0.73)));
     let green = Lambertian::new(SolidColor::new(Vec3::new(0.12, 0.45, 0.15)));
     let light = DiffuseLight::new(SolidColor::new(Vec3::new(15.0, 15.0, 15.0)));
-    //let light = DefaultMaterial::new();
 
     world.add(Quad::new(
         Vec3::new(555.0, 0.0, 0.0),
@@ -498,7 +502,8 @@ pub fn cornell_box() -> Scene {
         Vec3::new(343.0, 554.0, 332.0),
         Vec3::new(-130.0, 0.0, 0.0),
         Vec3::new(0.0, 0.0, -105.0),
-        light,
+        DefaultMaterial::new(),
+        //light,
     ));
 
     world.add(Quad::new(
@@ -507,6 +512,7 @@ pub fn cornell_box() -> Scene {
         Vec3::new(0.0, 0.0, 555.0),
         white.clone(),
     ));
+
     world.add(Quad::new(
         Vec3::new(555.0, 555.0, 555.0),
         Vec3::new(-555.0, 0.0, 0.0),
@@ -542,7 +548,7 @@ pub fn cornell_box() -> Scene {
 
     world.add(box2);
 
-    let samples = 1000;
+    let samples = 10;
     let mut config = RenderConfig::with_aspect_ratio(1.0, 400, samples, 50);
     config.background = Background::Night;
     let cam = CameraConfig {

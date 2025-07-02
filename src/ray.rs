@@ -2,6 +2,7 @@ use std::{fmt, write};
 
 use crate::vec3::Vec3;
 
+#[derive(Debug)]
 pub struct Ray {
     pub orig: Vec3,
     pub dir: Vec3,

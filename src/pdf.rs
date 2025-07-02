@@ -10,7 +10,9 @@ use crate::{
 };
 
 pub trait PDF {
+    ///  pdf value for a given direction
     fn value(&self, dir: &Vec3) -> f64;
+    /// a random direction weighted by interal PDF distribution
     fn generate(&self) -> Vec3;
 }
 
@@ -18,7 +20,7 @@ pub struct SpherePDF;
 
 impl PDF for SpherePDF {
     fn value(&self, _dir: &Vec3) -> f64 {
-        return 1.0 / (4.0 / f64::consts::PI);
+        return 1.0 / (4.0 * f64::consts::PI);
     }
 
     fn generate(&self) -> Vec3 {

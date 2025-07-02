@@ -287,7 +287,7 @@ impl Camera {
 
         let scattering_pdf = material.scattering_pdf(ray, &payload, &scattered);
 
-       let sample_color = self.ray_color(&scattered, world, lights, depth - 1);
+        let sample_color = self.ray_color(&scattered, world, lights, depth - 1);
 
         if pdf_value == 0.0 {
             pdf_value = f64::EPSILON;

@@ -1,9 +1,11 @@
+use rand::{thread_rng, Rng};
 use serde::{Deserialize, Serialize};
 
 use crate::interval::Interval;
 use crate::material::MaterialStorage;
 use crate::model::Model;
 use crate::ray::Ray;
+use crate::vec3::Vec3;
 use crate::{
     aabb::AABB,
     hittable::{HitPayload, Hittable},
@@ -63,6 +65,25 @@ impl Hittable for World {
 
     fn bounding_box(&self) -> AABB {
         return self.bbox;
+    }
+
+    fn pdf_value(&self, origin: &Vec3, dir: &Vec3) -> f64 {
+        let weight = 1.0 / self.entities.len() as f64;
+
+        let mut sum = 0.0;
+
+        for entity in &self.entities {
+            sum += weight * entity.pdf_value(origin, dir);
+        }
+
+        return sum;
+    }
+
+    fn random(&self, origin: &Vec3) -> Vec3 {
+        let size = self.entities.len();
+
+        let idx = thread_rng().gen_range(0..size);
+        return self.entities[idx].random(origin);
     }
 }
 
