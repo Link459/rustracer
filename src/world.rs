@@ -2,6 +2,7 @@ use rand::{thread_rng, Rng};
 use serde::{Deserialize, Serialize};
 
 use crate::interval::Interval;
+use crate::material::lambertian::random_cosine_direction;
 use crate::material::MaterialStorage;
 use crate::model::Model;
 use crate::ray::Ray;
@@ -67,8 +68,11 @@ impl Hittable for World {
         return self.bbox;
     }
 
+    //TODO: handle a light count of 0
     fn pdf_value(&self, origin: &Vec3, dir: &Vec3) -> f64 {
-        let weight = 1.0 / self.entities.len() as f64;
+        let size = self.entities.len();
+
+        let weight = 1.0 / size as f64;
 
         let mut sum = 0.0;
 

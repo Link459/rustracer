@@ -5,6 +5,8 @@ pub mod lambertian;
 pub mod material_storage;
 pub mod metal;
 
+use std::mem::MaybeUninit;
+
 pub use dielectric::Dielectric;
 pub use diffuse_light::DiffuseLight;
 pub use isotropic::Isotropic;
@@ -13,12 +15,12 @@ pub use material_storage::MaterialStorage;
 pub use metal::Metal;
 use serde::{Deserialize, Serialize};
 
-use crate::{hittable::HitPayload, ray::Ray, vec3::Vec3};
+use crate::{hittable::HitPayload, pdf::PDF, ray::Ray, vec3::Vec3};
 
 pub struct ScatterPayload {
     pub scattered: Ray,
     pub attenuation: Vec3,
-    //pub pdf: Box<PDF>,
+    //pub pdf: MaybeUninit<Box<dyn PDF>>,
     pub pdf: f64,
 }
 
@@ -28,8 +30,26 @@ impl ScatterPayload {
             scattered,
             attenuation,
             pdf,
+            //pdf: MaybeUninit::new(pdf),
         }
     }
+
+    /*pub fn new(scattered: Ray, attenuation: Vec3, pdf: Box<dyn PDF>) -> Self {
+            Self {
+                scattered,
+                attenuation,
+                pdf: MaybeUninit::new(pdf),
+            }
+        }
+
+        pub fn without_pdf(scattered: Ray, attenuation: Vec3) -> Self {
+    Self {
+                scattered,
+                skip_pdf: true,
+                attenuation,
+                pdf: MaybeUninit::uninit();
+            }
+        }*/
 }
 
 pub trait Material: Send + Sync {

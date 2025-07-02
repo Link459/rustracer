@@ -289,9 +289,9 @@ impl Camera {
 
         let sample_color = self.ray_color(&scattered, world, lights, depth - 1);
 
-        if pdf_value == 0.0 {
+        /*if pdf_value == 0.0 {
             pdf_value = f64::EPSILON;
-        }
+        }*/
 
         let color_from_scatter = (attenuation * scattering_pdf * sample_color) / pdf_value;
 
