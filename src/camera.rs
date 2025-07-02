@@ -276,11 +276,11 @@ impl Camera {
         let light_pdf = HittablePDF::new(lights, payload.p);
         let mixture_pdf = MixturePDF::new(&surface_pdf, &light_pdf);
 
-        /*let scattered = Ray::new(payload.p, mixture_pdf.generate(), ray.time);
-        let mut pdf_value = mixture_pdf.value(&scattered.dir);*/
+        let scattered = Ray::new(payload.p, mixture_pdf.generate(), ray.time);
+        let mut pdf_value = mixture_pdf.value(&scattered.dir);
 
-        let scattered = Ray::new(payload.p, surface_pdf.generate(), ray.time);
-        let mut pdf_value = surface_pdf.value(&scattered.dir);
+        /*let scattered = Ray::new(payload.p, surface_pdf.generate(), ray.time);
+        let mut pdf_value = surface_pdf.value(&scattered.dir);*/
 
         /*let scattered = Ray::new(payload.p, light_pdf.generate(), ray.time);
         let mut pdf_value = light_pdf.value(&scattered.dir);*/

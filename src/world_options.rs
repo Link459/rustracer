@@ -502,8 +502,8 @@ pub fn cornell_box() -> Scene {
         Vec3::new(343.0, 554.0, 332.0),
         Vec3::new(-130.0, 0.0, 0.0),
         Vec3::new(0.0, 0.0, -105.0),
-        DefaultMaterial::new(),
-        //light,
+        //DefaultMaterial::new(),
+        light,
     ));
 
     world.add(Quad::new(
@@ -548,7 +548,7 @@ pub fn cornell_box() -> Scene {
 
     world.add(box2);
 
-    let samples = 10;
+    let samples = 1000;
     let mut config = RenderConfig::with_aspect_ratio(1.0, 400, samples, 50);
     config.background = Background::Night;
     let cam = CameraConfig {
