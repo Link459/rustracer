@@ -1,4 +1,4 @@
-use std::f64;
+use std::{f64, ops::Deref};
 
 use rand::{thread_rng, Rng};
 
@@ -70,18 +70,18 @@ impl<'a, M: Hittable> PDF for HittablePDF<'a, M> {
     }
 }
 
-pub struct MixturePDF<'a, P1, P2> {
-    a: &'a P1,
-    b: &'a P2,
+pub struct MixturePDF<'a, P1> {
+    a: Box<dyn PDF>,
+    b: &'a P1,
 }
 
-impl<'a, P1, P2> MixturePDF<'a, P1, P2> {
-    pub fn new(a: &'a P1, b: &'a P2) -> Self {
+impl<'a, P1> MixturePDF<'a, P1> {
+    pub fn new(a: Box<dyn PDF>, b: &'a P1) -> Self {
         Self { a, b }
     }
 }
 
-impl<P1: PDF, P2: PDF> PDF for MixturePDF<'_, P1, P2> {
+impl<P1: PDF> PDF for MixturePDF<'_, P1> {
     fn value(&self, dir: &Vec3) -> f64 {
         return 0.5 * self.a.value(dir) + 0.5 * self.b.value(dir);
     }

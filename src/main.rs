@@ -31,11 +31,13 @@ mod vec3;
 mod world;
 mod world_options;
 
+struct Settings {}
+
 fn main() -> Result<()> {
     let args = env::args().skip(1).collect::<Vec<_>>();
-    if args.len() > 3 {
+    /*if args.len() > 3 {
         panic!();
-    }
+    }*/
 
     if args.len() == 2 && args[0] == "--save" {
         let scene = world_options::choose_scene();
@@ -68,7 +70,7 @@ fn main() -> Result<()> {
     println!("camera:\n{}", camera);
 
     world.extend(lights.clone());
-    let camera_config = camera;
+    let mut camera_config = camera;
 
     println!("generating bvh...");
     let now = Instant::now();
@@ -77,6 +79,7 @@ fn main() -> Result<()> {
     //println!("{}", world);
     println!("time to generate bvh: {:?}", now.elapsed());
 
+    camera_config.config = utils::parse_render_settings(&args, camera_config.config);
     let camera = Camera::from_camera_config(camera_config);
     let config = camera.get_config().clone();
     let rays_to_trace = config.width * config.height;

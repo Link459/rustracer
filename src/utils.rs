@@ -7,7 +7,14 @@ use std::{
     time::{Duration, Instant},
 };
 
-use crate::{camera::Camera, hittable::Hittable, image::Image, scene::Scene};
+use crate::{
+    camera::Camera,
+    hittable::Hittable,
+    image::Image,
+    render::{Background, RenderConfig},
+    scene::Scene,
+    texture::{ImageTexture, TextureStorage},
+};
 
 pub fn serialize_scene(scene: &Scene, path: &str) -> Result<()> {
     let extensions = ron::extensions::Extensions::UNWRAP_VARIANT_NEWTYPES;
@@ -79,4 +86,34 @@ pub fn load_hdri(path: &str) -> Result<Image> {
 
 pub fn linear_plane_index(len: usize, width: u32, row: u32, column: u32) -> usize {
     return len - (row * width + column) as usize;
+}
+
+pub fn parse_render_settings(options: &[String], mut orig: RenderConfig) -> RenderConfig {
+    for option_value in options.chunks(2) {
+        let get_val = || option_value[1].parse::<u32>().unwrap();
+        match option_value[0].as_str() {
+            "--samples" => {
+                orig.samples = get_val();
+            }
+            "--width" => {
+                orig.width = get_val();
+            }
+            "--height" => {
+                orig.height = get_val();
+            }
+            "--background" => match option_value[1].as_str() {
+                "Night" => {
+                    orig.background = Background::Night;
+                }
+                "Sky" => {
+                    orig.background = Background::Sky;
+                }
+                x => {
+                    orig.background = Background::Hdri(TextureStorage::Image(ImageTexture::new(x)));
+                }
+            },
+            _ => {}
+        };
+    }
+    return orig;
 }

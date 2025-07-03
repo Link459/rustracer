@@ -72,6 +72,8 @@ impl Hittable for World {
     fn pdf_value(&self, origin: &Vec3, dir: &Vec3) -> f64 {
         let size = self.entities.len();
 
+        
+
         let weight = 1.0 / size as f64;
 
         let mut sum = 0.0;
@@ -85,6 +87,7 @@ impl Hittable for World {
 
     fn random(&self, origin: &Vec3) -> Vec3 {
         let size = self.entities.len();
+
 
         let idx = thread_rng().gen_range(0..size);
         return self.entities[idx].random(origin);

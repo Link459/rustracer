@@ -13,12 +13,13 @@ use crate::{
     hittable::Hittable,
     image::Image,
     interval::Interval,
-    material::{Material, ScatterPayload},
-    pdf::{CosinePDF, HittablePDF, MixturePDF, PDF},
+    material::{Material, RayOrPDF},
+    pdf::{HittablePDF, MixturePDF, PDF},
     present::PresentationEvent,
     ray::Ray,
     render::RenderConfig,
     vec3::Vec3,
+    world::World,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -196,7 +197,7 @@ impl Camera {
     pub fn render(
         self,
         world: impl Hittable,
-        lights: impl Hittable,
+        lights: World,
         proxy: EventLoopProxy<PresentationEvent>,
     ) -> Result<Image> {
         println!(
@@ -221,7 +222,7 @@ impl Camera {
     }
 
     #[inline(always)]
-    pub fn trace_ray(&self, w: u32, h: u32, world: &impl Hittable, lights: &impl Hittable) -> Vec3 {
+    pub fn trace_ray(&self, w: u32, h: u32, world: &impl Hittable, lights: &World) -> Vec3 {
         let mut rng = rand::thread_rng();
         let mut color = Vec3::ZERO;
 
@@ -240,13 +241,7 @@ impl Camera {
         return color;
     }
 
-    pub fn ray_color(
-        &self,
-        ray: &Ray,
-        world: &impl Hittable,
-        lights: &impl Hittable,
-        depth: u32,
-    ) -> Vec3 {
+    pub fn ray_color(&self, ray: &Ray, world: &impl Hittable, lights: &World, depth: u32) -> Vec3 {
         if depth == 0 {
             return Vec3::ZERO;
         }
@@ -261,43 +256,34 @@ impl Camera {
             return color_from_emit;
         };
 
-        let ScatterPayload {
-            scattered,
-            attenuation,
-            pdf: _pdf,
-        } = scatter_payload;
+        match scatter_payload.pdf_ray {
+            RayOrPDF::Ray(ray) => {
+                return scatter_payload.attenuation
+                    * self.ray_color(&ray, world, lights, depth - 1);
+            }
+            RayOrPDF::PDF(pdf) => {
+                if lights.entities.len() == 0 {
+                    return scatter_payload.attenuation;
+                }
 
-        /*let color_from_scatter = attenuation * self.ray_color(&scattered, world, lights, depth - 1);
-        return color_from_emit + color_from_scatter;*/
+                let light_pdf = HittablePDF::new(lights, payload.p);
+                let mixture_pdf = MixturePDF::new(pdf, &light_pdf);
 
-        let surface_pdf = CosinePDF::new(&payload.normal);
+                let scattered = Ray::new(payload.p, mixture_pdf.generate(), ray.time);
+                let pdf_value = mixture_pdf.value(&scattered.dir);
 
-        //There's a NaN in here so we must find it
-        let light_pdf = HittablePDF::new(lights, payload.p);
-        let mixture_pdf = MixturePDF::new(&surface_pdf, &light_pdf);
+                let scattering_pdf = material.scattering_pdf(ray, &payload, &scattered);
 
-        let scattered = Ray::new(payload.p, mixture_pdf.generate(), ray.time);
-        let mut pdf_value = mixture_pdf.value(&scattered.dir);
+                let sample_color = self.ray_color(&scattered, world, lights, depth - 1);
 
-        /*let scattered = Ray::new(payload.p, surface_pdf.generate(), ray.time);
-        let mut pdf_value = surface_pdf.value(&scattered.dir);*/
+                let color_from_scatter =
+                    (scatter_payload.attenuation * scattering_pdf * sample_color) / pdf_value;
 
-        /*let scattered = Ray::new(payload.p, light_pdf.generate(), ray.time);
-        let mut pdf_value = light_pdf.value(&scattered.dir);*/
+                let color = color_from_emit + color_from_scatter;
 
-        let scattering_pdf = material.scattering_pdf(ray, &payload, &scattered);
-
-        let sample_color = self.ray_color(&scattered, world, lights, depth - 1);
-
-        /*if pdf_value == 0.0 {
-            pdf_value = f64::EPSILON;
-        }*/
-
-        let color_from_scatter = (attenuation * scattering_pdf * sample_color) / pdf_value;
-
-        let color = color_from_emit + color_from_scatter;
-
-        return color;
+                return color;
+            }
+        }
     }
 
     pub fn sample_square(&self) -> Vec3 {

@@ -13,7 +13,7 @@ pub struct Dielectric {
 
 impl Dielectric {
     pub fn new(ir: f64) -> Self {
-       return Self { ir };
+        return Self { ir };
     }
 
     fn reflectance(cosine: f64, ref_idx: f64) -> f64 {
@@ -49,10 +49,10 @@ impl Material for Dielectric {
 
         let scattered = Ray::new(payload.p, direction, ray.time);
 
-        return Some(ScatterPayload::new(
+        
+        return Some(ScatterPayload::without_pdf(
             scattered,
             Vec3::new(1.0, 1.0, 1.0),
-            0.0,
         ));
     }
 }

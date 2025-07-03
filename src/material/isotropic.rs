@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     hittable::HitPayload,
     material::ScatterPayload,
+    pdf::SpherePDF,
     ray::Ray,
     texture::{SolidColor, Texture, TextureStorage},
     vec3::Vec3,
@@ -34,10 +35,11 @@ impl From<Vec3> for Isotropic {
 
 impl Material for Isotropic {
     fn scatter(&self, ray: &Ray, payload: &HitPayload) -> Option<ScatterPayload> {
-        let scattered = Ray::new(payload.p, random_unit_vector(), ray.time);
         let attenuation = self.albedo.value(payload.u, payload.v, &payload.p);
+        /*let scattered = Ray::new(payload.p, random_unit_vector(), ray.time);
         let pdf = 1.0 / (4.0 * f64::consts::PI);
-        return Some(ScatterPayload::new(scattered, attenuation, pdf));
+        return Some(ScatterPayload::new(scattered, attenuation, pdf));*/
+        return Some(ScatterPayload::new(attenuation, SpherePDF {}));
     }
 
     fn scattering_pdf(&self, _incoming: &Ray, _payload: &HitPayload, _scattered: &Ray) -> f64 {

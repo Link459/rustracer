@@ -526,11 +526,25 @@ pub fn cornell_box() -> Scene {
         white.clone(),
     ));
 
-    let box1 = box_of_quads(
-        &Vec3::new(0.0, 0.0, 0.0),
-        &Vec3::new(165.0, 330.0, 165.0),
-        white.clone(),
-    );
+    println!("[0] = normal\n[1] = aluminium");
+    let mut buf = String::new();
+    stdin().read_line(&mut buf).expect("failed to read line");
+    let choice = buf.trim().parse::<usize>().unwrap();
+
+    let box1 = match choice {
+        0 => box_of_quads(
+            &Vec3::new(0.0, 0.0, 0.0),
+            &Vec3::new(165.0, 330.0, 165.0),
+            white.clone(),
+        ),
+        1 => box_of_quads(
+            &Vec3::new(0.0, 0.0, 0.0),
+            &Vec3::new(165.0, 330.0, 165.0),
+            Metal::new(Vec3::new(0.8, 0.85, 0.88), 0.0),
+        ),
+
+        _ => panic!(),
+    };
 
     let box1 = RotateY::new(box1, 15.0);
     let box1 = Translate::new(box1, Vec3::new(265.0, 0.0, 295.0));

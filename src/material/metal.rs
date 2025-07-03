@@ -31,7 +31,8 @@ impl Material for Metal {
             ray.time,
         );
         if Vec3::dot(&scattered.dir, &payload.normal) > 0.0 {
-            return Some(ScatterPayload::new(scattered, self.albedo, 0.0));
+            //return Some(ScatterPayload::new(scattered, self.albedo, 0.0));
+            return Some(ScatterPayload::without_pdf(scattered, self.albedo));
         }
 
         return None;

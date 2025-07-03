@@ -15,41 +15,47 @@ pub use material_storage::MaterialStorage;
 pub use metal::Metal;
 use serde::{Deserialize, Serialize};
 
-use crate::{hittable::HitPayload, pdf::PDF, ray::Ray, vec3::Vec3};
+use crate::{
+    hittable::HitPayload,
+    pdf::{CosinePDF, PDF},
+    ray::Ray,
+    vec3::Vec3,
+};
+
+pub enum RayOrPDF {
+    Ray(Ray),
+    PDF(Box<dyn PDF>),
+}
 
 pub struct ScatterPayload {
-    pub scattered: Ray,
     pub attenuation: Vec3,
     //pub pdf: MaybeUninit<Box<dyn PDF>>,
-    pub pdf: f64,
+    //pub pdf: f64,
+    pub pdf_ray: RayOrPDF,
 }
 
 impl ScatterPayload {
-    pub fn new(scattered: Ray, attenuation: Vec3, pdf: f64) -> Self {
+    /*pub fn new(scattered: Ray, attenuation: Vec3, pdf: f64) -> Self {
         Self {
             scattered,
             attenuation,
             pdf,
-            //pdf: MaybeUninit::new(pdf),
+        }
+    }*/
+
+    pub fn new(attenuation: Vec3, pdf: impl PDF + 'static) -> Self {
+        Self {
+            attenuation,
+            pdf_ray: RayOrPDF::PDF(Box::new(pdf)),
         }
     }
 
-    /*pub fn new(scattered: Ray, attenuation: Vec3, pdf: Box<dyn PDF>) -> Self {
-            Self {
-                scattered,
-                attenuation,
-                pdf: MaybeUninit::new(pdf),
-            }
+    pub fn without_pdf(scattered: Ray, attenuation: Vec3) -> Self {
+        Self {
+            attenuation,
+            pdf_ray: RayOrPDF::Ray(scattered),
         }
-
-        pub fn without_pdf(scattered: Ray, attenuation: Vec3) -> Self {
-    Self {
-                scattered,
-                skip_pdf: true,
-                attenuation,
-                pdf: MaybeUninit::uninit();
-            }
-        }*/
+    }
 }
 
 pub trait Material: Send + Sync {
