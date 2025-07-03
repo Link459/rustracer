@@ -5,7 +5,6 @@ pub mod lambertian;
 pub mod material_storage;
 pub mod metal;
 
-use std::mem::MaybeUninit;
 
 pub use dielectric::Dielectric;
 pub use diffuse_light::DiffuseLight;
@@ -17,7 +16,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     hittable::HitPayload,
-    pdf::{CosinePDF, PDF},
+    pdf::PDF,
     ray::Ray,
     vec3::Vec3,
 };

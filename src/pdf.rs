@@ -1,4 +1,4 @@
-use std::{f64, ops::Deref};
+use std::f64;
 
 use rand::{thread_rng, Rng};
 

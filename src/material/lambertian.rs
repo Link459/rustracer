@@ -6,7 +6,6 @@ use serde::{Deserialize, Serialize};
 use crate::{
     hittable::HitPayload,
     material::ScatterPayload,
-    onb::ONB,
     pdf::CosinePDF,
     ray::Ray,
     texture::{SolidColor, Texture, TextureStorage},

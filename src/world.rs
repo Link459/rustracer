@@ -2,7 +2,6 @@ use rand::{thread_rng, Rng};
 use serde::{Deserialize, Serialize};
 
 use crate::interval::Interval;
-use crate::material::lambertian::random_cosine_direction;
 use crate::material::MaterialStorage;
 use crate::model::Model;
 use crate::ray::Ray;

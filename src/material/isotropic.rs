@@ -11,7 +11,7 @@ use crate::{
     vec3::Vec3,
 };
 
-use super::{lambertian::random_unit_vector, Material};
+use super::Material;
 
 /// An Isotropic material used for things like Volumes
 #[derive(Clone, Debug, Serialize, Deserialize)]
