@@ -16,7 +16,7 @@ impl Triangle {}
 
 impl Hittable for Triangle {
     #[inline]
-    fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<(HitPayload, MaterialStorage)> {
+    fn hit(&self, ray: &Ray, _ray_t: Interval) -> Option<(HitPayload, MaterialStorage)> {
         let edge1 = self.b - self.a;
         let edge2 = self.c - self.a;
 

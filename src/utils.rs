@@ -1,6 +1,6 @@
 use anyhow::Result;
-use image::{open, ExtendedColorType};
-use rand::{thread_rng, Rng};
+use image::open;
+use rand::Rng;
 use std::{
     fs::{self, File},
     io::Write,
@@ -38,11 +38,11 @@ pub fn get_time_prediction(rays: u32, camera: &Camera, _world: &impl Hittable) -
     let height = camera.get_config().height;
     let samples = 100;
 
-    let mut rng = thread_rng();
+    let mut rng = rand::rng();
     let mut elapsed = Duration::default();
     for _ in 0..samples {
-        let _w = rng.gen_range(0..width);
-        let _h = rng.gen_range(0..height);
+        let _w = rng.random_range(0..width);
+        let _h = rng.random_range(0..height);
         let time = Instant::now();
         //TODO: fix this
         //camera.trace_ray(w, h, world);
@@ -65,23 +65,9 @@ pub fn number_with_decimals(n: usize) -> String {
         .join(",")
 }
 
-pub fn create_ppm_file(file: &str, buf: &[u8], width: u32, height: u32) -> Result<()> {
-    let mut file = File::create(file)?;
-    let ppm = format!("P6\n {:?} {:?}\n255\n", width, height);
-    file.write_all(ppm.as_bytes())?;
-    file.write_all(buf)?;
-    Ok(())
-}
-
-pub fn create_image_file(file: &str, buf: &[u8], width: u32, height: u32) -> Result<()> {
-    image::save_buffer(file, buf, width, height, ExtendedColorType::Rgb8)?;
-    Ok(())
-}
-
 pub fn load_hdri(path: &str) -> Result<Image> {
     let hdri = open(path)?;
     let hdri = hdri.into_rgb32f();
-    //let hdri = hdri.into_rgb8();
     return Ok(Image::from(hdri));
 }
 

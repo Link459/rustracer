@@ -44,6 +44,7 @@ mod material;
 mod model;
 mod moving_sphere;
 mod onb;
+mod sampler;
 mod pdf;
 mod perlin;
 mod present;
@@ -123,6 +124,7 @@ fn main() -> Result<()> {
         //utils::create_ppm_file("out.ppm", &image.buffer, image.width, image.height)?;
         //utils::create_image_file("out.png", &image.buffer, image.width, image.height)?;
 
+        image.save("out.png")?;
         return Ok(());
     });
 

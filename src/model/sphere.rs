@@ -1,9 +1,4 @@
-use std::f64::{
-    self,
-    consts::{FRAC_PI_2, PI},
-};
-
-use rand::{thread_rng, Rng};
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -111,8 +106,9 @@ impl Hittable for Sphere {
 }
 
 fn random_to_sphere(radius: Float, distance_square: Float) -> Vec3 {
-    let r1 = thread_rng().gen_range(0.0..1.0);
-    let r2 = thread_rng().gen_range(0.0..1.0);
+    let mut rng = rand::rng();
+    let r1 = rng.random_range(0.0..1.0);
+    let r2 = rng.random_range(0.0..1.0);
     let z = 1.0 + r2 * ((1.0 - radius * radius / distance_square).sqrt() - 1.0);
 
     let phi = 2.0 * crate::consts::PI * r1;

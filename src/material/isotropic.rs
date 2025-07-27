@@ -1,5 +1,3 @@
-use core::f64;
-
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -8,7 +6,8 @@ use crate::{
     pdf::SpherePDF,
     ray::Ray,
     texture::{SolidColor, Texture, TextureStorage},
-    vec3::Vec3, Float,
+    vec3::Vec3,
+    Float,
 };
 
 use super::Material;
@@ -34,7 +33,7 @@ impl From<Vec3> for Isotropic {
 }
 
 impl Material for Isotropic {
-    fn scatter(&self, ray: &Ray, payload: &HitPayload) -> Option<ScatterPayload> {
+    fn scatter(&self, _ray: &Ray, payload: &HitPayload) -> Option<ScatterPayload> {
         let attenuation = self.albedo.value(payload.u, payload.v, &payload.p);
         /*let scattered = Ray::new(payload.p, random_unit_vector(), ray.time);
         let pdf = 1.0 / (4.0 * Float::consts::PI);

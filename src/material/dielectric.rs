@@ -37,9 +37,9 @@ impl Material for Dielectric {
         let cos_theta = ((-1.0) * unit_direction).dot(&payload.normal).min(1.0);
         let sin_theta = (1.0 - cos_theta.powi(2)).sqrt();
 
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let cannot_refract = refraction_ratio * sin_theta > 1.0;
-        let will_reflect = rng.gen::<Float>() < Self::reflectance(cos_theta, refraction_ratio);
+        let will_reflect = rng.random::<Float>() < Self::reflectance(cos_theta, refraction_ratio);
 
         let direction = if cannot_refract || will_reflect {
             unit_direction.reflect(&payload.normal)

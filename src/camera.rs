@@ -1,6 +1,5 @@
 use anyhow::Result;
-use core::f64;
-use rand::{thread_rng, Rng};
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 use std::{
     fmt::{Display, Formatter},
@@ -173,7 +172,7 @@ impl Camera {
         Ray::new(
             origin,
             dir,
-            rand::thread_rng().gen_range(self.time.min..self.time.max),
+            rand::rng().random_range(self.time.min..self.time.max),
         )
     }
 
@@ -191,7 +190,7 @@ impl Camera {
         Ray::new(
             origin,
             dir,
-            rand::thread_rng().gen_range(self.time.min..self.time.max),
+            rand::rng().random_range(self.time.min..self.time.max),
         )
     }
 
@@ -224,14 +223,14 @@ impl Camera {
 
     #[inline(always)]
     pub fn trace_ray(&self, w: u32, h: u32, world: &impl Hittable, lights: &World) -> Vec3 {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let mut color = Vec3::ZERO;
 
         for s_i in 0..self.sqrt_samples as u64 {
             for s_j in 0..self.sqrt_samples as u64 {
-                let u = (w as Float + rng.gen_range(0.0..1.0) as Float)
+                let u = (w as Float + rng.random_range(0.0..1.0) as Float)
                     / (self.config.width - 1) as Float;
-                let v = (h as Float + rng.gen_range(0.0..1.0) as Float)
+                let v = (h as Float + rng.random_range(0.0..1.0) as Float)
                     / (self.config.height - 1) as Float;
                 let r = self.get_ray_stratified(u, v, s_i as Float, s_j as Float);
                 //let r = self.get_ray(u, v);
@@ -289,14 +288,18 @@ impl Camera {
     }
 
     pub fn sample_square(&self) -> Vec3 {
-        let mut rng = thread_rng();
-        return Vec3::new(rng.gen_range(-0.5..0.5), rng.gen_range(-0.5..0.5), 0.0);
+        let mut rng = rand::rng();
+        return Vec3::new(
+            rng.random_range(-0.5..0.5),
+            rng.random_range(-0.5..0.5),
+            0.0,
+        );
     }
 
     pub fn sample_square_stratified(&self, s_i: Float, s_j: Float) -> Vec3 {
-        let mut rng = thread_rng();
-        let px = ((s_i + rng.gen_range(0.0..1.0)) * self.recip_sqrt_samples) - 0.5;
-        let py = ((s_j + rng.gen_range(0.0..1.0)) * self.recip_sqrt_samples) - 0.5;
+        let mut rng = rand::rng();
+        let px = ((s_i + rng.random_range(0.0..1.0)) * self.recip_sqrt_samples) - 0.5;
+        let py = ((s_j + rng.random_range(0.0..1.0)) * self.recip_sqrt_samples) - 0.5;
         return Vec3::new(px, py, 0.0);
     }
 }
@@ -314,9 +317,13 @@ unsafe impl Sync for Camera {}
 
 #[inline(always)]
 fn random_in_unit_disk() -> Vec3 {
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
     loop {
-        let p = Vec3::new(rng.gen_range(-1.0..1.0), rng.gen_range(-1.0..1.0), 0.0);
+        let p = Vec3::new(
+            rng.random_range(-1.0..1.0),
+            rng.random_range(-1.0..1.0),
+            0.0,
+        );
         if p.length_squared() < 1.0 {
             continue;
         }

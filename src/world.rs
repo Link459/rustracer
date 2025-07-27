@@ -1,4 +1,4 @@
-use rand::{thread_rng, Rng};
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 use crate::interval::Interval;
@@ -86,7 +86,7 @@ impl Hittable for World {
     fn random(&self, origin: &Vec3) -> Vec3 {
         let size = self.entities.len();
 
-        let idx = thread_rng().gen_range(0..size);
+        let idx = rand::rng().random_range(0..size);
         return self.entities[idx].random(origin);
     }
 }

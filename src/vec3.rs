@@ -90,18 +90,18 @@ impl Vec3 {
     #[inline(always)]
     pub fn default_random<T: rand::Rng>(r: &mut T) -> Vec3 {
         return Vec3 {
-            x: r.gen_range(0.0..1.0),
-            y: r.gen_range(0.0..1.0),
-            z: r.gen_range(0.0..1.0),
+            x: r.random_range(0.0..1.0),
+            y: r.random_range(0.0..1.0),
+            z: r.random_range(0.0..1.0),
         };
     }
 
     #[inline(always)]
     pub fn random<T: rand::Rng>(r: &mut T, range: Range<Float>) -> Vec3 {
         return Vec3 {
-            x: r.gen_range(range.clone()),
-            y: r.gen_range(range.clone()),
-            z: r.gen_range(range),
+            x: r.random_range(range.clone()),
+            y: r.random_range(range.clone()),
+            z: r.random_range(range),
         };
     }
 

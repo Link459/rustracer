@@ -1,6 +1,4 @@
-use core::f64;
-
-use rand::{thread_rng, Rng};
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -111,8 +109,8 @@ impl Hittable for Quad {
     }
 
     fn random(&self, origin: &Vec3) -> Vec3 {
-        let mut rng = thread_rng();
-        let p = self.q + (rng.gen_range(0.0..1.0) * self.u) + (rng.gen_range(0.0..1.0) * self.v);
+        let mut rng = rand::rng();
+        let p = self.q + (rng.random_range(0.0..1.0) * self.u) + (rng.random_range(0.0..1.0) * self.v);
         return p - origin;
     }
 }

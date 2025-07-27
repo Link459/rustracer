@@ -1,4 +1,4 @@
-use rand::{thread_rng, Rng};
+use rand::Rng;
 
 use crate::{
     hittable::Hittable,
@@ -87,7 +87,7 @@ impl<P1: PDF> PDF for MixturePDF<'_, P1> {
     }
 
     fn generate(&self) -> Vec3 {
-        if thread_rng().gen_range(0.0..1.0) < 0.5 {
+        if rand::rng().random_range(0.0..1.0) < 0.5 {
             return self.a.generate();
         }
         return self.b.generate();

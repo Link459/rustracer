@@ -1,4 +1,4 @@
-use rand::{thread_rng, Rng};
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -36,7 +36,7 @@ impl From<Vec3> for Lambertian {
 
 impl Material for Lambertian {
     #[inline]
-    fn scatter(&self, ray: &Ray, payload: &HitPayload) -> Option<ScatterPayload> {
+    fn scatter(&self, _ray: &Ray, payload: &HitPayload) -> Option<ScatterPayload> {
         //let mut scatter_direction = payload.normal + random_unit_vector();
         //let mut scatter_direction = random_on_hemisphere(&payload.normal);
         /*let uvw = ONB::new(&payload.normal);
@@ -85,7 +85,7 @@ pub fn random_unit_vector() -> Vec3 {
 
 pub fn random_unit_sphere() -> Vec3 {
     loop {
-        let p = Vec3::random(&mut rand::thread_rng(), -1.0..1.0);
+        let p = Vec3::random(&mut rand::rng(), -1.0..1.0);
         if p.length_squared() >= 1.0 {
             continue;
         }
@@ -102,9 +102,9 @@ pub fn random_on_hemisphere(normal: &Vec3) -> Vec3 {
 }
 
 pub fn random_cosine_direction() -> Vec3 {
-    let mut rng = thread_rng();
-    let r1: Float = rng.gen_range(0.0..1.0);
-    let r2: Float = rng.gen_range(0.0..1.0);
+    let mut rng = rand::rng();
+    let r1: Float = rng.random_range(0.0..1.0);
+    let r2: Float = rng.random_range(0.0..1.0);
 
     let phi = 2.0 * crate::consts::PI * r1;
     let r2_sqrt = r2.sqrt();

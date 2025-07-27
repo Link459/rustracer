@@ -1,7 +1,7 @@
-use std::ptr;
+use std::{ path::Path, ptr};
 
 use crate::{present::PresentationEvent, render::RenderConfig, vec3::Vec3, Float};
-use image::{ImageBuffer, Rgb};
+use image::{ ImageBuffer, Rgb};
 use rayon::prelude::*;
 use winit::event_loop::EventLoopProxy;
 
@@ -12,6 +12,8 @@ pub struct Image {
     pub height: u32,
     samples: Float,
 }
+
+pub type ImageBufferGlue<T = Float> = image::ImageBuffer<image::Rgb<T>, Vec<T>>;
 
 impl Image {
     pub fn new(width: u32, height: u32, samples: Float) -> Self {
@@ -77,32 +79,43 @@ impl Image {
     }
 
     #[inline(always)]
-    pub fn write(&self, add_color: Vec3, index: usize) {
-        let mut r = add_color.x;
-        let mut g = add_color.y;
-        let mut b = add_color.z;
-
-        let scale = 1.0 / self.samples;
-        r = Float::sqrt(scale * r);
-        g = Float::sqrt(scale * g);
-        b = Float::sqrt(scale * b);
-
-        let ptr = self.buffer.as_ptr() as *mut u8;
+    pub fn write(&self, color: Vec3, index: usize) {
+        let ptr = self.buffer.as_ptr() as *mut Float;
         unsafe {
-            ptr::write(ptr.add(index), (256.0 * r.clamp(0.0, 0.999)) as u8);
-            ptr::write(ptr.add(index + 1), (256.0 * g.clamp(0.0, 0.999)) as u8);
-            ptr::write(ptr.add(index + 2), (256.0 * b.clamp(0.0, 0.999)) as u8);
+            ptr::write(ptr.add(index), color.x);
+            ptr::write(ptr.add(index + 1), color.y);
+            ptr::write(ptr.add(index + 2), color.z);
         }
     }
 
-    pub fn into_image_buffer(self) -> image::ImageBuffer<image::Rgb<Float>, Vec<Float>> {
-        return image::ImageBuffer::<image::Rgb<Float>, Vec<Float>>::from_vec(
-            self.width,
-            self.height,
-            self.buffer.clone(),
-        )
-        .unwrap();
-        //image::Rgb32FImage::from_vec(self.width, self.height, self.buffer.clone()).unwrap()
+    pub fn into_image_buffer(self) -> ImageBufferGlue {
+        return ImageBufferGlue::from_vec(self.width, self.height, self.buffer.clone()).unwrap();
+    }
+
+    pub fn into_bytes(self) -> ImageBufferGlue<u8> {
+        let mut buf = Vec::with_capacity(self.buffer.capacity());
+
+        for  chunck in self.buffer.chunks(3) {
+            let scale = 1.0 / self.samples;
+            let mut r = chunck[0];
+            let mut g = chunck[1];
+            let mut b = chunck[2];
+            r = Float::sqrt(scale * r);
+            g = Float::sqrt(scale * g);
+            b = Float::sqrt(scale * b);
+
+            buf.push((256.0 * r.clamp(0.0, 0.999)) as u8);
+            buf.push((256.0 * g.clamp(0.0, 0.999)) as u8);
+            buf.push((256.0 * b.clamp(0.0, 0.999)) as u8);
+        }
+
+        return ImageBufferGlue::from_vec(self.width, self.height, buf).unwrap();
+    }
+
+    pub fn save(self, path: impl AsRef<Path>) -> Result<(), image::ImageError> {
+        let buf = self.into_bytes();
+        buf.save(path).unwrap();
+        return Ok(());
     }
 
     pub fn index(&self, row: u32, column: u32) -> usize {

@@ -1,6 +1,6 @@
 use std::io::{stdin, stdout, Write};
 
-use rand::{thread_rng, Rng};
+use rand::Rng;
 
 use crate::{
     bvh::BvhNode,
@@ -20,12 +20,13 @@ use crate::{
     texture::{ChessTexture, ImageTexture, NoiseTexture, SolidColor, TextureStorage},
     utils::load_hdri,
     vec3::Vec3,
-    world::World, Float,
+    world::World,
+    Float,
 };
 
 #[inline]
 pub fn random_world() -> Scene {
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
     let origin = Vec3::new(4.0, 0.2, 0.0);
     let mut world = World::default();
 
@@ -40,11 +41,11 @@ pub fn random_world() -> Scene {
     ));
     for a in -11..11 {
         for b in -11..11 {
-            let choose_material = rng.gen::<Float>();
+            let choose_material = rng.random::<Float>();
             let center = Vec3::new(
-                a as Float + 0.9 * rng.gen::<Float>(),
+                a as Float + 0.9 * rng.random::<Float>(),
                 0.2,
-                b as Float + 0.9 * rng.gen::<Float>(),
+                b as Float + 0.9 * rng.random::<Float>(),
             );
             if (center - origin).length() > 0.9 {
                 if choose_material < 0.8 {
@@ -53,9 +54,9 @@ pub fn random_world() -> Scene {
                         center,
                         0.2,
                         Lambertian::new(SolidColor::new(Vec3::new(
-                            rng.gen::<Float>() * rng.gen::<Float>(),
-                            rng.gen::<Float>() * rng.gen::<Float>(),
-                            rng.gen::<Float>() * rng.gen::<Float>(),
+                            rng.random::<Float>() * rng.random::<Float>(),
+                            rng.random::<Float>() * rng.random::<Float>(),
+                            rng.random::<Float>() * rng.random::<Float>(),
                         ))),
                     ));
                 } else if choose_material < 0.95 {
@@ -65,11 +66,11 @@ pub fn random_world() -> Scene {
                         0.2,
                         Metal::new(
                             Vec3::new(
-                                0.5 * (1.0 + rng.gen::<Float>()),
-                                0.5 * (1.0 + rng.gen::<Float>()),
-                                0.5 * (1.0 + rng.gen::<Float>()),
+                                0.5 * (1.0 + rng.random::<Float>()),
+                                0.5 * (1.0 + rng.random::<Float>()),
+                                0.5 * (1.0 + rng.random::<Float>()),
                             ),
-                            0.5 * rng.gen::<Float>(),
+                            0.5 * rng.random::<Float>(),
                         ),
                     ));
                 } else {
@@ -97,18 +98,20 @@ pub fn random_world() -> Scene {
 
     let config = RenderConfig::with_aspect_ratio(16.0 / 9.0, 500, 100, 50);
 
-    return (
+    let lights = World::new();
+
+    return Scene {
         world,
-        CameraConfig {
+        lights,
+        camera: CameraConfig {
             config,
             ..Default::default()
         },
-    )
-        .into();
+    };
 }
 
 pub fn random_world_moving() -> Scene {
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
     let origin = Vec3::new(4.0, 0.2, 0.0);
     let mut world = World::default();
 
@@ -123,15 +126,15 @@ pub fn random_world_moving() -> Scene {
     ));
     for a in -11..11 {
         for b in -11..11 {
-            let choose_material = rng.gen::<Float>();
+            let choose_material = rng.random::<Float>();
             let center = Vec3::new(
-                a as Float + 0.9 * rng.gen::<Float>(),
+                a as Float + 0.9 * rng.random::<Float>(),
                 0.2,
-                b as Float + 0.9 * rng.gen::<Float>(),
+                b as Float + 0.9 * rng.random::<Float>(),
             );
             if (center - origin).length() > 0.9 {
                 if choose_material < 0.8 {
-                    let center2 = center + Vec3::new(0.0, rng.gen_range(0.0..0.5), 0.0);
+                    let center2 = center + Vec3::new(0.0, rng.random_range(0.0..0.5), 0.0);
                     // diffuse
                     world.add(MovingSphere::new(
                         center,
@@ -140,9 +143,9 @@ pub fn random_world_moving() -> Scene {
                         1.0,
                         0.2,
                         Lambertian::new(SolidColor::new(Vec3::new(
-                            rng.gen::<Float>() * rng.gen::<Float>(),
-                            rng.gen::<Float>() * rng.gen::<Float>(),
-                            rng.gen::<Float>() * rng.gen::<Float>(),
+                            rng.random::<Float>() * rng.random::<Float>(),
+                            rng.random::<Float>() * rng.random::<Float>(),
+                            rng.random::<Float>() * rng.random::<Float>(),
                         ))),
                     ));
                 } else if choose_material < 0.95 {
@@ -152,11 +155,11 @@ pub fn random_world_moving() -> Scene {
                         0.2,
                         Metal::new(
                             Vec3::new(
-                                0.5 * (1.0 + rng.gen::<Float>()),
-                                0.5 * (1.0 + rng.gen::<Float>()),
-                                0.5 * (1.0 + rng.gen::<Float>()),
+                                0.5 * (1.0 + rng.random::<Float>()),
+                                0.5 * (1.0 + rng.random::<Float>()),
+                                0.5 * (1.0 + rng.random::<Float>()),
                             ),
-                            0.5 * rng.gen::<Float>(),
+                            0.5 * rng.random::<Float>(),
                         ),
                     ));
                 } else {
@@ -693,7 +696,7 @@ pub fn final_world() -> Scene {
             let z0 = -1000.0 + j as Float * w;
             let y0 = 0.0;
             let x1 = x0 + w;
-            let y1: Float = thread_rng().gen_range(1.0..101.0);
+            let y1: Float = rand::rng().random_range(1.0..101.0);
             let z1 = z0 + w;
             box_world.add(box_of_quads(
                 &Vec3::new(x0, y0, z0),
@@ -760,7 +763,7 @@ pub fn final_world() -> Scene {
     let white = Lambertian::new(SolidColor::new(Vec3::new(0.73, 0.73, 0.73)));
     for _ in 0..1000 {
         box_world.add(Sphere::new(
-            Vec3::random(&mut rand::thread_rng(), 0.0..165.0),
+            Vec3::random(&mut rand::rng(), 0.0..165.0),
             10.0,
             white.clone(),
         ));

@@ -8,7 +8,8 @@ use crate::{
     material::{Isotropic, MaterialStorage},
     model::Model,
     ray::Ray,
-    vec3::Vec3, Float,
+    vec3::Vec3,
+    Float,
 };
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -30,7 +31,7 @@ impl ConstantMedium {
 
 impl Hittable for ConstantMedium {
     fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<(HitPayload, MaterialStorage)> {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         if let Some((mut hit1, _)) = self
             .boundary
             .hit(ray, Interval::new(-Float::MAX, Float::MAX))
@@ -47,7 +48,7 @@ impl Hittable for ConstantMedium {
                 }
                 if hit1.t < hit2.t {
                     let distance_inside_boundary = (hit2.t - hit1.t) * ray.dir.length();
-                    let hit_distance = self.neg_inv_density * rng.gen::<Float>().ln();
+                    let hit_distance = self.neg_inv_density * rng.random::<Float>().ln();
                     if hit_distance < distance_inside_boundary {
                         let t = hit1.t + hit_distance / ray.dir.length();
                         return Some((

@@ -1,13 +1,11 @@
-use crate::{ray::Ray, scene::Scene, vec3::Vec3};
+use crate::{image::Image, sampler::Sampler, scene::Scene};
 
 trait Integrator {
     fn render(&mut self, scene: &Scene);
 }
 
-trait ImageIntegrator {
-    fn evaluate_pixel() -> Vec3;
-}
-
-trait RayIntegrator {
-    fn sample(ray: Ray) -> Vec3;
+struct Renderer {
+    integrator: Box<dyn Integrator>,
+    image: Image,
+    sampler: Box<dyn Sampler>,
 }

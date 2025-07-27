@@ -21,7 +21,7 @@ impl Default for Perlin {
 impl Perlin {
     pub fn new() -> Self {
         let mut ran_vec = [Vec3::ZERO; MAX_PERLIN];
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         for i in ran_vec.iter_mut().take(MAX_PERLIN) {
             *i = Vec3::random(&mut rng, -1.0..1.0);
         }
@@ -84,9 +84,9 @@ fn generate_perm() -> [usize; MAX_PERLIN] {
 }
 
 fn permute(p: &mut [usize; MAX_PERLIN], n: usize) {
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
     for i in (0..n).rev() {
-        let target = rng.gen_range(0..(i + 1));
+        let target = rng.random_range(0..(i + 1));
         p.swap(i, target);
     }
 }
