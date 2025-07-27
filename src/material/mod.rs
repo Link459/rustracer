@@ -22,8 +22,10 @@ pub enum RayOrPDF {
 
 pub struct ScatterPayload {
     pub attenuation: Vec3,
-    //pub pdf: MaybeUninit<Box<dyn PDF>>,
-    //pub pdf: Float,
+    //TODO: migrate to the proper way of doing it by having an outgoing direction, it's much more
+    //sensible than having a pdf structure
+    //pdf: Float,
+    //wo: Vec3 // -> outgoing direction
     pub pdf_ray: RayOrPDF,
 }
 
