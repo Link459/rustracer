@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{hittable::HitPayload, material::ScatterPayload, ray::Ray, vec3::Vec3};
+use crate::{hittable::HitPayload, material::ScatterPayload, ray::Ray, vec3::Vec3, Float};
 
 use super::{
     dielectric::Dielectric, isotropic::Isotropic, lambertian::Lambertian, metal::Metal,
@@ -31,7 +31,7 @@ impl Material for MaterialStorage {
     }
 
     #[inline]
-    fn emitted(&self, ray: &Ray, payload: &HitPayload, u: f64, v: f64, p: &Vec3) -> Vec3 {
+    fn emitted(&self, ray: &Ray, payload: &HitPayload, u: Float, v: Float, p: &Vec3) -> Vec3 {
         match self {
             MaterialStorage::DiffuseLight(ref m) => m.emitted(ray, payload, u, v, p),
             _ => Vec3::ZERO,
@@ -39,7 +39,7 @@ impl Material for MaterialStorage {
     }
 
     #[inline]
-    fn scattering_pdf(&self, incoming: &Ray, payload: &HitPayload, scattered: &Ray) -> f64 {
+    fn scattering_pdf(&self, incoming: &Ray, payload: &HitPayload, scattered: &Ray) -> Float {
         match self {
             MaterialStorage::Lambertian(ref m) => m.scattering_pdf(incoming, payload, scattered),
             MaterialStorage::Metal(ref m) => m.scattering_pdf(incoming, payload, scattered),

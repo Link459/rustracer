@@ -14,17 +14,18 @@ use crate::{
     onb::ONB,
     ray::Ray,
     vec3::Vec3,
+    Float,
 };
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Sphere {
     pub center: Vec3,
-    pub radius: f64,
+    pub radius: Float,
     pub material: MaterialStorage,
 }
 
 impl Sphere {
-    pub fn new(center: Vec3, radius: f64, material: impl Into<MaterialStorage>) -> Self {
+    pub fn new(center: Vec3, radius: Float, material: impl Into<MaterialStorage>) -> Self {
         return Self {
             center,
             radius,
@@ -32,11 +33,11 @@ impl Sphere {
         };
     }
 
-    pub fn get_uv(p: &Vec3) -> (f64, f64) {
+    pub fn get_uv(p: &Vec3) -> (Float, Float) {
         let phi = p.z.atan2(p.x);
         let theta = p.y.asin();
-        let u = 1.0 - (phi + PI) / (2.0 * PI);
-        let v = (theta + FRAC_PI_2) / PI;
+        let u = 1.0 - (phi + crate::consts::PI) / (2.0 * crate::consts::PI);
+        let v = (theta + crate::consts::FRAC_PI_2) / crate::consts::PI;
         return (u, v);
     }
 }
@@ -88,16 +89,16 @@ impl Hittable for Sphere {
         return AABB::from((self.center - rvec, self.center + rvec));
     }
 
-    fn pdf_value(&self, origin: &Vec3, dir: &Vec3) -> f64 {
+    fn pdf_value(&self, origin: &Vec3, dir: &Vec3) -> Float {
         let ray = Ray::new(*origin, *dir, 0.0);
-        let Some((_payload, _material)) = self.hit(&ray, Interval::new(0.001, f64::INFINITY))
+        let Some((_payload, _material)) = self.hit(&ray, Interval::new(0.001, Float::INFINITY))
         else {
             return 0.0;
         };
 
         let distance_sq = (self.center.x - origin).length_squared();
         let cos_theta_max = (1.0 - self.radius * self.radius / distance_sq).sqrt();
-        let solid_angle = 2.0 * f64::consts::PI * (1.0 - cos_theta_max);
+        let solid_angle = 2.0 * crate::consts::PI * (1.0 - cos_theta_max);
         return 1.0 / solid_angle;
     }
 
@@ -109,12 +110,12 @@ impl Hittable for Sphere {
     }
 }
 
-fn random_to_sphere(radius: f64, distance_square: f64) -> Vec3 {
+fn random_to_sphere(radius: Float, distance_square: Float) -> Vec3 {
     let r1 = thread_rng().gen_range(0.0..1.0);
     let r2 = thread_rng().gen_range(0.0..1.0);
     let z = 1.0 + r2 * ((1.0 - radius * radius / distance_square).sqrt() - 1.0);
 
-    let phi = 2.0 * f64::consts::PI * r1;
+    let phi = 2.0 * crate::consts::PI * r1;
 
     let sq = (1.0 - z * z).sqrt();
     let x = phi.cos() * sq;

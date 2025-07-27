@@ -9,6 +9,7 @@ use crate::{
     ray::Ray,
     vec3::Vec3,
     world::World,
+    Float,
 };
 
 pub struct BvhBuildConfig {
@@ -52,22 +53,25 @@ impl Bin {
         self.primitive_count += other.primitive_count;
     }
 
-    fn cost(&self) -> f64 {
-        return self.bbox.half_area() * self.primitive_count as f64;
+    fn cost(&self) -> Float {
+        return self.bbox.half_area() * self.primitive_count as Float;
     }
 }
 
 const BIN_COUNT: usize = 16;
+const BIN_COUNT_FLOAT: Float = 16.0;
 
 fn bin_index(axis: usize, bbox: AABB, center: Vec3) -> usize {
     let index = (center.axis(axis) - bbox.min_axis(axis))
-        * (BIN_COUNT as f64 / (bbox.max_axis(axis) - bbox.min_axis(axis)));
-    return (BIN_COUNT - 1).min((0f64.max(index)) as usize);
+        * (BIN_COUNT_FLOAT / (bbox.max_axis(axis) - bbox.min_axis(axis)));
+    let null: Float = 0.0;
+    let idx = null.max(index);
+    return (BIN_COUNT - 1).min((idx) as usize);
 }
 
 struct Split {
     axis: usize,
-    cost: f64,
+    cost: Float,
     right_bin: usize,
 }
 
@@ -96,7 +100,7 @@ impl Split {
 
         let mut split = Split {
             axis,
-            cost: f64::MAX,
+            cost: Float::MAX,
             right_bin: 0,
         };
 

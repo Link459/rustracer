@@ -1,20 +1,20 @@
 use std::{fmt, write};
 
-use crate::vec3::Vec3;
+use crate::{vec3::Vec3, Float};
 
 #[derive(Debug)]
 pub struct Ray {
     pub orig: Vec3,
     pub dir: Vec3,
-    pub time: f64,
+    pub time: Float,
 }
 
 impl Ray {
-    pub fn new(orig: Vec3, dir: Vec3, time: f64) -> Self {
+    pub fn new(orig: Vec3, dir: Vec3, time: Float) -> Self {
         return Self { orig, dir, time };
     }
 
-    pub fn at(&self, t: f64) -> Vec3 {
+    pub fn at(&self, t: Float) -> Vec3 {
         return self.orig + t * self.dir;
     }
 }

@@ -19,12 +19,12 @@ use crate::{
         quad::Quad,
         sphere::Sphere,
         transform::{RotateY, Translate},
-    volume::ConstantMedium,
+        volume::ConstantMedium,
     },
     moving_sphere::MovingSphere,
     ray::Ray,
     vec3::Vec3,
-    world::World,
+    world::World, Float,
 };
 
 //TODO: improve the size of this, bvh,world etc. don't need to be in here. Quad is also really big,
@@ -53,11 +53,11 @@ impl Default for Model {
 }
 
 impl Model {
-    pub fn min(&self, axis: usize) -> f64 {
+    pub fn min(&self, axis: usize) -> Float {
         return self.get_interval(axis).min;
     }
 
-    pub fn max(&self, axis: usize) -> f64 {
+    pub fn max(&self, axis: usize) -> Float {
         return self.get_interval(axis).min;
     }
 
@@ -103,7 +103,7 @@ impl Hittable for Model {
         }
     }
 
-    fn pdf_value(&self, origin: &Vec3, dir: &Vec3) -> f64 {
+    fn pdf_value(&self, origin: &Vec3, dir: &Vec3) -> Float {
         match self {
             Model::Sphere(ref m) => m.pdf_value(origin, dir),
             Model::MovingSphere(ref m) => m.pdf_value(origin, dir),

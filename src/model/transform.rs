@@ -3,7 +3,7 @@ use crate::{
     hittable::Hittable,
     model::{HitPayload, Interval, MaterialStorage, Model},
     ray::Ray,
-    vec3::Vec3,
+    vec3::Vec3, Float,
 };
 use serde::{Deserialize, Serialize};
 
@@ -43,12 +43,12 @@ impl Hittable for Translate {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct RotateY {
     model: Box<Model>,
-    sin_theta: f64,
-    cos_theta: f64,
+    sin_theta: Float,
+    cos_theta: Float,
 }
 
 impl RotateY {
-    pub fn new(model: impl Into<Model>, angle: f64) -> Self {
+    pub fn new(model: impl Into<Model>, angle: Float) -> Self {
         let radians = angle.to_radians();
         let sin_theta = radians.sin();
         let cos_theta = radians.cos();
@@ -97,15 +97,15 @@ impl Hittable for RotateY {
 
     fn bounding_box(&self) -> AABB {
         let bbox = self.model.bounding_box();
-        let mut min = Vec3::new(f64::INFINITY, f64::INFINITY, f64::INFINITY);
-        let mut max = Vec3::new(-f64::INFINITY, -f64::INFINITY, -f64::INFINITY);
+        let mut min = Vec3::new(Float::INFINITY, Float::INFINITY, Float::INFINITY);
+        let mut max = Vec3::new(-Float::INFINITY, -Float::INFINITY, -Float::INFINITY);
 
         for i in 0..2 {
             for j in 0..2 {
                 for k in 0..2 {
-                    let x = i as f64 * bbox.x.max + (1.0 - i as f64) * bbox.x.min;
-                    let y = j as f64 * bbox.y.max + (1.0 - j as f64) * bbox.y.min;
-                    let z = k as f64 * bbox.z.max + (1.0 - k as f64) * bbox.z.min;
+                    let x = i as Float * bbox.x.max + (1.0 - i as Float) * bbox.x.min;
+                    let y = j as Float * bbox.y.max + (1.0 - j as Float) * bbox.y.min;
+                    let z = k as Float * bbox.z.max + (1.0 - k as Float) * bbox.z.min;
 
                     let newx = self.cos_theta * x + self.sin_theta * z;
                     let newz = -self.sin_theta * x + self.cos_theta * z;
@@ -113,8 +113,8 @@ impl Hittable for RotateY {
                     let tester = Vec3::new(newx, y, newz);
 
                     for c in 0..3 {
-                        min[c] = f64::min(min[c], tester[c]);
-                        max[c] = f64::max(max[c], tester[c]);
+                        min[c] = Float::min(min[c], tester[c]);
+                        max[c] = Float::max(max[c], tester[c]);
                     }
                 }
             }

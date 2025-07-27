@@ -3,7 +3,7 @@ use std::{
     write,
 };
 
-use crate::{aabb::AABB, interval::Interval, material::MaterialStorage, ray::Ray, vec3::Vec3};
+use crate::{aabb::AABB, interval::Interval, material::MaterialStorage, ray::Ray, vec3::Vec3, Float};
 
 #[derive(Default, Debug)]
 pub struct HitPayload {
@@ -11,16 +11,16 @@ pub struct HitPayload {
     pub p: Vec3,
     /// the surface normal
     pub normal: Vec3,
-    pub t: f64,
+    pub t: Float,
     /// The interpolated u coordinate between [0,1] (used for texture sampling)
-    pub u: f64,
+    pub u: Float,
     /// The interpolated v coordinate between [0,1] (used for texture sampling)
-    pub v: f64,
+    pub v: Float,
     pub front_face: bool,
 }
 
 impl HitPayload {
-    pub fn new(p: Vec3, normal: Vec3, t: f64, u: f64, v: f64) -> Self {
+    pub fn new(p: Vec3, normal: Vec3, t: Float, u: Float, v: Float) -> Self {
         Self {
             p,
             normal,
@@ -55,7 +55,7 @@ impl Display for HitPayload {
 pub trait Hittable: Send + Sync {
     fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<(HitPayload, MaterialStorage)>;
     fn bounding_box(&self) -> AABB;
-    fn pdf_value(&self, _origin: &Vec3, _dir: &Vec3) -> f64 {
+    fn pdf_value(&self, _origin: &Vec3, _dir: &Vec3) -> Float {
         return 0.0;
     }
     fn random(&self, _origin: &Vec3) -> Vec3 {

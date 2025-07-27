@@ -2,43 +2,45 @@ use std::{fmt::Display, ops::Add};
 
 use serde::{Deserialize, Serialize};
 
+use crate::Float;
+
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct Interval {
-    pub min: f64,
-    pub max: f64,
+    pub min: Float,
+    pub max: Float,
 }
 
 impl Interval {
     pub const EMPTY: Interval = Interval {
-        min: f64::INFINITY,
-        max: -f64::INFINITY,
+        min: Float::INFINITY,
+        max: -Float::INFINITY,
     };
     pub const UNIVERSE: Interval = Interval {
-        min: -f64::INFINITY,
-        max: f64::INFINITY,
+        min: -Float::INFINITY,
+        max: Float::INFINITY,
     };
 
-    pub fn new(min: f64, max: f64) -> Self {
+    pub fn new(min: Float, max: Float) -> Self {
         Self { min, max }
     }
 
-    pub fn contains(&self, x: f64) -> bool {
+    pub fn contains(&self, x: Float) -> bool {
         return self.min <= x && x <= self.max;
     }
 
-    pub fn surrounds(&self, x: f64) -> bool {
+    pub fn surrounds(&self, x: Float) -> bool {
         return self.min < x && x < self.max;
     }
-    pub fn size(&self) -> f64 {
+    pub fn size(&self) -> Float {
         return self.max - self.min;
     }
 
-    pub fn expand(self, delta: f64) -> Self {
+    pub fn expand(self, delta: Float) -> Self {
         let padding = delta / 2.0;
         return Self::new(self.min - padding, self.max + padding);
     }
 
-    pub fn clamp(&self, x: f64) -> f64 {
+    pub fn clamp(&self, x: Float) -> Float {
         if x < self.min {
             return self.min;
         };
@@ -49,10 +51,10 @@ impl Interval {
     }
 }
 
-impl Add<f64> for Interval {
+impl Add<Float> for Interval {
     type Output = Self;
 
-    fn add(self, rhs: f64) -> Self::Output {
+    fn add(self, rhs: Float) -> Self::Output {
         return Interval::new(self.min + rhs, self.max + rhs);
     }
 }
@@ -60,16 +62,16 @@ impl Add<f64> for Interval {
 impl Default for Interval {
     fn default() -> Self {
         Self {
-            min: (f64::INFINITY),
-            max: (-f64::INFINITY),
+            min: (Float::INFINITY),
+            max: (-Float::INFINITY),
         }
     }
 }
 
 impl From<(Interval, Interval)> for Interval {
     fn from(value: (Interval, Interval)) -> Self {
-        let min = f64::min(value.0.min, value.1.min);
-        let max = f64::max(value.0.max, value.1.max);
+        let min = Float::min(value.0.min, value.1.min);
+        let max = Float::max(value.0.max, value.1.max);
         Self { min, max }
     }
 }

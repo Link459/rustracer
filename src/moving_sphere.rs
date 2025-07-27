@@ -7,16 +7,16 @@ use crate::{
     material::MaterialStorage,
     model::sphere::Sphere,
     ray::Ray,
-    vec3::Vec3,
+    vec3::Vec3, Float,
 };
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct MovingSphere {
     pub center0: Vec3,
     pub center1: Vec3,
-    pub time0: f64,
-    pub time1: f64,
-    pub radius: f64,
+    pub time0: Float,
+    pub time1: Float,
+    pub radius: Float,
     pub material: MaterialStorage,
 }
 
@@ -24,9 +24,9 @@ impl MovingSphere {
     pub fn new(
         center0: Vec3,
         center1: Vec3,
-        time0: f64,
-        time1: f64,
-        radius: f64,
+        time0: Float,
+        time1: Float,
+        radius: Float,
         material: impl Into<MaterialStorage>,
     ) -> Self {
         return Self {
@@ -40,7 +40,7 @@ impl MovingSphere {
     }
 
     #[inline]
-    pub fn center(&self, time: f64) -> Vec3 {
+    pub fn center(&self, time: Float) -> Vec3 {
         return self.center0
             + ((time - self.time0) / (self.time1 - self.time0)) * (self.center1 - self.center0);
     }

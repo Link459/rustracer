@@ -1,22 +1,22 @@
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 
-use crate::{hittable::HitPayload, material::ScatterPayload, ray::Ray, vec3::Vec3};
+use crate::{hittable::HitPayload, material::ScatterPayload, ray::Ray, vec3::Vec3, Float};
 
 use super::Material;
 
 /// A Dielectric material, like glass (ior of ~1.5)
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct Dielectric {
-    ir: f64,
+    ir: Float,
 }
 
 impl Dielectric {
-    pub fn new(ir: f64) -> Self {
+    pub fn new(ir: Float) -> Self {
         return Self { ir };
     }
 
-    fn reflectance(cosine: f64, ref_idx: f64) -> f64 {
+    fn reflectance(cosine: Float, ref_idx: Float) -> Float {
         // Use Schlick's approximation for reflectance
         let r0 = ((1.0 - ref_idx) / (1.0 + ref_idx)).powi(2);
         r0 + (1.0 - r0) * (1.0 - cosine).powi(5)
@@ -39,7 +39,7 @@ impl Material for Dielectric {
 
         let mut rng = rand::thread_rng();
         let cannot_refract = refraction_ratio * sin_theta > 1.0;
-        let will_reflect = rng.gen::<f64>() < Self::reflectance(cos_theta, refraction_ratio);
+        let will_reflect = rng.gen::<Float>() < Self::reflectance(cos_theta, refraction_ratio);
 
         let direction = if cannot_refract || will_reflect {
             unit_direction.reflect(&payload.normal)
@@ -49,7 +49,6 @@ impl Material for Dielectric {
 
         let scattered = Ray::new(payload.p, direction, ray.time);
 
-        
         return Some(ScatterPayload::without_pdf(
             scattered,
             Vec3::new(1.0, 1.0, 1.0),

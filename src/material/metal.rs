@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use crate::material::ScatterPayload;
 use crate::vec3::Vec3;
 
+use crate::Float;
 use crate::{hittable::HitPayload, ray::Ray};
 
 use super::{lambertian::random_unit_sphere, Material};
@@ -12,11 +13,11 @@ use super::{lambertian::random_unit_sphere, Material};
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct Metal {
     albedo: Vec3,
-    fuzz: f64,
+    fuzz: Float,
 }
 
 impl Metal {
-    pub fn new(albedo: Vec3, fuzz: f64) -> Self {
+    pub fn new(albedo: Vec3, fuzz: Float) -> Self {
         return Self { albedo, fuzz };
     }
 }

@@ -6,6 +6,7 @@ use crate::material::MaterialStorage;
 use crate::model::Model;
 use crate::ray::Ray;
 use crate::vec3::Vec3;
+use crate::Float;
 use crate::{
     aabb::AABB,
     hittable::{HitPayload, Hittable},
@@ -68,12 +69,10 @@ impl Hittable for World {
     }
 
     //TODO: handle a light count of 0
-    fn pdf_value(&self, origin: &Vec3, dir: &Vec3) -> f64 {
+    fn pdf_value(&self, origin: &Vec3, dir: &Vec3) -> Float {
         let size = self.entities.len();
 
-        
-
-        let weight = 1.0 / size as f64;
+        let weight = 1.0 / size as Float;
 
         let mut sum = 0.0;
 
@@ -86,7 +85,6 @@ impl Hittable for World {
 
     fn random(&self, origin: &Vec3) -> Vec3 {
         let size = self.entities.len();
-
 
         let idx = thread_rng().gen_range(0..size);
         return self.entities[idx].random(origin);

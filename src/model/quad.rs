@@ -10,6 +10,7 @@ use crate::{
     material::MaterialStorage,
     ray::Ray,
     vec3::Vec3,
+    Float,
 };
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -21,9 +22,9 @@ pub struct Quad {
     #[serde(skip)]
     bbox: AABB,
     normal: Vec3,
-    d: f64,
+    d: Float,
     w: Vec3,
-    area: f64,
+    area: Float,
 }
 
 impl Quad {
@@ -49,7 +50,7 @@ impl Quad {
         };
     }
 
-    fn is_interior(a: f64, b: f64) -> Option<(f64, f64)> {
+    fn is_interior(a: Float, b: Float) -> Option<(Float, Float)> {
         // Given the hit point in plane coordinates, return false if it is outside the
         // primitive, otherwise set the hit record UV coordinates and return true.
 
@@ -97,9 +98,9 @@ impl Hittable for Quad {
         return bbox;
     }
 
-    fn pdf_value(&self, origin: &Vec3, dir: &Vec3) -> f64 {
+    fn pdf_value(&self, origin: &Vec3, dir: &Vec3) -> Float {
         let ray = Ray::new(*origin, *dir, 0.0);
-        //let Some((payload, _material)) = self.hit(&ray, Interval::new(0.001, f64::INFINITY)) else {
+        //let Some((payload, _material)) = self.hit(&ray, Interval::new(0.001, Float::INFINITY)) else {
         let Some((payload, _material)) = self.hit(&ray, Interval::UNIVERSE) else {
             return 0.0;
         };

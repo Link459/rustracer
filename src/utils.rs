@@ -80,7 +80,8 @@ pub fn create_image_file(file: &str, buf: &[u8], width: u32, height: u32) -> Res
 
 pub fn load_hdri(path: &str) -> Result<Image> {
     let hdri = open(path)?;
-    let hdri = hdri.into_rgb8();
+    let hdri = hdri.into_rgb32f();
+    //let hdri = hdri.into_rgb8();
     return Ok(Image::from(hdri));
 }
 

@@ -1,5 +1,3 @@
-use std::f64;
-
 use rand::{thread_rng, Rng};
 
 use crate::{
@@ -7,11 +5,12 @@ use crate::{
     material::lambertian::{random_cosine_direction, random_unit_vector},
     onb::ONB,
     vec3::Vec3,
+    Float,
 };
 
 pub trait PDF {
     ///  pdf value for a given direction
-    fn value(&self, dir: &Vec3) -> f64;
+    fn value(&self, dir: &Vec3) -> Float;
     /// a random direction weighted by interal PDF distribution
     fn generate(&self) -> Vec3;
 }
@@ -19,8 +18,8 @@ pub trait PDF {
 pub struct SpherePDF;
 
 impl PDF for SpherePDF {
-    fn value(&self, _dir: &Vec3) -> f64 {
-        return 1.0 / (4.0 * f64::consts::PI);
+    fn value(&self, _dir: &Vec3) -> Float {
+        return 1.0 / (4.0 * crate::consts::PI);
     }
 
     fn generate(&self) -> Vec3 {
@@ -39,9 +38,10 @@ impl CosinePDF {
 }
 
 impl PDF for CosinePDF {
-    fn value(&self, dir: &Vec3) -> f64 {
+    fn value(&self, dir: &Vec3) -> Float {
         let cosine_theta = dir.normalize().dot(self.uvw.w());
-        return 0.0_f64.max(cosine_theta / f64::consts::PI);
+        let null: Float = 0.0;
+        return null.max(cosine_theta / crate::consts::PI);
     }
 
     fn generate(&self) -> Vec3 {
@@ -61,7 +61,7 @@ impl<'a, M> HittablePDF<'a, M> {
 }
 
 impl<'a, M: Hittable> PDF for HittablePDF<'a, M> {
-    fn value(&self, dir: &Vec3) -> f64 {
+    fn value(&self, dir: &Vec3) -> Float {
         return self.model.pdf_value(&self.origin, dir);
     }
 
@@ -82,7 +82,7 @@ impl<'a, P1> MixturePDF<'a, P1> {
 }
 
 impl<P1: PDF> PDF for MixturePDF<'_, P1> {
-    fn value(&self, dir: &Vec3) -> f64 {
+    fn value(&self, dir: &Vec3) -> Float {
         return 0.5 * self.a.value(dir) + 0.5 * self.b.value(dir);
     }
 

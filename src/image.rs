@@ -1,20 +1,20 @@
 use std::ptr;
 
-use crate::{present::PresentationEvent, render::RenderConfig, vec3::Vec3};
+use crate::{present::PresentationEvent, render::RenderConfig, vec3::Vec3, Float};
 use image::{ImageBuffer, Rgb};
 use rayon::prelude::*;
 use winit::event_loop::EventLoopProxy;
 
 #[derive(Default, Debug, Clone)]
 pub struct Image {
-    pub buffer: Vec<u8>,
+    pub buffer: Vec<Float>,
     pub width: u32,
     pub height: u32,
-    samples: f64,
+    samples: Float,
 }
 
 impl Image {
-    pub fn new(width: u32, height: u32, samples: f64) -> Self {
+    pub fn new(width: u32, height: u32, samples: Float) -> Self {
         let len = 3 * (width * height) as usize;
         let mut img = Self {
             buffer: Vec::with_capacity(len),
@@ -83,9 +83,9 @@ impl Image {
         let mut b = add_color.z;
 
         let scale = 1.0 / self.samples;
-        r = f64::sqrt(scale * r);
-        g = f64::sqrt(scale * g);
-        b = f64::sqrt(scale * b);
+        r = Float::sqrt(scale * r);
+        g = Float::sqrt(scale * g);
+        b = Float::sqrt(scale * b);
 
         let ptr = self.buffer.as_ptr() as *mut u8;
         unsafe {
@@ -95,8 +95,14 @@ impl Image {
         }
     }
 
-    pub fn into_image_buffer(self) -> image::ImageBuffer<image::Rgb<u8>, Vec<u8>> {
-        image::RgbImage::from_vec(self.width, self.height, self.buffer.clone()).unwrap()
+    pub fn into_image_buffer(self) -> image::ImageBuffer<image::Rgb<Float>, Vec<Float>> {
+        return image::ImageBuffer::<image::Rgb<Float>, Vec<Float>>::from_vec(
+            self.width,
+            self.height,
+            self.buffer.clone(),
+        )
+        .unwrap();
+        //image::Rgb32FImage::from_vec(self.width, self.height, self.buffer.clone()).unwrap()
     }
 
     pub fn index(&self, row: u32, column: u32) -> usize {
@@ -112,12 +118,12 @@ impl Image {
 
 impl From<&RenderConfig> for Image {
     fn from(v: &RenderConfig) -> Self {
-        return Self::new(v.width, v.height, v.samples.into());
+        return Self::new(v.width, v.height, v.samples as Float);
     }
 }
 
-impl From<ImageBuffer<Rgb<u8>, Vec<u8>>> for Image {
-    fn from(value: ImageBuffer<Rgb<u8>, Vec<u8>>) -> Self {
+impl From<ImageBuffer<Rgb<Float>, Vec<Float>>> for Image {
+    fn from(value: ImageBuffer<Rgb<Float>, Vec<Float>>) -> Self {
         let v = value.to_vec();
         Self {
             buffer: v,
@@ -147,7 +153,7 @@ impl<'a> ImageIterator<'a> {
 }
 
 impl<'a> Iterator for ImageIterator<'a> {
-    type Item = (usize, usize, &'a [u8]);
+    type Item = (usize, usize, &'a [Float]);
 
     #[inline(always)]
     fn next(&mut self) -> Option<Self::Item> {

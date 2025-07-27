@@ -8,18 +8,18 @@ use crate::{
     material::{Isotropic, MaterialStorage},
     model::Model,
     ray::Ray,
-    vec3::Vec3,
+    vec3::Vec3, Float,
 };
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ConstantMedium {
     boundary: Box<Model>,
-    neg_inv_density: f64,
+    neg_inv_density: Float,
     phase_func: MaterialStorage,
 }
 
 impl ConstantMedium {
-    pub fn new(boundary: impl Into<Model>, d: f64, c: Vec3) -> Self {
+    pub fn new(boundary: impl Into<Model>, d: Float, c: Vec3) -> Self {
         return Self {
             boundary: Box::new(boundary.into()),
             neg_inv_density: -1.0 / d,
@@ -31,10 +31,13 @@ impl ConstantMedium {
 impl Hittable for ConstantMedium {
     fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<(HitPayload, MaterialStorage)> {
         let mut rng = rand::thread_rng();
-        if let Some((mut hit1, _)) = self.boundary.hit(ray, Interval::new(-f64::MAX, f64::MAX)) {
+        if let Some((mut hit1, _)) = self
+            .boundary
+            .hit(ray, Interval::new(-Float::MAX, Float::MAX))
+        {
             if let Some((mut hit2, _)) = self
                 .boundary
-                .hit(ray, Interval::new(hit1.t + 0.0001, f64::MAX))
+                .hit(ray, Interval::new(hit1.t + 0.0001, Float::MAX))
             {
                 if hit1.t < ray_t.min {
                     hit1.t = ray_t.min
@@ -44,7 +47,7 @@ impl Hittable for ConstantMedium {
                 }
                 if hit1.t < hit2.t {
                     let distance_inside_boundary = (hit2.t - hit1.t) * ray.dir.length();
-                    let hit_distance = self.neg_inv_density * rng.gen::<f64>().ln();
+                    let hit_distance = self.neg_inv_density * rng.gen::<Float>().ln();
                     if hit_distance < distance_inside_boundary {
                         let t = hit1.t + hit_distance / ray.dir.length();
                         return Some((

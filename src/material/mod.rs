@@ -5,7 +5,6 @@ pub mod lambertian;
 pub mod material_storage;
 pub mod metal;
 
-
 pub use dielectric::Dielectric;
 pub use diffuse_light::DiffuseLight;
 pub use isotropic::Isotropic;
@@ -14,12 +13,7 @@ pub use material_storage::MaterialStorage;
 pub use metal::Metal;
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    hittable::HitPayload,
-    pdf::PDF,
-    ray::Ray,
-    vec3::Vec3,
-};
+use crate::{hittable::HitPayload, pdf::PDF, ray::Ray, vec3::Vec3, Float};
 
 pub enum RayOrPDF {
     Ray(Ray),
@@ -29,12 +23,12 @@ pub enum RayOrPDF {
 pub struct ScatterPayload {
     pub attenuation: Vec3,
     //pub pdf: MaybeUninit<Box<dyn PDF>>,
-    //pub pdf: f64,
+    //pub pdf: Float,
     pub pdf_ray: RayOrPDF,
 }
 
 impl ScatterPayload {
-    /*pub fn new(scattered: Ray, attenuation: Vec3, pdf: f64) -> Self {
+    /*pub fn new(scattered: Ray, attenuation: Vec3, pdf: Float) -> Self {
         Self {
             scattered,
             attenuation,
@@ -60,14 +54,14 @@ impl ScatterPayload {
 pub trait Material: Send + Sync {
     /// Ray: the scattered ray,
     /// Vec3: the color attenuation
-    /// f64: the pdf value
-    //fn scatter(&self, ray: &Ray, payload: &HitPayload) -> Option<(Ray, Vec3, f64)>;
+    /// Float: the pdf value
+    //fn scatter(&self, ray: &Ray, payload: &HitPayload) -> Option<(Ray, Vec3, Float)>;
     fn scatter(&self, ray: &Ray, payload: &HitPayload) -> Option<ScatterPayload>;
-    fn emitted(&self, _ray: &Ray, _payload: &HitPayload, _u: f64, _v: f64, _p: &Vec3) -> Vec3 {
+    fn emitted(&self, _ray: &Ray, _payload: &HitPayload, _u: Float, _v: Float, _p: &Vec3) -> Vec3 {
         return Vec3::ZERO;
     }
 
-    fn scattering_pdf(&self, _incoming: &Ray, _payload: &HitPayload, _scattered: &Ray) -> f64 {
+    fn scattering_pdf(&self, _incoming: &Ray, _payload: &HitPayload, _scattered: &Ray) -> Float {
         return 0.0;
     }
 }

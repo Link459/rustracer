@@ -3,7 +3,7 @@ use std::{
     sync::Arc,
 };
 
-use crate::{image::Image, perlin::Perlin, vec3::Vec3};
+use crate::{image::Image, perlin::Perlin, vec3::Vec3, Float};
 use image::{open, GenericImageView};
 use serde::{
     de::{self, Visitor},
@@ -20,7 +20,7 @@ pub enum TextureStorage {
 }
 
 impl Texture for TextureStorage {
-    fn value(&self, u: f64, v: f64, p: &Vec3) -> Vec3 {
+    fn value(&self, u: Float, v: Float, p: &Vec3) -> Vec3 {
         match self {
             TextureStorage::SolidColor(ref t) => t.value(u, v, p),
             TextureStorage::Chess(ref t) => t.value(u, v, p),
@@ -52,7 +52,7 @@ impl From<ImageTexture> for TextureStorage {
 }
 
 pub trait Texture {
-    fn value(&self, u: f64, v: f64, p: &Vec3) -> Vec3;
+    fn value(&self, u: Float, v: Float, p: &Vec3) -> Vec3;
 }
 
 #[derive(Clone, Debug, Copy, Serialize, Deserialize)]
@@ -67,7 +67,7 @@ impl SolidColor {
 }
 
 impl Texture for SolidColor {
-    fn value(&self, _u: f64, _v: f64, _p: &Vec3) -> Vec3 {
+    fn value(&self, _u: Float, _v: Float, _p: &Vec3) -> Vec3 {
         self.color_value
     }
 }
@@ -88,8 +88,8 @@ impl ChessTexture {
 }
 
 impl Texture for ChessTexture {
-    fn value(&self, u: f64, v: f64, p: &Vec3) -> Vec3 {
-        let sines = f64::sin(10.0 * p.x) * f64::sin(10.0 * p.y) * f64::sin(10.0 * p.z);
+    fn value(&self, u: Float, v: Float, p: &Vec3) -> Vec3 {
+        let sines = Float::sin(10.0 * p.x) * Float::sin(10.0 * p.y) * Float::sin(10.0 * p.z);
         if sines < 0.0 {
             return self.odd.value(u, v, p);
         } else {
@@ -102,11 +102,11 @@ impl Texture for ChessTexture {
 pub struct NoiseTexture {
     #[serde(skip)]
     perlin: Arc<Perlin>,
-    scale: f64,
+    scale: Float,
 }
 
 impl NoiseTexture {
-    pub fn new(scale: f64) -> Self {
+    pub fn new(scale: Float) -> Self {
         return Self {
             perlin: Arc::new(Perlin::new()),
             scale,
@@ -115,13 +115,13 @@ impl NoiseTexture {
 }
 
 impl Texture for NoiseTexture {
-    fn value(&self, _u: f64, _v: f64, p: &Vec3) -> Vec3 {
+    fn value(&self, _u: Float, _v: Float, p: &Vec3) -> Vec3 {
         return Vec3::ONE * 0.5 * (1.0 + (self.scale * p.z + 10.0 * self.perlin.turb(p, 7)).sin());
     }
 }
 
 pub struct ImageTexture {
-    buffer: Arc<Vec<u8>>,
+    buffer: Arc<Vec<Float>>,
     nx: u32,
     ny: u32,
     path: String,
@@ -145,7 +145,7 @@ impl ImageTexture {
         return Self {
             nx,
             ny,
-            buffer: Arc::new(buffer.into_bytes()),
+            buffer: Arc::new(buffer.into_rgb32f().to_vec()),
             path: String::from(file_path),
         };
     }
@@ -158,7 +158,7 @@ impl ImageTexture {
         return Self {
             nx,
             ny,
-            buffer: Arc::new(buffer.into_bytes()),
+            buffer: Arc::new(buffer.into_rgb32f().to_vec()),
             path: String::from(file_path),
         };
     }
@@ -187,11 +187,11 @@ impl From<Image> for ImageTexture {
 }
 
 impl Texture for ImageTexture {
-    fn value(&self, u: f64, v: f64, _p: &Vec3) -> Vec3 {
+    fn value(&self, u: Float, v: Float, _p: &Vec3) -> Vec3 {
         let nx = self.nx as usize;
         let ny = self.ny as usize;
-        let mut i = (u * nx as f64) as usize;
-        let mut j = ((1.0 - v) * ny as f64) as usize;
+        let mut i = (u * nx as Float) as usize;
+        let mut j = ((1.0 - v) * ny as Float) as usize;
         if i > nx - 1 {
             i = nx - 1
         }
@@ -200,9 +200,9 @@ impl Texture for ImageTexture {
         }
 
         let index = 3 * i + ((3 * nx) * j);
-        let r = self.buffer[index] as f64 / 255.0;
-        let g = self.buffer[index + 1] as f64 / 255.0;
-        let b = self.buffer[index + 2] as f64 / 255.0;
+        let r = self.buffer[index] as Float / 255.0;
+        let g = self.buffer[index + 1] as Float / 255.0;
+        let b = self.buffer[index + 2] as Float / 255.0;
         Vec3::new(r, g, b)
     }
 }

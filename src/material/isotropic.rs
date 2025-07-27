@@ -8,7 +8,7 @@ use crate::{
     pdf::SpherePDF,
     ray::Ray,
     texture::{SolidColor, Texture, TextureStorage},
-    vec3::Vec3,
+    vec3::Vec3, Float,
 };
 
 use super::Material;
@@ -37,12 +37,12 @@ impl Material for Isotropic {
     fn scatter(&self, ray: &Ray, payload: &HitPayload) -> Option<ScatterPayload> {
         let attenuation = self.albedo.value(payload.u, payload.v, &payload.p);
         /*let scattered = Ray::new(payload.p, random_unit_vector(), ray.time);
-        let pdf = 1.0 / (4.0 * f64::consts::PI);
+        let pdf = 1.0 / (4.0 * Float::consts::PI);
         return Some(ScatterPayload::new(scattered, attenuation, pdf));*/
         return Some(ScatterPayload::new(attenuation, SpherePDF {}));
     }
 
-    fn scattering_pdf(&self, _incoming: &Ray, _payload: &HitPayload, _scattered: &Ray) -> f64 {
-        return 1.0 / (4.0 * f64::consts::PI);
+    fn scattering_pdf(&self, _incoming: &Ray, _payload: &HitPayload, _scattered: &Ray) -> Float {
+        return 1.0 / (4.0 * crate::consts::PI);
     }
 }

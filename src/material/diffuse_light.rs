@@ -5,7 +5,7 @@ use crate::{
     material::ScatterPayload,
     ray::Ray,
     texture::{Texture, TextureStorage},
-    vec3::Vec3,
+    vec3::Vec3, Float,
 };
 
 use super::Material;
@@ -26,7 +26,7 @@ impl Material for DiffuseLight {
         return None;
     }
 
-    fn emitted(&self, _ray: &Ray, payload: &HitPayload, u: f64, v: f64, p: &Vec3) -> Vec3 {
+    fn emitted(&self, _ray: &Ray, payload: &HitPayload, u: Float, v: Float, p: &Vec3) -> Vec3 {
         if !payload.front_face {
             return Vec3::ZERO;
         }

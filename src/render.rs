@@ -1,7 +1,4 @@
-use std::{
-    f64,
-    fmt::{Display, Formatter},
-};
+use std::fmt::{Display, Formatter};
 
 use serde::{Deserialize, Serialize};
 
@@ -9,6 +6,7 @@ use crate::{
     ray::Ray,
     texture::{Texture, TextureStorage},
     vec3::Vec3,
+    Float,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -55,8 +53,8 @@ pub fn night(_ray: &Ray) -> Vec3 {
 #[inline(always)]
 pub fn hdri(ray: &Ray, hdri: &TextureStorage) -> Vec3 {
     let dir = ray.dir.normalize();
-    let u = 0.5 + f64::atan2(dir.x, dir.z) / (2.0 * f64::consts::PI);
-    let v = 0.5 + dir.y.asin() / f64::consts::PI;
+    let u = 0.5 + Float::atan2(dir.x, dir.z) / (2.0 * crate::consts::PI);
+    let v = 0.5 + dir.y.asin() / crate::consts::PI;
     return hdri.value(u, v, &dir);
 }
 
@@ -80,10 +78,15 @@ impl RenderConfig {
         }
     }
 
-    pub fn with_aspect_ratio(aspect_ratio: f64, width: u32, samples: u32, max_depth: u32) -> Self {
+    pub fn with_aspect_ratio(
+        aspect_ratio: Float,
+        width: u32,
+        samples: u32,
+        max_depth: u32,
+    ) -> Self {
         Self {
             width,
-            height: (width as f64 / aspect_ratio) as u32,
+            height: (width as Float / aspect_ratio) as u32,
             samples,
             max_depth,
             background: Background::Sky,

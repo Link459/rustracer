@@ -5,11 +5,13 @@ use std::ops::{
 
 use serde::{Deserialize, Serialize};
 
+use crate::Float;
+
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Default, Deserialize, Serialize)]
 pub struct Vec3 {
-    pub x: f64,
-    pub y: f64,
-    pub z: f64,
+    pub x: Float,
+    pub y: Float,
+    pub z: Float,
 }
 
 impl Vec3 {
@@ -25,7 +27,7 @@ impl Vec3 {
     };
 
     #[inline(always)]
-    pub fn new(x: f64, y: f64, z: f64) -> Vec3 {
+    pub fn new(x: Float, y: Float, z: Float) -> Vec3 {
         Vec3 { x, y, z }
     }
 
@@ -35,7 +37,7 @@ impl Vec3 {
     }
 
     #[inline(always)]
-    pub fn length(&self) -> f64 {
+    pub fn length(&self) -> Float {
         return self.length_squared().sqrt();
     }
 
@@ -67,12 +69,12 @@ impl Vec3 {
     }
 
     #[inline(always)]
-    pub fn length_squared(&self) -> f64 {
+    pub fn length_squared(&self) -> Float {
         return self.x * self.x + self.y * self.y + self.z * self.z;
     }
 
     #[inline(always)]
-    pub fn dot(&self, b: &Vec3) -> f64 {
+    pub fn dot(&self, b: &Vec3) -> Float {
         return self.x * b.x + self.y * b.y + self.z * b.z;
     }
 
@@ -95,7 +97,7 @@ impl Vec3 {
     }
 
     #[inline(always)]
-    pub fn random<T: rand::Rng>(r: &mut T, range: Range<f64>) -> Vec3 {
+    pub fn random<T: rand::Rng>(r: &mut T, range: Range<Float>) -> Vec3 {
         return Vec3 {
             x: r.gen_range(range.clone()),
             y: r.gen_range(range.clone()),
@@ -105,7 +107,7 @@ impl Vec3 {
 
     #[inline(always)]
     pub fn near_zero(&self) -> bool {
-        const S: f64 = 1e-8;
+        const S: Float = 1e-8;
         return (self.x.abs() < S) && (self.y.abs() < S) && (self.z.abs() < S);
     }
 
@@ -113,7 +115,7 @@ impl Vec3 {
         return self.x.is_nan() || self.y.is_nan() || self.z.is_nan();
     }
 
-    pub fn axis(&self, axis: usize) -> f64 {
+    pub fn axis(&self, axis: usize) -> Float {
         return match axis {
             0 => self.x,
             1 => self.y,
@@ -128,7 +130,7 @@ impl Vec3 {
     }
 
     #[inline(always)]
-    pub fn refract(&self, n: &Vec3, etai_over_etat: f64) -> Vec3 {
+    pub fn refract(&self, n: &Vec3, etai_over_etat: Float) -> Vec3 {
         let cos_theta = ((-1.0) * self).dot(n).min(1.0);
         let r_out_perp = etai_over_etat * (self + cos_theta * n);
         let r_out_parallel = -(1.0 - r_out_perp.length().powi(2)).abs().sqrt() * n;
@@ -136,9 +138,9 @@ impl Vec3 {
     }
 }
 
-impl From<f64> for Vec3 {
+impl From<Float> for Vec3 {
     #[inline(always)]
-    fn from(value: f64) -> Self {
+    fn from(value: Float) -> Self {
         Vec3 {
             x: value,
             y: value,
@@ -148,7 +150,7 @@ impl From<f64> for Vec3 {
 }
 
 impl Index<usize> for Vec3 {
-    type Output = f64;
+    type Output = Float;
 
     #[inline(always)]
     fn index(&self, index: usize) -> &Self::Output {
@@ -188,7 +190,7 @@ impl std::fmt::Display for Vec3 {
 
 // This macro helps us implement math operators on Vector3
 // in such a way that it handles binary operators on any
-// combination of Vec3, &Vec3 and f64.
+// combination of Vec3, &Vec3 and Float.
 macro_rules! impl_binary_operations {
     // $VectorType is something like `Vec3`
     // $Operation is something like `Add`
@@ -244,12 +246,12 @@ macro_rules! impl_binary_operations {
             }
         }
 
-        // Implement a + b where a is type &$VectorType and b is type f64
-        impl<'a> $Operation<f64> for &'a $VectorType {
+        // Implement a + b where a is type &$VectorType and b is type Float
+        impl<'a> $Operation<Float> for &'a $VectorType {
             type Output = $VectorType;
 
 			#[inline(always)]
-            fn $op_fn(self, other: f64) -> $VectorType {
+            fn $op_fn(self, other: Float) -> $VectorType {
                 $VectorType {
                     x: self.x $op_symbol other,
                     y: self.y $op_symbol other,
@@ -260,22 +262,22 @@ macro_rules! impl_binary_operations {
 
         // Implement a + b where...
         //
-        // a is $VectorType and b is f64
-        // a is f64 and b is $VectorType
-        // a is f64 and b is &$VectorType
+        // a is $VectorType and b is Float
+        // a is Float and b is $VectorType
+        // a is Float and b is &$VectorType
         //
         // In each case we forward the logic to the implementation
         // above.
-        impl $Operation<f64> for $VectorType {
+        impl $Operation<Float> for $VectorType {
             type Output = $VectorType;
 
             #[inline(always)]
-            fn $op_fn(self, other: f64) -> $VectorType {
+            fn $op_fn(self, other: Float) -> $VectorType {
                 &self $op_symbol other
             }
         }
 
-        impl $Operation<$VectorType> for f64 {
+        impl $Operation<$VectorType> for Float {
             type Output = $VectorType;
 
             #[inline(always)]
@@ -284,7 +286,7 @@ macro_rules! impl_binary_operations {
             }
         }
 
-        impl<'a> $Operation<&'a $VectorType> for f64 {
+        impl<'a> $Operation<&'a $VectorType> for Float {
             type Output = $VectorType;
 
             #[inline(always)]

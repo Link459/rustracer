@@ -1,5 +1,3 @@
-use std::f64;
-
 use rand::{thread_rng, Rng};
 use serde::{Deserialize, Serialize};
 
@@ -10,6 +8,7 @@ use crate::{
     ray::Ray,
     texture::{SolidColor, Texture, TextureStorage},
     vec3::Vec3,
+    Float,
 };
 
 use super::Material;
@@ -48,7 +47,7 @@ impl Material for Lambertian {
         }*/
 
         let scattered = Ray::new(payload.p, scatter_direction.normalize(), ray.time);
-        let pdf = uvw.w().dot(&scattered.dir) / f64::consts::PI;
+        let pdf = uvw.w().dot(&scattered.dir) / Float::consts::PI;
         return Some(ScatterPayload::new(
             scattered,
             self.albedo.value(payload.u, payload.v, &payload.p),
@@ -60,22 +59,22 @@ impl Material for Lambertian {
         ));
     }
 
-    fn scattering_pdf(&self, _incoming: &Ray, payload: &HitPayload, scattered: &Ray) -> f64 {
+    fn scattering_pdf(&self, _incoming: &Ray, payload: &HitPayload, scattered: &Ray) -> Float {
         //let cos_theta = payload.normal.dot(&scattered.dir.normalize());
         //account for minimal error so that there won't be a divide by 0
         //let error = 1e-5;
         /*if cos_theta < 0.0 {
             return 0.0;
         }
-        return cos_theta / f64::consts::PI;
+        return cos_theta / Float::consts::PI;
         */
-        //return 1.0 / (2.0 * f64::consts::PI);
+        //return 1.0 / (2.0 * Float::consts::PI);
 
         let cos_theta = payload.normal.dot(&scattered.dir.normalize());
         return if cos_theta < 0.0 {
             0.0
         } else {
-            cos_theta / f64::consts::PI
+            cos_theta / crate::consts::PI
         };
     }
 }
@@ -104,10 +103,10 @@ pub fn random_on_hemisphere(normal: &Vec3) -> Vec3 {
 
 pub fn random_cosine_direction() -> Vec3 {
     let mut rng = thread_rng();
-    let r1: f64 = rng.gen_range(0.0..1.0);
-    let r2: f64 = rng.gen_range(0.0..1.0);
+    let r1: Float = rng.gen_range(0.0..1.0);
+    let r2: Float = rng.gen_range(0.0..1.0);
 
-    let phi = 2.0 * f64::consts::PI * r1;
+    let phi = 2.0 * crate::consts::PI * r1;
     let r2_sqrt = r2.sqrt();
     let x = phi.cos() * r2_sqrt;
     let y = phi.sin() * r2_sqrt;

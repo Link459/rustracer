@@ -1,6 +1,6 @@
 use std::{cell::Ref, ops::Add};
 
-use crate::{interval::Interval, ray::Ray, vec3::Vec3};
+use crate::{interval::Interval, ray::Ray, vec3::Vec3, Float};
 
 #[allow(clippy::upper_case_acronyms)]
 #[derive(Default, Clone, Copy, Debug)]
@@ -97,14 +97,14 @@ impl AABB {
     /// extends an AABB by another one
     pub fn surrounding_box(&self, box0: &Self) -> Self {
         let min = Vec3::new(
-            f64::min(self.x.min, box0.x.min),
-            f64::min(self.y.min, box0.y.min),
-            f64::min(self.z.min, box0.z.min),
+            Float::min(self.x.min, box0.x.min),
+            Float::min(self.y.min, box0.y.min),
+            Float::min(self.z.min, box0.z.min),
         );
         let max = Vec3::new(
-            f64::max(self.x.max, box0.x.max),
-            f64::max(self.y.max, box0.y.max),
-            f64::max(self.z.max, box0.z.max),
+            Float::max(self.x.max, box0.x.max),
+            Float::max(self.y.max, box0.y.max),
+            Float::max(self.z.max, box0.z.max),
         );
 
         return Self::from((min, max));
@@ -118,11 +118,11 @@ impl AABB {
         return Vec3::new(self.x.max, self.y.max, self.z.max);
     }
 
-    pub fn min_axis(&self, axis: usize) -> f64 {
+    pub fn min_axis(&self, axis: usize) -> Float {
         return self.axis(axis).min;
     }
 
-    pub fn max_axis(&self, axis: usize) -> f64 {
+    pub fn max_axis(&self, axis: usize) -> Float {
         return self.axis(axis).max;
     }
 
@@ -153,7 +153,7 @@ impl AABB {
         return max - min;
     }
 
-    pub fn half_area(&self) -> f64 {
+    pub fn half_area(&self) -> Float {
         let d = self.diagonal();
         return (d.x + d.y) * d.z + d.x * d.y;
     }
@@ -175,16 +175,16 @@ impl Add<Vec3> for AABB {
 impl From<(Vec3, Vec3)> for AABB {
     fn from(value: (Vec3, Vec3)) -> Self {
         let x = Interval::new(
-            f64::min(value.0[0], value.1[0]),
-            f64::max(value.0[0], value.1[0]),
+            Float::min(value.0[0], value.1[0]),
+            Float::max(value.0[0], value.1[0]),
         );
         let y = Interval::new(
-            f64::min(value.0[1], value.1[1]),
-            f64::max(value.0[1], value.1[1]),
+            Float::min(value.0[1], value.1[1]),
+            Float::max(value.0[1], value.1[1]),
         );
         let z = Interval::new(
-            f64::min(value.0[2], value.1[2]),
-            f64::max(value.0[2], value.1[2]),
+            Float::min(value.0[2], value.1[2]),
+            Float::max(value.0[2], value.1[2]),
         );
 
         return Self::new(x, y, z);

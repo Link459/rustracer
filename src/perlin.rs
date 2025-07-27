@@ -1,6 +1,6 @@
 use rand::Rng;
 
-use crate::vec3::Vec3;
+use crate::{vec3::Vec3, Float};
 
 const MAX_PERLIN: usize = 256;
 
@@ -34,7 +34,7 @@ impl Perlin {
         };
     }
 
-    pub fn noise(&self, p: &Vec3) -> f64 {
+    pub fn noise(&self, p: &Vec3) -> Float {
         let mut u = p.x - p.x.floor();
         let mut v = p.y - p.y.floor();
         let mut w = p.z - p.z.floor();
@@ -61,7 +61,7 @@ impl Perlin {
         return trilinear_interp(&c, u, v, w);
     }
 
-    pub fn turb(&self, p: &Vec3, depth: u32) -> f64 {
+    pub fn turb(&self, p: &Vec3, depth: u32) -> Float {
         let mut accum = 0.0;
         let mut t_p = *p;
         let mut weight = 1.0;
@@ -91,7 +91,7 @@ fn permute(p: &mut [usize; MAX_PERLIN], n: usize) {
     }
 }
 
-fn trilinear_interp(c: &[[[Vec3; 2]; 2]; 2], u: f64, v: f64, w: f64) -> f64 {
+fn trilinear_interp(c: &[[[Vec3; 2]; 2]; 2], u: Float, v: Float, w: Float) -> Float {
     let uu = u * u * (3.0 - 2.0 * u);
     let vv = v * v * (3.0 - 2.0 * v);
     let ww = w * w * (3.0 - 2.0 * w);
@@ -99,10 +99,10 @@ fn trilinear_interp(c: &[[[Vec3; 2]; 2]; 2], u: f64, v: f64, w: f64) -> f64 {
     for i in 0..2 {
         for j in 0..2 {
             for k in 0..2 {
-                let weight = Vec3::new(u - i as f64, v - j as f64, w - k as f64);
-                accum += (i as f64 * uu + (1 - i) as f64 * (1.0 - uu))
-                    * (j as f64 * vv + (1 - j) as f64 * (1.0 - vv))
-                    * (k as f64 * ww + (1 - k) as f64 * (1.0 - ww))
+                let weight = Vec3::new(u - i as Float, v - j as Float, w - k as Float);
+                accum += (i as Float * uu + (1 - i) as Float * (1.0 - uu))
+                    * (j as Float * vv + (1 - j) as Float * (1.0 - vv))
+                    * (k as Float * ww + (1 - k) as Float * (1.0 - ww))
                     * c[i][j][k].dot(&weight);
             }
         }
