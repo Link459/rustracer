@@ -36,23 +36,8 @@ impl From<Vec3> for Lambertian {
 
 impl Material for Lambertian {
     #[inline]
-    fn scatter(&self, _ray: &Ray, payload: &HitPayload) -> Option<ScatterPayload> {
-        //let mut scatter_direction = payload.normal + random_unit_vector();
-        //let mut scatter_direction = random_on_hemisphere(&payload.normal);
-        /*let uvw = ONB::new(&payload.normal);
-        let scatter_direction = uvw.transform(&random_cosine_direction());
-
-        /*if scatter_direction.near_zero() {
-            scatter_direction = payload.normal;
-        }*/
-
-        let scattered = Ray::new(payload.p, scatter_direction.normalize(), ray.time);
-        let pdf = uvw.w().dot(&scattered.dir) / Float::consts::PI;
-        return Some(ScatterPayload::new(
-            scattered,
-            self.albedo.value(payload.u, payload.v, &payload.p),
-            pdf,
-        ));*/
+    //fn scatter(&self, _ray: &Ray, payload: &HitPayload) -> Option<ScatterPayload> {
+    fn scatter(&self, _wi: &Vec3, payload: &HitPayload) -> Option<ScatterPayload> {
         return Some(ScatterPayload::new(
             self.albedo.value(payload.u, payload.v, &payload.p),
             CosinePDF::new(&payload.normal),
@@ -60,16 +45,6 @@ impl Material for Lambertian {
     }
 
     fn scattering_pdf(&self, _incoming: &Ray, payload: &HitPayload, scattered: &Ray) -> Float {
-        //let cos_theta = payload.normal.dot(&scattered.dir.normalize());
-        //account for minimal error so that there won't be a divide by 0
-        //let error = 1e-5;
-        /*if cos_theta < 0.0 {
-            return 0.0;
-        }
-        return cos_theta / Float::consts::PI;
-        */
-        //return 1.0 / (2.0 * Float::consts::PI);
-
         let cos_theta = payload.normal.dot(&scattered.dir.normalize());
         return if cos_theta < 0.0 {
             0.0

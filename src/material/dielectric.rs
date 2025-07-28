@@ -25,14 +25,16 @@ impl Dielectric {
 
 impl Material for Dielectric {
     #[inline]
-    fn scatter(&self, ray: &Ray, payload: &HitPayload) -> Option<ScatterPayload> {
+    //fn scatter(&self, ray: &Ray, payload: &HitPayload) -> Option<ScatterPayload> {
+    fn scatter(&self, wi: &Vec3, payload: &HitPayload) -> Option<ScatterPayload> {
         let refraction_ratio = if payload.front_face {
             1.0 / self.ir
         } else {
             self.ir
         };
 
-        let unit_direction = ray.dir.normalize();
+        //let unit_direction = ray.dir.normalize();
+        let unit_direction = wi.normalize();
 
         let cos_theta = ((-1.0) * unit_direction).dot(&payload.normal).min(1.0);
         let sin_theta = (1.0 - cos_theta.powi(2)).sqrt();
@@ -47,7 +49,8 @@ impl Material for Dielectric {
             unit_direction.refract(&payload.normal, refraction_ratio)
         };
 
-        let scattered = Ray::new(payload.p, direction, ray.time);
+        //let scattered = Ray::new(payload.p, direction, ray.time);
+        let scattered = Ray::new(payload.p, direction, 0.0);
 
         return Some(ScatterPayload::without_pdf(
             scattered,

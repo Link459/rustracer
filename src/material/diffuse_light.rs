@@ -5,7 +5,8 @@ use crate::{
     material::ScatterPayload,
     ray::Ray,
     texture::{Texture, TextureStorage},
-    vec3::Vec3, Float,
+    vec3::Vec3,
+    Float,
 };
 
 use super::Material;
@@ -22,7 +23,7 @@ impl DiffuseLight {
 }
 
 impl Material for DiffuseLight {
-    fn scatter(&self, _ray: &Ray, _payload: &HitPayload) -> Option<ScatterPayload> {
+    fn scatter(&self, _wi: &Vec3, _payload: &HitPayload) -> Option<ScatterPayload> {
         return None;
     }
 

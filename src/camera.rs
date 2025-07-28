@@ -253,11 +253,12 @@ impl Camera {
 
         let color_from_emit = material.emitted(&ray, &payload, payload.u, payload.v, &payload.p);
 
-        let Some(scatter_payload) = material.scatter(ray, &payload) else {
+        //let Some(scatter_payload) = material.scatter(ray, &payload) else {
+        let Some(scatter_payload) = material.scatter(&ray.dir, &payload) else {
             return color_from_emit;
         };
 
-        match scatter_payload.pdf_ray {
+        /*match scatter_payload.pdf_ray {
             RayOrPDF::Ray(ray) => {
                 return scatter_payload.attenuation
                     * self.ray_color(&ray, world, lights, depth - 1);
@@ -284,6 +285,32 @@ impl Camera {
 
                 return color;
             }
+        }*/
+
+        /*if lights.entities.len() == 0 {
+            return scatter_payload.attenuation;
+        }*/
+
+        /*let light_pdf = HittablePDF::new(lights, payload.p);
+        let mixture_pdf = MixturePDF::new(pdf, &light_pdf);*/
+
+        //let scattered = Ray::new(payload.p, mixture_pdf.generate(), ray.time);
+        //let pdf_value = mixture_pdf.value(&scattered.dir);
+        let scattered = Ray::new(payload.p, scatter_payload.wo, ray.time);
+        let pdf_value = scatter_payload.pdf;
+
+        if pdf_value == 0.0 {
+            return scatter_payload.attenuation
+                * self.ray_color(&scattered, world, lights, depth - 1);
+        } else {
+            let sample_color = self.ray_color(&scattered, world, lights, depth - 1);
+            let scattering_pdf = material.scattering_pdf(ray, &payload, &scattered);
+            let color_from_scatter =
+                (scatter_payload.attenuation * scattering_pdf * sample_color) / pdf_value;
+
+            let color = color_from_emit + color_from_scatter;
+
+            return color;
         }
     }
 

@@ -33,7 +33,8 @@ impl From<Vec3> for Isotropic {
 }
 
 impl Material for Isotropic {
-    fn scatter(&self, _ray: &Ray, payload: &HitPayload) -> Option<ScatterPayload> {
+    //fn scatter(&self, _ray: &Ray, payload: &HitPayload) -> Option<ScatterPayload> {
+    fn scatter(&self, _wi: &Vec3, payload: &HitPayload) -> Option<ScatterPayload> {
         let attenuation = self.albedo.value(payload.u, payload.v, &payload.p);
         /*let scattered = Ray::new(payload.p, random_unit_vector(), ray.time);
         let pdf = 1.0 / (4.0 * Float::consts::PI);

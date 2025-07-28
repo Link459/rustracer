@@ -24,9 +24,9 @@ pub struct ScatterPayload {
     pub attenuation: Vec3,
     //TODO: migrate to the proper way of doing it by having an outgoing direction, it's much more
     //sensible than having a pdf structure
-    //pdf: Float,
-    //wo: Vec3 // -> outgoing direction
-    pub pdf_ray: RayOrPDF,
+    pub wo: Vec3, // -> outgoing direction
+    pub pdf: Float,
+    //pub pdf_ray: RayOrPDF,
 }
 
 impl ScatterPayload {
@@ -39,26 +39,27 @@ impl ScatterPayload {
     }*/
 
     pub fn new(attenuation: Vec3, pdf: impl PDF + 'static) -> Self {
+        let wo = pdf.generate();
         Self {
             attenuation,
-            pdf_ray: RayOrPDF::PDF(Box::new(pdf)),
+            wo,
+            pdf: pdf.value(&wo), //pdf_ray: RayOrPDF::PDF(Box::new(pdf)),
         }
     }
 
     pub fn without_pdf(scattered: Ray, attenuation: Vec3) -> Self {
         Self {
             attenuation,
-            pdf_ray: RayOrPDF::Ray(scattered),
+            wo: scattered.dir,
+            pdf: 0.0,
+            //pdf_ray: RayOrPDF::Ray(scattered),
         }
     }
 }
 
 pub trait Material: Send + Sync {
-    /// Ray: the scattered ray,
-    /// Vec3: the color attenuation
-    /// Float: the pdf value
-    //fn scatter(&self, ray: &Ray, payload: &HitPayload) -> Option<(Ray, Vec3, Float)>;
-    fn scatter(&self, ray: &Ray, payload: &HitPayload) -> Option<ScatterPayload>;
+    //fn scatter(&self, ray: &Ray, payload: &HitPayload) -> Option<ScatterPayload>;
+    fn scatter(&self, wi: &Vec3, payload: &HitPayload) -> Option<ScatterPayload>;
     fn emitted(&self, _ray: &Ray, _payload: &HitPayload, _u: Float, _v: Float, _p: &Vec3) -> Vec3 {
         return Vec3::ZERO;
     }
@@ -78,7 +79,7 @@ impl DefaultMaterial {
 }
 
 impl Material for DefaultMaterial {
-    fn scatter(&self, _ray: &Ray, _payload: &HitPayload) -> Option<ScatterPayload> {
+    fn scatter(&self, _ray: &Vec3, _payload: &HitPayload) -> Option<ScatterPayload> {
         return None;
     }
 }
