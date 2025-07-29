@@ -1,90 +1,138 @@
-mod random_integrator;
-mod simple_path_integrator;
+pub mod random_integrator;
+pub mod simple_path_integrator;
 
+use rand::Rng;
 use std::time::Instant;
+use winit::event_loop::EventLoopProxy;
 
 use crate::{
-    camera::Camera, image::Image, ray::Ray, sampler::Sampler, scene::Scene, vec3::Vec3, Float,
+    camera::{random_in_unit_disk, Camera},
+    image::Image,
+    present::PresentationEvent,
+    ray::Ray,
+    render::RenderConfig,
+    vec3::Vec3,
+    Float,
 };
 
-trait Integrator {
-    fn pixel(&mut self, ray: &Ray, sampler: &dyn Sampler) -> Vec3;
+pub trait Integrator {
+    //fn pixel(&self, ray: &Ray, sampler: &dyn Sampler) -> Vec3;
+    fn pixel(&self, ray: &Ray) -> Vec3;
 }
 
-struct Renderer<'a> {
-    scene: &'a Scene,
+pub struct Renderer<I> {
     camera: Camera,
-    integrator: Box<dyn Integrator>,
-    image: Image,
-    sampler: Box<dyn Sampler>,
+    config: RenderConfig,
+    integrator: I,
+    pub image: Image,
+    proxy: EventLoopProxy<PresentationEvent>,
+    //sampler: Box<dyn Sampler>,
 }
 
-impl<'a> Renderer<'a> {
-    fn new(
-        scene: &'a Scene,
+impl<I> Renderer<I>
+where
+    I: Integrator + Sync,
+{
+    pub fn new(
         camera: Camera,
-        integrator: impl Integrator + 'static,
-        image: Image,
-        sampler: impl Sampler + 'static,
+        config: RenderConfig,
+        integrator: I,
+        proxy: EventLoopProxy<PresentationEvent>,
+        //sampler: impl Sampler + 'static,
     ) -> Self {
+        let image = Image::new(config.width, config.height, config.samples as f32);
+
         Self {
-            scene,
             camera,
-            integrator: Box::new(integrator),
+            config,
+            integrator,
             image,
-            sampler: Box::new(sampler),
+            proxy,
+            //sampler: Box::new(sampler),
         }
     }
 
-    pub fn render(self) {
+    pub fn render(&mut self) {
         println!(
             "widht: {:?},\nheight: {:?},\nsamples: {:?},\ndepth: {:?}",
-            self.scene.camera.config.width,
-            self.scene.camera.config.height,
-            self.scene.camera.config.samples,
-            self.scene.camera.config.max_depth
+            self.config.width, self.config.height, self.config.samples, self.config.max_depth
         );
 
         println!("starting the render");
         let render_time = Instant::now();
-        let mut image = Image::from(&self.scene.camera.config);
-        /*image.compute_parallel_present(
-            |w, h| {
-                return self.trace_ray(w, h, &self.scene.world, &self.scene.lights);
-            },
-            proxy,
-        );*/
+        let mut image = Image::from(&self.config);
 
-        image.compute_parallel(|w, h| {
-            Vec3::ZERO
-            //return self.trace_ray(w, h, &self.scene.world, &self.scene.lights);
-        });
+        image.compute_parallel_present(
+            |w, h| {
+                return self.trace_ray(w, h);
+            },
+            self.proxy.clone(),
+        );
+
+        self.image = image;
 
         let time_took = format!("rendering took: {:?}", render_time.elapsed());
         println!("{time_took}");
     }
 
-    /*#[inline(always)]
-    pub fn trace_ray(&self, w: u32, h: u32, world: &impl Hittable, lights: &World) -> Vec3 {
+    #[inline(always)]
+    pub fn trace_ray(&self, w: u32, h: u32) -> Vec3 {
         let mut rng = rand::rng();
         let mut color = Vec3::ZERO;
 
-        for s_i in 0..self.sqrt_samples as u64 {
-            for s_j in 0..self.sqrt_samples as u64 {
+        for s_i in 0..self.camera.sqrt_samples as u64 {
+            for s_j in 0..self.camera.sqrt_samples as u64 {
                 let u = (w as Float + rng.random_range(0.0..1.0) as Float)
                     / (self.config.width - 1) as Float;
                 let v = (h as Float + rng.random_range(0.0..1.0) as Float)
                     / (self.config.height - 1) as Float;
                 let r = self.get_ray_stratified(u, v, s_i as Float, s_j as Float);
                 //let r = self.get_ray(u, v);
-                color += self.ray_color(&r, world, lights, self.config.max_depth);
+                color += self.integrator.pixel(&r);
+                //return self.integrator.pixel(ray, &*self.sampler);
             }
         }
 
-        return color;
+        return color / self.config.samples as Float;
     }
 
-    pub fn ray_color(&self, ray: &Ray, world: &impl Hittable, lights: &World, depth: u32) -> Vec3 {
-        return self.integrator.pixel(ray, &self.sampler);
-    }*/
+    #[inline(always)]
+    pub fn get_ray(&self, s: Float, t: Float) -> Ray {
+        let origin = if self.camera.lens_radius <= 0.0 {
+            self.camera.origin
+        } else {
+            let rd = self.camera.lens_radius * random_in_unit_disk();
+            self.camera.origin + self.camera.cu * rd.x + self.camera.cv * rd.y
+        };
+
+        let dir =
+            self.camera.lower_left_corner + s * self.camera.horizontal + t * self.camera.vertical
+                - self.camera.origin;
+
+        Ray::new(
+            origin,
+            dir,
+            rand::rng().random_range(self.camera.time.min..self.camera.time.max),
+        )
+    }
+
+    #[inline(always)]
+    pub fn get_ray_stratified(&self, s: Float, t: Float, s_i: Float, s_j: Float) -> Ray {
+        let offset = self.camera.sample_square_stratified(s_i, s_j);
+        let origin = if self.camera.lens_radius <= 0.0 {
+            self.camera.origin
+        } else {
+            self.camera.origin + offset
+        };
+
+        let dir =
+            self.camera.lower_left_corner + s * self.camera.horizontal + t * self.camera.vertical
+                - self.camera.origin;
+
+        Ray::new(
+            origin,
+            dir,
+            rand::rng().random_range(self.camera.time.min..self.camera.time.max),
+        )
+    }
 }

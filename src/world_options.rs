@@ -102,9 +102,9 @@ pub fn random_world() -> Scene {
 
     return Scene {
         world,
+        config,
         lights,
         camera: CameraConfig {
-            config,
             ..Default::default()
         },
     };
@@ -187,14 +187,14 @@ pub fn random_world_moving() -> Scene {
 
     let config = RenderConfig::with_aspect_ratio(16.0 / 9.0, 300, 50, 50);
 
-    return (
+    return Scene {
         world,
-        CameraConfig {
-            config,
+        lights: World::default(),
+        config,
+        camera: CameraConfig {
             ..Default::default()
         },
-    )
-        .into();
+    };
 }
 
 pub fn two_chess_spheres() -> Scene {
@@ -248,7 +248,11 @@ pub fn overlapping() -> Scene {
     world.add(sphere);
 
     let config = RenderConfig::with_aspect_ratio(16.0 / 9.0, 200, 50, 50);
-    return (world, CameraConfig::from_config(config)).into();
+    return Scene {
+        world,
+        config,
+        ..Default::default()
+    };
 }
 
 #[inline]
@@ -260,7 +264,11 @@ pub fn earth() -> Scene {
     world.add(globe);
 
     let config = RenderConfig::with_aspect_ratio(16.0 / 9.0, 200, 50, 50);
-    return (world, CameraConfig::from_config(config)).into();
+    return Scene {
+        world,
+        config,
+        ..Default::default()
+    };
 }
 
 #[inline]
@@ -323,10 +331,15 @@ pub fn quads() -> Scene {
         aperture,
         focus_dist,
         time: Interval::new(0.0, 1.0),
-        config,
     };
 
-    return (world, camera).into();
+    return Scene {
+        world,
+        camera,
+        config,
+        ..Default::default()
+    };
+    //return (world, camera).into();
 }
 
 #[inline]
@@ -371,11 +384,11 @@ pub fn simple_light() -> Scene {
         aperture: 0.0,
         focus_dist: 10.0,
         time: Interval::new(0.001, 1.0),
-        config,
     };
 
     return Scene {
         camera: cam,
+        config,
         world,
         lights,
     };
@@ -415,14 +428,11 @@ pub fn simple_skybox() -> Scene {
     let mut config = RenderConfig::with_aspect_ratio(16.0 / 9.0, 500, 100, 50);
     config.background = skybox;
 
-    return (
+    return Scene {
         world,
-        CameraConfig {
-            config,
-            ..Default::default()
-        },
-    )
-        .into();
+        config,
+        ..Default::default()
+    };
 }
 
 #[inline]
@@ -576,7 +586,7 @@ pub fn cornell_box() -> Scene {
     let samples = 1000;
     let mut config = RenderConfig::with_aspect_ratio(1.0, 400, samples, 50);
     config.background = Background::Night;
-    let cam = CameraConfig {
+    let camera = CameraConfig {
         lookfrom: Vec3::new(278.0, 278.0, -800.0),
         lookat: Vec3::new(278.0, 278.0, 0.0),
         vup: Vec3::new(0.0, 1.0, 0.0),
@@ -585,11 +595,11 @@ pub fn cornell_box() -> Scene {
         aperture: 0.0,
         focus_dist: 10.0,
         time: Interval::new(0.0, 1.0),
-        config,
     };
 
     return Scene {
-        camera: cam,
+        camera,
+        config,
         world,
         lights,
     };
@@ -665,7 +675,7 @@ pub fn cornell_smoke() -> Scene {
 
     let mut config = RenderConfig::with_aspect_ratio(1.0, 200, 500, 50);
     config.background = Background::Night;
-    let cam = CameraConfig {
+    let camera = CameraConfig {
         lookfrom: Vec3::new(278.0, 278.0, -800.0),
         lookat: Vec3::new(278.0, 278.0, 0.0),
         vup: Vec3::new(0.0, 1.0, 0.0),
@@ -674,11 +684,11 @@ pub fn cornell_smoke() -> Scene {
         aperture: 0.0,
         focus_dist: 10.0,
         time: Interval::new(0.0, 1.0),
-        config,
     };
 
     return Scene {
-        camera: cam,
+        camera,
+        config,
         world,
         lights,
     };
@@ -774,7 +784,7 @@ pub fn final_world() -> Scene {
 
     let mut config = RenderConfig::with_aspect_ratio(1.0, 300, 350, 4);
     config.background = Background::Night;
-    let cam = CameraConfig {
+    let camera = CameraConfig {
         lookfrom: Vec3::new(478.0, 278.0, -600.0),
         lookat: Vec3::new(278.0, 278.0, 0.0),
         vup: Vec3::new(0.0, 1.0, 0.0),
@@ -783,11 +793,11 @@ pub fn final_world() -> Scene {
         aperture: 0.0,
         focus_dist: 10.0,
         time: Interval::new(0.0, 1.0),
-        config,
     };
 
     return Scene {
-        camera: cam,
+        camera,
+        config,
         world,
         lights,
     };

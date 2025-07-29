@@ -1,7 +1,7 @@
-use std::{ path::Path, ptr};
+use std::{path::Path, ptr};
 
 use crate::{present::PresentationEvent, render::RenderConfig, vec3::Vec3, Float};
-use image::{ ImageBuffer, Rgb};
+use image::{ImageBuffer, Rgb};
 use rayon::prelude::*;
 use winit::event_loop::EventLoopProxy;
 
@@ -95,14 +95,10 @@ impl Image {
     pub fn into_bytes(self) -> ImageBufferGlue<u8> {
         let mut buf = Vec::with_capacity(self.buffer.capacity());
 
-        for  chunck in self.buffer.chunks(3) {
-            let scale = 1.0 / self.samples;
-            let mut r = chunck[0];
-            let mut g = chunck[1];
-            let mut b = chunck[2];
-            r = Float::sqrt(scale * r);
-            g = Float::sqrt(scale * g);
-            b = Float::sqrt(scale * b);
+        for chunck in self.buffer.chunks(3) {
+            let r = Float::sqrt(chunck[0]);
+            let g = Float::sqrt(chunck[1]);
+            let b = Float::sqrt(chunck[2]);
 
             buf.push((256.0 * r.clamp(0.0, 0.999)) as u8);
             buf.push((256.0 * g.clamp(0.0, 0.999)) as u8);

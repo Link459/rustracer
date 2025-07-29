@@ -15,7 +15,7 @@ use crate::{
 pub struct BvhBuildConfig {
     min_prims: usize,
     max_prims: usize,
-    traversal_cost: f32,
+    traversal_cost: Float,
 }
 
 impl Default for BvhBuildConfig {

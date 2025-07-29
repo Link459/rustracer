@@ -117,11 +117,11 @@ impl Default for RenderConfig {
 
 impl Display for RenderConfig {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "width: {}", self.width)?;
-        writeln!(f, "height: {}", self.height)?;
-        writeln!(f, "samples: {}", self.samples)?;
-        writeln!(f, "max depth: {}", self.max_depth)?;
-        writeln!(f, "background: {}", self.background)?;
+        writeln!(f, " width: {}", self.width)?;
+        writeln!(f, " height: {}", self.height)?;
+        writeln!(f, " samples: {}", self.samples)?;
+        writeln!(f, " max depth: {}", self.max_depth)?;
+        writeln!(f, " background: {}", self.background)?;
         return Ok(());
     }
 }

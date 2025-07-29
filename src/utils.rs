@@ -34,8 +34,10 @@ pub fn deserialize_scene(path: &str) -> Result<Scene> {
 }
 
 pub fn get_time_prediction(rays: u32, camera: &Camera, _world: &impl Hittable) -> Duration {
-    let width = camera.get_config().width;
-    let height = camera.get_config().height;
+    //let width = camera.get_config().width;
+    //let height = camera.get_config().height;
+    let width = 100;
+    let height = 100;
     let samples = 100;
 
     let mut rng = rand::rng();
@@ -73,6 +75,10 @@ pub fn load_hdri(path: &str) -> Result<Image> {
 
 pub fn linear_plane_index(len: usize, width: u32, row: u32, column: u32) -> usize {
     return len - (row * width + column) as usize;
+}
+
+pub fn cmd_seperator() {
+    println!("================");
 }
 
 pub fn parse_render_settings(options: &[String], mut orig: RenderConfig) -> RenderConfig {

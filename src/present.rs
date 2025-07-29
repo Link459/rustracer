@@ -10,8 +10,8 @@ use winit::event::WindowEvent;
 use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
 use winit::window::{Window, WindowId};
 
-use crate::{utils, Float};
 use crate::vec3::Vec3;
+use crate::{utils, Float};
 
 #[derive(Debug)]
 pub struct PresentationEvent {
@@ -30,7 +30,6 @@ pub struct Presentation {
 
 impl Presentation {
     pub fn new(width: u32, height: u32, samples: Float) -> Self {
-        println!("presentation width {} height {} ", width, height);
         Presentation {
             window: None,
             surface: None,
@@ -97,14 +96,10 @@ impl ApplicationHandler<PresentationEvent> for Presentation {
     }
 
     fn user_event(&mut self, _event_loop: &ActiveEventLoop, event: PresentationEvent) {
-        let mut r = event.color.x;
-        let mut g = event.color.y;
-        let mut b = event.color.z;
+        let r = Float::sqrt(event.color.x);
+        let g = Float::sqrt(event.color.y);
+        let b = Float::sqrt(event.color.z);
 
-        let scale = 1.0 / self.samples;
-        r = Float::sqrt(scale * r);
-        g = Float::sqrt(scale * g);
-        b = Float::sqrt(scale * b);
         let r = (256.0 * r.clamp(0.0, 0.999)) as u32;
         let g = (256.0 * g.clamp(0.0, 0.999)) as u32;
         let b = (256.0 * b.clamp(0.0, 0.999)) as u32;

@@ -9,6 +9,8 @@ use present::Presentation;
 use scene::Scene;
 use std::{env, time::Instant};
 
+use crate::utils::cmd_seperator;
+
 pub type Float = f32;
 pub mod consts {
     use crate::Float;
@@ -44,12 +46,12 @@ mod material;
 mod model;
 mod moving_sphere;
 mod onb;
-mod sampler;
 mod pdf;
 mod perlin;
 mod present;
 mod ray;
 mod render;
+mod sampler;
 mod scene;
 mod texture;
 mod utils;
@@ -84,19 +86,25 @@ fn main() -> Result<()> {
 
     let Scene {
         camera,
+        mut config,
         mut world,
         lights,
     } = scene;
 
+    cmd_seperator();
     println!(
-        "objects: {}\nlights: {}",
+        "scene:\n objects: {}\n lights: {}",
         world.entities.len(),
         lights.entities.len()
     );
+    cmd_seperator();
     println!("camera:\n{}", camera);
+    cmd_seperator();
+    println!("config:\n{}", config);
+    cmd_seperator();
 
     world.extend(lights.clone());
-    let mut camera_config = camera;
+    let camera_config = camera;
 
     println!("generating bvh...");
     let now = Instant::now();
@@ -105,11 +113,13 @@ fn main() -> Result<()> {
     //println!("{}", world);
     println!("time to generate bvh: {:?}", now.elapsed());
 
-    camera_config.config = utils::parse_render_settings(&args, camera_config.config);
-    let camera = Camera::from_camera_config(camera_config);
-    let config = camera.get_config().clone();
-    let rays_to_trace = config.width * config.height;
+    config = utils::parse_render_settings(&args, config);
+
+    let camera = Camera::from_camera_config(camera_config, &config);
+
+    let rays_to_trace = config.width * config.height * config.samples;
     let ray_time = utils::get_time_prediction(rays_to_trace, &camera, &world);
+
     let rays_to_trace = utils::number_with_decimals(rays_to_trace as usize);
     println!("rays to be traced: {rays_to_trace}");
     println!("estimated time: {}s", ray_time.as_secs());
@@ -118,17 +128,24 @@ fn main() -> Result<()> {
     let event_loop = present::create_present_loop()?;
     let proxy = event_loop.create_proxy();
 
+    let integrator = integrator::simple_path_integrator::SimplePathIntegrator::new(
+        camera.clone(),
+        world,
+        lights,
+        config.clone(),
+    );
+
+    let mut app = Presentation::new(config.width, config.height, config.samples as Float);
+
+    let mut render = integrator::Renderer::new(camera, config, integrator, proxy);
+
     let handle = std::thread::spawn(move || -> Result<()> {
-        let image = camera.render(world, lights, proxy)?;
+        render.render();
 
-        //utils::create_ppm_file("out.ppm", &image.buffer, image.width, image.height)?;
-        //utils::create_image_file("out.png", &image.buffer, image.width, image.height)?;
-
-        image.save("out.png")?;
+        render.image.save("out.png")?;
         return Ok(());
     });
 
-    let mut app = Presentation::new(config.width, config.height, config.samples as Float);
     event_loop.run_app(&mut app)?;
 
     handle.join().unwrap()?;

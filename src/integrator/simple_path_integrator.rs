@@ -1,31 +1,35 @@
 use crate::{
-    hittable::Hittable, integrator::Integrator, interval::Interval, material::Material, ray::Ray,
-    sampler::Sampler, scene::Scene, vec3::Vec3, Float,
+    camera::Camera, hittable::Hittable, integrator::Integrator, interval::Interval, material::Material, ray::Ray, render::RenderConfig, sampler::Sampler, scene::Scene, vec3::Vec3, world::World, Float
 };
 
-struct SimplePathIntegrator {
-    scene: Scene,
-    depth: u32,
+pub struct SimplePathIntegrator<W> {
+    camera: Camera,
+    world: W,
+    lights: World,
+    config: RenderConfig,
 }
 
-impl SimplePathIntegrator {
-    fn new(scene: Scene, depth: u32) -> Self {
-        Self { scene, depth }
+impl<W> SimplePathIntegrator<W>
+where
+    W: Hittable,
+{
+    pub fn new(camera: Camera, world: W, lights: World, config: RenderConfig) -> Self {
+        Self {
+            camera,
+            world,
+            lights,
+            config,
+        }
     }
-}
 
-impl Integrator for SimplePathIntegrator {
-    fn pixel(&mut self, ray: &Ray, sampler: &dyn Sampler) -> Vec3 {
-        if self.depth == 0 {
+    fn radiance(&self, ray: &Ray, depth: u32) -> Vec3 {
+        if depth > self.config.max_depth {
             return Vec3::ZERO;
         }
 
-        let Some((payload, material)) = self
-            .scene
-            .world
-            .hit(ray, Interval::new(0.001, Float::INFINITY))
+        let Some((payload, material)) = self.world.hit(ray, Interval::new(0.001, Float::INFINITY))
         else {
-            return self.scene.camera.config.background.call(ray);
+            return self.config.background.call(ray);
         };
 
         let color_from_emit = material.emitted(&ray, &payload, payload.u, payload.v, &payload.p);
@@ -73,15 +77,17 @@ impl Integrator for SimplePathIntegrator {
 
         //let scattered = Ray::new(payload.p, mixture_pdf.generate(), ray.time);
         //let pdf_value = mixture_pdf.value(&scattered.dir);
-        
+
         let scattered = Ray::new(payload.p, scatter_payload.wo, ray.time);
         let pdf_value = scatter_payload.pdf;
 
-        self.depth -= 1;
+        //self.depth -= 1;
+        let value = self.radiance(&scattered, depth + 1);
+        //let value = self.pixel(&scattered, sampler);
         if pdf_value == 0.0 {
-            return scatter_payload.attenuation * self.pixel(&scattered, sampler);
+            return scatter_payload.attenuation * value;
         } else {
-            let sample_color = self.pixel(&scattered, sampler);
+            let sample_color = value;
             let scattering_pdf = material.scattering_pdf(ray, &payload, &scattered);
             let color_from_scatter =
                 (scatter_payload.attenuation * scattering_pdf * sample_color) / pdf_value;
@@ -90,5 +96,15 @@ impl Integrator for SimplePathIntegrator {
 
             return color;
         }
+    }
+}
+
+impl<W> Integrator for SimplePathIntegrator<W>
+where
+    W: Hittable,
+{
+    //fn pixel(&self, ray: &Ray, sampler: &dyn Sampler) -> Vec3 {
+    fn pixel(&self, ray: &Ray) -> Vec3 {
+        return self.radiance(ray, 0);
     }
 }
