@@ -77,8 +77,8 @@ pub fn linear_plane_index(len: usize, width: u32, row: u32, column: u32) -> usiz
     return len - (row * width + column) as usize;
 }
 
-pub fn cmd_seperator() {
-    println!("================");
+pub fn cmd_seperator(name: &str) {
+    println!("========{}========",name);
 }
 
 pub fn parse_render_settings(options: &[String], mut orig: RenderConfig) -> RenderConfig {

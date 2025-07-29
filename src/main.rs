@@ -91,17 +91,17 @@ fn main() -> Result<()> {
         lights,
     } = scene;
 
-    cmd_seperator();
+    cmd_seperator("Scene");
     println!(
-        "scene:\n objects: {}\n lights: {}",
+        "objects: {}\nlights: {}",
         world.entities.len(),
         lights.entities.len()
     );
-    cmd_seperator();
-    println!("camera:\n{}", camera);
-    cmd_seperator();
-    println!("config:\n{}", config);
-    cmd_seperator();
+    cmd_seperator("Camera");
+    println!("{}", camera);
+    cmd_seperator("Config");
+    println!("{}", config);
+    cmd_seperator("BVH");
 
     world.extend(lights.clone());
     let camera_config = camera;
@@ -110,8 +110,9 @@ fn main() -> Result<()> {
     let now = Instant::now();
     let world = BvhNode::from_world(world);
     //let world = Bvh::from_world(world);
-    //println!("{}", world);
     println!("time to generate bvh: {:?}", now.elapsed());
+
+    cmd_seperator("Statistics");
 
     config = utils::parse_render_settings(&args, config);
 
@@ -123,26 +124,63 @@ fn main() -> Result<()> {
     let rays_to_trace = utils::number_with_decimals(rays_to_trace as usize);
     println!("rays to be traced: {rays_to_trace}");
     println!("estimated time: {}s", ray_time.as_secs());
+    cmd_seperator("Rendering");
 
-    println!("starting...");
     let event_loop = present::create_present_loop()?;
     let proxy = event_loop.create_proxy();
 
     let integrator = integrator::simple_path_integrator::SimplePathIntegrator::new(
         camera.clone(),
-        world,
+        world.clone(),
         lights,
         config.clone(),
     );
 
+    let albedo_integrator = integrator::auxiliary_integrator::AlbedoIntegrator::new(world.clone());
+    let normal_integrator = integrator::auxiliary_integrator::NormalIntegrator::new(world);
+
     let mut app = Presentation::new(config.width, config.height, config.samples as Float);
 
-    let mut render = integrator::Renderer::new(camera, config, integrator, proxy);
+    let mut render =
+        integrator::ImageIntegrator::new(camera.clone(), config.clone(), integrator, proxy.clone());
+
+    let mut albedo = integrator::ImageIntegrator::new(
+        camera.clone(),
+        config.clone(),
+        albedo_integrator,
+        proxy.clone(),
+    );
+    let mut normal = integrator::ImageIntegrator::new(camera, config, normal_integrator, proxy);
 
     let handle = std::thread::spawn(move || -> Result<()> {
         render.render();
 
-        render.image.save("out.png")?;
+        render.image.clone().save("out.png")?;
+        normal.render();
+        normal.image.clone().save("normal.png")?;
+
+        albedo.render();
+        albedo.image.clone().save("albedo.png")?;
+
+        let start = Instant::now();
+        let device = oidn::Device::new();
+        oidn::RayTracing::new(&device)
+            .srgb(false)
+            .hdr(true)
+            .image_dimensions(render.image.width as usize, render.image.height as usize)
+            .albedo_normal(&albedo.image.buffer, &normal.image.buffer)
+            .filter_quality(oidn::Quality::High)
+            .filter_in_place(&mut render.image.buffer)
+            .expect("Error setting up denoising filter");
+
+        if let Err(e) = device.get_error() {
+            eprintln!("Error denoising image: {}", e.1);
+        }
+
+        let end = start.elapsed();
+        println!("Denoised image in {:?}", end);
+
+        render.image.save("denoised.png")?;
         return Ok(());
     });
 

@@ -1,3 +1,4 @@
+pub mod auxiliary_integrator;
 pub mod random_integrator;
 pub mod simple_path_integrator;
 
@@ -6,7 +7,7 @@ use std::time::Instant;
 use winit::event_loop::EventLoopProxy;
 
 use crate::{
-    camera::{random_in_unit_disk, Camera},
+    camera::{self, random_in_unit_disk, Camera},
     image::Image,
     present::PresentationEvent,
     ray::Ray,
@@ -18,9 +19,13 @@ use crate::{
 pub trait Integrator {
     //fn pixel(&self, ray: &Ray, sampler: &dyn Sampler) -> Vec3;
     fn pixel(&self, ray: &Ray) -> Vec3;
+
+    fn name() -> &'static str {
+        return "Integrator";
+    }
 }
 
-pub struct Renderer<I> {
+pub struct ImageIntegrator<I> {
     camera: Camera,
     config: RenderConfig,
     integrator: I,
@@ -29,7 +34,7 @@ pub struct Renderer<I> {
     //sampler: Box<dyn Sampler>,
 }
 
-impl<I> Renderer<I>
+impl<I> ImageIntegrator<I>
 where
     I: Integrator + Sync,
 {
@@ -53,12 +58,7 @@ where
     }
 
     pub fn render(&mut self) {
-        println!(
-            "widht: {:?},\nheight: {:?},\nsamples: {:?},\ndepth: {:?}",
-            self.config.width, self.config.height, self.config.samples, self.config.max_depth
-        );
-
-        println!("starting the render");
+        println!("starting the render using {}...", I::name());
         let render_time = Instant::now();
         let mut image = Image::from(&self.config);
 

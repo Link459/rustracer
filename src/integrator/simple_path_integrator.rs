@@ -107,4 +107,8 @@ where
     fn pixel(&self, ray: &Ray) -> Vec3 {
         return self.radiance(ray, 0);
     }
+
+    fn name() -> &'static str {
+        return "SimplePathIntegrator";
+    }
 }
