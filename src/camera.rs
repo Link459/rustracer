@@ -2,7 +2,7 @@ use rand::Rng;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 
-use crate::{interval::Interval, render::RenderConfig, vec3::Vec3, Float};
+use crate::{interval::Interval, render::RenderSettings, vec3::Vec3, Float};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CameraConfig {
@@ -66,11 +66,11 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn new(config: CameraConfig, render_config: &RenderConfig) -> Self {
+    pub fn new(config: CameraConfig, render_config: &RenderSettings) -> Self {
         return Self::from_camera_config(config, render_config);
     }
 
-    pub fn from_camera_config(config: CameraConfig, render_config: &RenderConfig) -> Self {
+    pub fn from_camera_config(config: CameraConfig, render_config: &RenderSettings) -> Self {
         // Vertical field-of-view in degrees
         let theta = crate::consts::PI / 180.0 * config.vfov;
         let viewport_height = 2.0 * (theta / 2.0).tan();
@@ -131,7 +131,7 @@ impl Default for Camera {
     fn default() -> Self {
         let config = CameraConfig::default();
 
-        return Self::new(config, &RenderConfig::default());
+        return Self::new(config, &RenderSettings::default());
     }
 }
 

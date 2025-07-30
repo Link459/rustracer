@@ -165,12 +165,10 @@ impl Bvh {
             return;
         }
 
-        dbg!(node.primitive_count);
 
         for i in 0..node.primitive_count {
             let model = &self.models[self.prim_indices[(node.first_idx + i) as usize]];
             node.bbox = AABB::from((node.bbox, model.bounding_box()));
-            dbg!(node.bbox);
         }
 
         let axis = node.bbox.longest_axis();

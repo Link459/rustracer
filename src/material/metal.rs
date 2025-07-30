@@ -28,14 +28,13 @@ impl Material for Metal {
     fn scatter(&self, wi: &Vec3, payload: &HitPayload) -> Option<ScatterPayload> {
         //let reflected = ray.dir.normalize().reflect(&payload.normal);
         let reflected = wi.normalize().reflect(&payload.normal);
-        let scattered = Ray::new(
-            payload.p,
-            reflected + self.fuzz * random_unit_sphere(),
-            0.0,//ray.time,
-        );
-        if Vec3::dot(&scattered.dir, &payload.normal) > 0.0 {
-            //return Some(ScatterPayload::new(scattered, self.albedo, 0.0));
-            return Some(ScatterPayload::without_pdf(scattered, self.albedo));
+        let scattered = reflected + self.fuzz * random_unit_sphere();
+        if Vec3::dot(&scattered, &payload.normal) > 0.0 {
+            return Some(ScatterPayload {
+                attenuation: self.albedo,
+                wo: scattered,
+                pdf: 0.0,
+            });
         }
 
         return None;

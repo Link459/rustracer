@@ -1,6 +1,6 @@
 use std::{path::Path, ptr};
 
-use crate::{present::PresentationEvent, render::RenderConfig, vec3::Vec3, Float};
+use crate::{present::PresentationEvent, render::RenderSettings, vec3::Vec3, Float};
 use image::{ImageBuffer, Rgb};
 use rayon::prelude::*;
 use winit::event_loop::EventLoopProxy;
@@ -10,19 +10,17 @@ pub struct Image {
     pub buffer: Vec<Float>,
     pub width: u32,
     pub height: u32,
-    samples: Float,
 }
 
 pub type ImageBufferGlue<T = Float> = image::ImageBuffer<image::Rgb<T>, Vec<T>>;
 
 impl Image {
-    pub fn new(width: u32, height: u32, samples: Float) -> Self {
+    pub fn new(width: u32, height: u32) -> Self {
         let len = 3 * (width * height) as usize;
         let mut img = Self {
             buffer: Vec::with_capacity(len),
             width,
             height,
-            samples,
         };
         unsafe { img.buffer.set_len(len) };
         return img;
@@ -125,9 +123,9 @@ impl Image {
     }
 }
 
-impl From<&RenderConfig> for Image {
-    fn from(v: &RenderConfig) -> Self {
-        return Self::new(v.width, v.height, v.samples as Float);
+impl From<&RenderSettings> for Image {
+    fn from(v: &RenderSettings) -> Self {
+        return Self::new(v.width, v.height);
     }
 }
 
@@ -138,7 +136,6 @@ impl From<ImageBuffer<Rgb<Float>, Vec<Float>>> for Image {
             buffer: v,
             width: value.width(),
             height: value.height(),
-            samples: 0.0,
         }
     }
 }

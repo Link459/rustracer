@@ -1,5 +1,5 @@
 use crate::{
-    hittable::Hittable, image::Image, integrator::Integrator, interval::Interval,
+    hittable::Hittable,  integrator::Integrator, interval::Interval,
     material::Material, ray::Ray, vec3::Vec3, Float,
 };
 
@@ -17,13 +17,13 @@ impl<W> Integrator for NormalIntegrator<W>
 where
     W: Hittable,
 {
-    fn pixel(&self, ray: &Ray) -> crate::vec3::Vec3 {
+    fn pixel(&self, ray: &Ray) -> Vec3 {
         let Some((payload, _material)) = self.world.hit(ray, Interval::new(0.001, Float::INFINITY))
         else {
             return Vec3::ZERO;
         };
 
-        return payload.p;
+        return payload.normal;
     }
 
     fn name() -> &'static str {
@@ -45,7 +45,7 @@ impl<W> Integrator for AlbedoIntegrator<W>
 where
     W: Hittable,
 {
-    fn pixel(&self, ray: &Ray) -> crate::vec3::Vec3 {
+    fn pixel(&self, ray: &Ray) -> Vec3 {
         let Some((payload, material)) = self.world.hit(ray, Interval::new(0.001, Float::INFINITY))
         else {
             return Vec3::ZERO;

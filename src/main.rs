@@ -9,7 +9,11 @@ use present::Presentation;
 use scene::Scene;
 use std::{env, time::Instant};
 
-use crate::utils::cmd_seperator;
+use crate::{
+    bvh::Bvh,
+    integrator::{AlbedoIntegrator, ImageIntegrator, NormalIntegrator},
+    utils::cmd_seperator,
+};
 
 pub type Float = f32;
 pub mod consts {
@@ -38,6 +42,7 @@ pub mod consts {
 mod aabb;
 mod bvh;
 mod camera;
+mod denoise;
 mod hittable;
 mod image;
 mod integrator;
@@ -53,13 +58,12 @@ mod ray;
 mod render;
 mod sampler;
 mod scene;
+mod settings;
 mod texture;
 mod utils;
 mod vec3;
 mod world;
 mod world_options;
-
-struct Settings {}
 
 fn main() -> Result<()> {
     let args = env::args().skip(1).collect::<Vec<_>>();
@@ -86,7 +90,7 @@ fn main() -> Result<()> {
 
     let Scene {
         camera,
-        mut config,
+        config: mut render_settings,
         mut world,
         lights,
     } = scene;
@@ -100,7 +104,7 @@ fn main() -> Result<()> {
     cmd_seperator("Camera");
     println!("{}", camera);
     cmd_seperator("Config");
-    println!("{}", config);
+    println!("{}", render_settings);
     cmd_seperator("BVH");
 
     world.extend(lights.clone());
@@ -114,11 +118,11 @@ fn main() -> Result<()> {
 
     cmd_seperator("Statistics");
 
-    config = utils::parse_render_settings(&args, config);
+    render_settings = settings::parse_render_settings(&args, render_settings);
 
-    let camera = Camera::from_camera_config(camera_config, &config);
+    let camera = Camera::from_camera_config(camera_config, &render_settings);
 
-    let rays_to_trace = config.width * config.height * config.samples;
+    let rays_to_trace = render_settings.width * render_settings.height * render_settings.samples;
     let ray_time = utils::get_time_prediction(rays_to_trace, &camera, &world);
 
     let rays_to_trace = utils::number_with_decimals(rays_to_trace as usize);
@@ -133,44 +137,55 @@ fn main() -> Result<()> {
         camera.clone(),
         world.clone(),
         lights,
-        config.clone(),
+        render_settings.clone(),
     );
 
-    let albedo_integrator = integrator::auxiliary_integrator::AlbedoIntegrator::new(world.clone());
-    let normal_integrator = integrator::auxiliary_integrator::NormalIntegrator::new(world);
+    let mut app = Presentation::new(
+        render_settings.width,
+        render_settings.height,
+        render_settings.samples as Float,
+    );
 
-    let mut app = Presentation::new(config.width, config.height, config.samples as Float);
-
-    let mut render =
-        integrator::ImageIntegrator::new(camera.clone(), config.clone(), integrator, proxy.clone());
-
-    let mut albedo = integrator::ImageIntegrator::new(
+    let mut render = ImageIntegrator::new(
         camera.clone(),
-        config.clone(),
-        albedo_integrator,
+        render_settings.clone(),
+        integrator,
         proxy.clone(),
     );
-    let mut normal = integrator::ImageIntegrator::new(camera, config, normal_integrator, proxy);
+
+    let mut albedo_integrator = ImageIntegrator::new(
+        camera.clone(),
+        render_settings.clone(),
+        AlbedoIntegrator::new(world.clone()),
+        proxy.clone(),
+    );
+    let mut normal_integrator =
+        ImageIntegrator::new(camera, render_settings, NormalIntegrator::new(world), proxy);
 
     let handle = std::thread::spawn(move || -> Result<()> {
         render.render();
 
-        render.image.clone().save("out.png")?;
-        normal.render();
-        normal.image.clone().save("normal.png")?;
+        let mut result = render.get_image();
+        result.clone().save("out.png")?;
 
-        albedo.render();
-        albedo.image.clone().save("albedo.png")?;
+        normal_integrator.render();
+        let normal = normal_integrator.get_image();
+        normal.clone().save("normal.png")?;
+
+        albedo_integrator.render();
+
+        let albedo = albedo_integrator.get_image();
+        albedo.clone().save("albedo.png")?;
 
         let start = Instant::now();
         let device = oidn::Device::new();
         oidn::RayTracing::new(&device)
             .srgb(false)
             .hdr(true)
-            .image_dimensions(render.image.width as usize, render.image.height as usize)
-            .albedo_normal(&albedo.image.buffer, &normal.image.buffer)
+            .image_dimensions(result.width as usize, result.height as usize)
+            .albedo_normal(&albedo.buffer, &normal.buffer)
             .filter_quality(oidn::Quality::High)
-            .filter_in_place(&mut render.image.buffer)
+            .filter_in_place(&mut result.buffer)
             .expect("Error setting up denoising filter");
 
         if let Err(e) = device.get_error() {
@@ -180,7 +195,7 @@ fn main() -> Result<()> {
         let end = start.elapsed();
         println!("Denoised image in {:?}", end);
 
-        render.image.save("denoised.png")?;
+        result.save("denoised.png")?;
         return Ok(());
     });
 

@@ -2,16 +2,19 @@ pub mod auxiliary_integrator;
 pub mod random_integrator;
 pub mod simple_path_integrator;
 
+pub use auxiliary_integrator::{AlbedoIntegrator, NormalIntegrator};
+pub use simple_path_integrator::SimplePathIntegrator;
+
 use rand::Rng;
 use std::time::Instant;
 use winit::event_loop::EventLoopProxy;
 
 use crate::{
-    camera::{self, random_in_unit_disk, Camera},
+    camera::{random_in_unit_disk, Camera},
     image::Image,
     present::PresentationEvent,
     ray::Ray,
-    render::RenderConfig,
+    render::RenderSettings,
     vec3::Vec3,
     Float,
 };
@@ -27,9 +30,9 @@ pub trait Integrator {
 
 pub struct ImageIntegrator<I> {
     camera: Camera,
-    config: RenderConfig,
+    config: RenderSettings,
     integrator: I,
-    pub image: Image,
+    pub image: Option<Image>,
     proxy: EventLoopProxy<PresentationEvent>,
     //sampler: Box<dyn Sampler>,
 }
@@ -40,18 +43,16 @@ where
 {
     pub fn new(
         camera: Camera,
-        config: RenderConfig,
+        config: RenderSettings,
         integrator: I,
         proxy: EventLoopProxy<PresentationEvent>,
         //sampler: impl Sampler + 'static,
     ) -> Self {
-        let image = Image::new(config.width, config.height, config.samples as f32);
-
         Self {
             camera,
             config,
             integrator,
-            image,
+            image: None,
             proxy,
             //sampler: Box::new(sampler),
         }
@@ -69,10 +70,17 @@ where
             self.proxy.clone(),
         );
 
-        self.image = image;
+        self.image = Some(image);
 
         let time_took = format!("rendering took: {:?}", render_time.elapsed());
         println!("{time_took}");
+    }
+
+    pub fn get_image(self) -> Image {
+        if let Some(img) = self.image {
+            return img;
+        }
+        panic!();
     }
 
     #[inline(always)]

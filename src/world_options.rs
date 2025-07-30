@@ -15,7 +15,7 @@ use crate::{
         Model,
     },
     moving_sphere::MovingSphere,
-    render::{Background, RenderConfig},
+    render::{Background, RenderSettings},
     scene::Scene,
     texture::{ChessTexture, ImageTexture, NoiseTexture, SolidColor, TextureStorage},
     utils::load_hdri,
@@ -96,7 +96,7 @@ pub fn random_world() -> Scene {
         Metal::new(Vec3::new(0.7, 0.6, 0.5), 0.0),
     ));
 
-    let config = RenderConfig::with_aspect_ratio(16.0 / 9.0, 500, 100, 50);
+    let config = RenderSettings::with_aspect_ratio(16.0 / 9.0, 500, 100, 50);
 
     let lights = World::new();
 
@@ -185,7 +185,7 @@ pub fn random_world_moving() -> Scene {
         Metal::new(Vec3::new(0.7, 0.6, 0.5), 0.0),
     ));
 
-    let config = RenderConfig::with_aspect_ratio(16.0 / 9.0, 300, 50, 50);
+    let config = RenderSettings::with_aspect_ratio(16.0 / 9.0, 300, 50, 50);
 
     return Scene {
         world,
@@ -247,7 +247,7 @@ pub fn overlapping() -> Scene {
     let sphere = Sphere::new(Vec3::new(0.5, 0.5, 0.5), 2.0, solid);
     world.add(sphere);
 
-    let config = RenderConfig::with_aspect_ratio(16.0 / 9.0, 200, 50, 50);
+    let config = RenderSettings::with_aspect_ratio(16.0 / 9.0, 200, 50, 50);
     return Scene {
         world,
         config,
@@ -263,7 +263,7 @@ pub fn earth() -> Scene {
     let globe = Sphere::new(Vec3::ZERO, 2.0, earth_surface);
     world.add(globe);
 
-    let config = RenderConfig::with_aspect_ratio(16.0 / 9.0, 200, 50, 50);
+    let config = RenderSettings::with_aspect_ratio(16.0 / 9.0, 200, 50, 50);
     return Scene {
         world,
         config,
@@ -321,7 +321,7 @@ pub fn quads() -> Scene {
     let focus_dist = 10.0;
     let aperture = 0.0;
 
-    let config = RenderConfig::with_aspect_ratio(1.0, 400, 500, 200);
+    let config = RenderSettings::with_aspect_ratio(1.0, 400, 500, 200);
     let camera = CameraConfig {
         lookfrom,
         lookat,
@@ -373,7 +373,7 @@ pub fn simple_light() -> Scene {
         difflight,
     ));
 
-    let mut config = RenderConfig::with_aspect_ratio(16.0 / 9.0, 400, 300, 50);
+    let mut config = RenderSettings::with_aspect_ratio(16.0 / 9.0, 400, 300, 50);
     config.background = Background::Night;
     let cam = CameraConfig {
         lookfrom: Vec3::new(26.0, 3.0, 6.0),
@@ -425,7 +425,7 @@ pub fn simple_skybox() -> Scene {
 
     let hdri = load_hdri("assets/skybox.hdr").unwrap();
     let skybox = Background::Hdri(TextureStorage::Image(ImageTexture::from(hdri)));
-    let mut config = RenderConfig::with_aspect_ratio(16.0 / 9.0, 500, 100, 50);
+    let mut config = RenderSettings::with_aspect_ratio(16.0 / 9.0, 500, 100, 50);
     config.background = skybox;
 
     return Scene {
@@ -584,7 +584,7 @@ pub fn cornell_box() -> Scene {
     world.add(box2);
 
     let samples = 1000;
-    let mut config = RenderConfig::with_aspect_ratio(1.0, 400, samples, 50);
+    let mut config = RenderSettings::with_aspect_ratio(1.0, 400, samples, 50);
     config.background = Background::Night;
     let camera = CameraConfig {
         lookfrom: Vec3::new(278.0, 278.0, -800.0),
@@ -673,7 +673,7 @@ pub fn cornell_smoke() -> Scene {
 
     world.add(ConstantMedium::new(box2, 0.01, Vec3::ONE));
 
-    let mut config = RenderConfig::with_aspect_ratio(1.0, 200, 500, 50);
+    let mut config = RenderSettings::with_aspect_ratio(1.0, 200, 500, 50);
     config.background = Background::Night;
     let camera = CameraConfig {
         lookfrom: Vec3::new(278.0, 278.0, -800.0),
@@ -782,7 +782,7 @@ pub fn final_world() -> Scene {
     let rotate = RotateY::new(BvhNode::from_world(box_world), 15.0);
     world.add(Translate::new(rotate, Vec3::new(-100.0, 270.0, 395.0)));
 
-    let mut config = RenderConfig::with_aspect_ratio(1.0, 300, 350, 4);
+    let mut config = RenderSettings::with_aspect_ratio(1.0, 300, 350, 4);
     config.background = Background::Night;
     let camera = CameraConfig {
         lookfrom: Vec3::new(478.0, 278.0, -600.0),

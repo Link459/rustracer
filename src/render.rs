@@ -59,15 +59,15 @@ pub fn hdri(ray: &Ray, hdri: &TextureStorage) -> Vec3 {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct RenderConfig {
+pub struct RenderSettings {
     pub width: u32,
     pub height: u32,
     pub samples: u32,
     pub max_depth: u32,
-    pub background: Background, //pub background: fn(ray: &Ray) -> Vec3,
+    pub background: Background, 
 }
 
-impl RenderConfig {
+impl RenderSettings {
     pub fn new(width: u32, height: u32, samples: u32, max_depth: u32) -> Self {
         Self {
             width,
@@ -109,13 +109,13 @@ impl RenderConfig {
     }
 }
 
-impl Default for RenderConfig {
+impl Default for RenderSettings {
     fn default() -> Self {
         return Self::with_aspect_ratio(16.0 / 9.0, 400, 100, 50);
     }
 }
 
-impl Display for RenderConfig {
+impl Display for RenderSettings {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         writeln!(f, " width: {}", self.width)?;
         writeln!(f, " height: {}", self.height)?;
