@@ -16,7 +16,7 @@ use serde::{Deserialize, Serialize};
 use crate::{hittable::HitPayload, pdf::PDF, ray::Ray, vec3::Vec3, Float};
 
 pub struct ScatterPayload {
-    pub attenuation: Vec3,
+    pub f: Vec3,
     pub wo: Vec3, // -> outgoing direction
     pub pdf: Float,
 }
@@ -25,7 +25,7 @@ impl ScatterPayload {
     pub fn new(attenuation: Vec3, pdf: impl PDF + 'static) -> Self {
         let wo = pdf.generate();
         Self {
-            attenuation,
+            f: attenuation,
             wo,
             pdf: pdf.value(&wo), //pdf_ray: RayOrPDF::PDF(Box::new(pdf)),
         }
@@ -33,7 +33,7 @@ impl ScatterPayload {
 
     pub fn without_pdf(scattered: Ray, attenuation: Vec3) -> Self {
         Self {
-            attenuation,
+            f: attenuation,
             wo: scattered.dir,
             pdf: 0.0,
             //pdf_ray: RayOrPDF::Ray(scattered),

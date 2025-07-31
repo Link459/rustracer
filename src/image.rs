@@ -1,6 +1,8 @@
 use std::{path::Path, ptr};
 
-use crate::{present::PresentationEvent, render::RenderSettings, vec3::Vec3, Float};
+use crate::{
+    present::PresentationEvent, render::RenderSettings, settings::Settings, vec3::Vec3, Float,
+};
 use image::{ImageBuffer, Rgb};
 use rayon::prelude::*;
 use winit::event_loop::EventLoopProxy;
@@ -106,9 +108,17 @@ impl Image {
         return ImageBufferGlue::from_vec(self.width, self.height, buf).unwrap();
     }
 
-    pub fn save(self, path: impl AsRef<Path>) -> Result<(), image::ImageError> {
+    pub fn save(
+        self,
+        settings: &Settings,
+        path: impl AsRef<Path>,
+    ) -> Result<(), image::ImageError> {
         let buf = self.into_bytes();
-        buf.save(path).unwrap();
+
+        let mut new_path = settings.output.clone();
+        new_path.push(path);
+
+        buf.save(new_path).unwrap();
         return Ok(());
     }
 

@@ -5,9 +5,9 @@ use crate::{
     texture::{ImageTexture, TextureStorage},
 };
 
-struct Settings {
-    output: PathBuf,
-    render_settings: RenderSettings,
+pub struct Settings {
+    pub output: PathBuf,
+    pub render_settings: RenderSettings,
 }
 
 fn parse_settings(mut settings: Settings, args: &[String]) -> Settings {

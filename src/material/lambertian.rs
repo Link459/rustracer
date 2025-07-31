@@ -48,7 +48,7 @@ impl Material for Lambertian {
         let pdf = CosinePDF::new(&payload.normal);
         let wo = pdf.generate();
         return Some(ScatterPayload {
-            attenuation: albedo,
+            f: albedo,
             wo,
             pdf: pdf.value(&wo),
         });

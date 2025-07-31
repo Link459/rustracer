@@ -58,7 +58,7 @@ where
             return color_from_emit;
         };
 
-        return scatter_payload.attenuation;
+        return scatter_payload.f;
     }
 
     fn name() -> &'static str {

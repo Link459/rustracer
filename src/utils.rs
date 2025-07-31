@@ -7,14 +7,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use crate::{
-    camera::Camera,
-    hittable::Hittable,
-    image::Image,
-    render::{Background, RenderSettings},
-    scene::Scene,
-    texture::{ImageTexture, TextureStorage},
-};
+use crate::{camera::Camera, hittable::Hittable, image::Image, scene::Scene, settings::Settings};
 
 pub fn serialize_scene(scene: &Scene, path: &str) -> Result<()> {
     let extensions = ron::extensions::Extensions::UNWRAP_VARIANT_NEWTYPES;
@@ -79,4 +72,21 @@ pub fn linear_plane_index(len: usize, width: u32, row: u32, column: u32) -> usiz
 
 pub fn cmd_seperator(name: &str) {
     println!("========{}========", name);
+}
+
+pub fn save_images(
+    settings: &Settings,
+    res: Image,
+    albedo: Image,
+    normal: Image,
+) -> anyhow::Result<()> {
+    if !settings.output.exists() {
+        std::fs::create_dir(&settings.output)?;
+    }
+
+    res.save(settings, "out.png")?;
+    albedo.save(settings, "albedo.png")?;
+    normal.save(settings, "normal.png")?;
+
+    return Ok(());
 }

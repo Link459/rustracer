@@ -24,41 +24,42 @@ where
     }
 
     fn li(&self, mut ray: Ray, mut depth: u32) -> Vec3 {
-        /*if depth > self.config.max_depth {
+        if depth > self.config.max_depth {
             return Vec3::ZERO;
         }
 
-        let Some((payload, material)) = self.world.hit(ray, Interval::new(0.001, Float::INFINITY))
+        let Some((payload, material)) = self.world.hit(&ray, Interval::new(0.001, Float::INFINITY))
         else {
-            return self.config.background.call(ray);
+            return self.config.background.call(&ray);
         };
 
-        let color_from_emit = material.emitted(&ray, &payload, payload.u, payload.v, &payload.p);
+        let emitted = material.emitted(&ray, &payload, payload.u, payload.v, &payload.p);
 
         let Some(scatter_payload) = material.scatter(&ray.dir, &payload) else {
-            return color_from_emit;
+            return emitted;
         };
 
         let scattered = Ray::new(payload.p, scatter_payload.wo, ray.time);
         let pdf_value = scatter_payload.pdf;
 
-        self.depth -= 1;
-        let beta = self.li(&scattered, depth + 1);
+        let beta = self.li(scattered, depth + 1);
 
         if pdf_value == 0.0 {
-            return scatter_payload.attenuation * beta;
+            //return scatter_payload.f * scatter_payload.wo.dot(&payload.normal).abs() * beta;
+            return scatter_payload.f * beta;
         } else {
-            let color_from_scatter = (scatter_payload.attenuation
-                * scatter_payload.wo.dot(&payload.normal).abs()
-                * beta)
+            let f = (scatter_payload.f * scatter_payload.wo.dot(&payload.normal).abs() * beta)
                 / pdf_value;
 
-            let color = color_from_emit + color_from_scatter;
+            let color = emitted + f;
 
             return color;
-        }*/
-        let mut beta = Vec3::ONE;
+        }
+
+        /*let mut beta = Vec3::ONE;
         let mut l = Vec3::ZERO;
+
+        let mut specular_bounce = false;
 
         while beta != Vec3::ZERO {
             let Some((payload, material)) =
@@ -75,24 +76,22 @@ where
             let emitted = material.emitted(&ray, &payload, payload.u, payload.v, &payload.p);
 
             l += beta * emitted;
-            let Some(scatter_payload) = material.scatter(&ray.dir, &payload) else {
+
+            let wi = ray.dir;
+
+            let Some(material_sample) = material.scatter(&wi, &payload) else {
                 break;
             };
 
-            ray = Ray::new(payload.p, scatter_payload.wo, ray.time);
-            let pdf_value = scatter_payload.pdf;
-
-            if pdf_value == 0.0 {
-                return scatter_payload.attenuation * beta;
+            ray = Ray::new(payload.p, material_sample.wo, ray.time);
+            if material_sample.pdf == 0.0 {
+                return material_sample.f * beta;
             } else {
-                let color_from_scatter = (scatter_payload.attenuation
-                    * scatter_payload.wo.dot(&payload.normal).abs())
-                    / pdf_value;
-
-                beta *= color_from_scatter;
+                beta *= (material_sample.f * material_sample.wo.dot(&payload.normal).abs())
+                    / material_sample.pdf;
             }
         }
-        return l;
+        return l;*/
     }
 }
 
