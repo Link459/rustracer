@@ -3,8 +3,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     hittable::HitPayload,
-    material::ScatterPayload,
-    pdf::CosinePDF,
+    material::{same_hemisphere, ScatterPayload},
+    pdf::{CosinePDF, PDF},
     ray::Ray,
     texture::{SolidColor, Texture, TextureStorage},
     vec3::Vec3,
@@ -35,16 +35,26 @@ impl From<Vec3> for Lambertian {
 }
 
 impl Material for Lambertian {
-    #[inline]
-    //fn scatter(&self, _ray: &Ray, payload: &HitPayload) -> Option<ScatterPayload> {
-    fn scatter(&self, _wi: &Vec3, payload: &HitPayload) -> Option<ScatterPayload> {
-        return Some(ScatterPayload::new(
-            self.albedo.value(payload.u, payload.v, &payload.p),
-            CosinePDF::new(&payload.normal),
-        ));
+    fn f(&self, wi: Vec3, wo: Vec3) -> Vec3 {
+        if !same_hemisphere(wi, wo) {
+            return Vec3::ZERO;
+        }
+        return self.albedo.value(0.0, 0.0, &Vec3::ZERO) / crate::consts::PI;
     }
 
-    fn scattering_pdf(&self, _incoming: &Ray, payload: &HitPayload, scattered: &Ray) -> Float {
+    #[inline]
+    fn scatter(&self, _wi: &Vec3, payload: &HitPayload) -> Option<ScatterPayload> {
+        let albedo = self.albedo.value(payload.u, payload.v, &payload.p) / crate::consts::PI;
+        let pdf = CosinePDF::new(&payload.normal);
+        let wo = pdf.generate();
+        return Some(ScatterPayload {
+            attenuation: albedo,
+            wo,
+            pdf: pdf.value(&wo),
+        });
+    }
+
+    fn pdf(&self, _incoming: &Ray, payload: &HitPayload, scattered: &Ray) -> Float {
         let cos_theta = payload.normal.dot(&scattered.dir.normalize());
         return if cos_theta < 0.0 {
             0.0

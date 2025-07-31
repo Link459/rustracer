@@ -49,6 +49,7 @@ impl PDF for CosinePDF {
     }
 }
 
+
 pub struct HittablePDF<'a, M> {
     model: &'a M,
     origin: Vec3,

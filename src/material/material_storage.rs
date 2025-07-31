@@ -40,14 +40,14 @@ impl Material for MaterialStorage {
     }
 
     #[inline]
-    fn scattering_pdf(&self, incoming: &Ray, payload: &HitPayload, scattered: &Ray) -> Float {
+    fn pdf(&self, incoming: &Ray, payload: &HitPayload, scattered: &Ray) -> Float {
         match self {
-            MaterialStorage::Lambertian(ref m) => m.scattering_pdf(incoming, payload, scattered),
-            MaterialStorage::Metal(ref m) => m.scattering_pdf(incoming, payload, scattered),
-            MaterialStorage::Dielectric(ref m) => m.scattering_pdf(incoming, payload, scattered),
-            MaterialStorage::DiffuseLight(ref m) => m.scattering_pdf(incoming, payload, scattered),
-            MaterialStorage::Isotropic(ref m) => m.scattering_pdf(incoming, payload, scattered),
-            MaterialStorage::Default(ref m) => m.scattering_pdf(incoming, payload, scattered),
+            MaterialStorage::Lambertian(ref m) => m.pdf(incoming, payload, scattered),
+            MaterialStorage::Metal(ref m) => m.pdf(incoming, payload, scattered),
+            MaterialStorage::Dielectric(ref m) => m.pdf(incoming, payload, scattered),
+            MaterialStorage::DiffuseLight(ref m) => m.pdf(incoming, payload, scattered),
+            MaterialStorage::Isotropic(ref m) => m.pdf(incoming, payload, scattered),
+            MaterialStorage::Default(ref m) => m.pdf(incoming, payload, scattered),
         }
     }
 }

@@ -248,7 +248,6 @@ impl<'de> Deserialize<'de> for ImageTexture {
                     where
                         E: de::Error,
                     {
-                        dbg!(value);
                         match value {
                             "path" => Ok(Field::Path),
                             _ => Err(de::Error::unknown_field(value, FIELDS)),

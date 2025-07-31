@@ -11,7 +11,7 @@ use std::{env, time::Instant};
 
 use crate::{
     bvh::Bvh,
-    integrator::{AlbedoIntegrator, ImageIntegrator, NormalIntegrator},
+    integrator::{AlbedoIntegrator, ImageIntegrator, NormalIntegrator, SimplePathIntegrator},
     utils::cmd_seperator,
 };
 
@@ -19,6 +19,7 @@ pub type Float = f32;
 pub mod consts {
     use crate::Float;
     pub const PI: Float = 3.14159265358979323846264338327950288;
+    pub const INV_PI: Float = 1.0 / PI;
     pub const TAU: Float = 6.28318530717958647692528676655900577;
     pub const PHI: Float = 1.618033988749894848204586834365638118;
     pub const EGAMMA: Float = 0.577215664901532860606512090082402431;
@@ -133,7 +134,7 @@ fn main() -> Result<()> {
     let event_loop = present::create_present_loop()?;
     let proxy = event_loop.create_proxy();
 
-    let integrator = integrator::simple_path_integrator::SimplePathIntegrator::new(
+    let integrator = SimplePathIntegrator::new(
         camera.clone(),
         world.clone(),
         lights,
