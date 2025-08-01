@@ -24,7 +24,6 @@ impl Metal {
 
 impl Material for Metal {
     #[inline]
-    //fn scatter(&self, ray: &Ray, payload: &HitPayload) -> Option<ScatterPayload> {
     fn scatter(&self, wi: &Vec3, payload: &HitPayload) -> Option<ScatterPayload> {
         let reflected = wi.normalize().reflect(&payload.normal);
         let scattered = reflected + self.fuzz * random_unit_sphere();

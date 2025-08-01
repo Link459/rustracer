@@ -51,7 +51,7 @@ where
             return Vec3::ZERO;
         };
 
-        let color_from_emit = material.emitted(&ray, &payload, payload.u, payload.v, &payload.p);
+        let color_from_emit = material.emitted(&ray.dir, &payload, payload.u, payload.v, &payload.p);
 
         //let Some(scatter_payload) = material.scatter(ray, &payload) else {
         let Some(scatter_payload) = material.scatter(&ray.dir, &payload) else {

@@ -70,7 +70,7 @@ where
             };
 
             if specular_bounce {
-                let emitted = material.emitted(&ray, &payload, payload.u, payload.v, &payload.p);
+                let emitted = material.emitted(&ray.dir, &payload, payload.u, payload.v, &payload.p);
 
                 l += beta * emitted;
             }

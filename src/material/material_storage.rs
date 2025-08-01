@@ -32,9 +32,9 @@ impl Material for MaterialStorage {
     }
 
     #[inline]
-    fn emitted(&self, ray: &Ray, payload: &HitPayload, u: Float, v: Float, p: &Vec3) -> Vec3 {
+    fn emitted(&self, wi: &Vec3, payload: &HitPayload, u: Float, v: Float, p: &Vec3) -> Vec3 {
         match self {
-            MaterialStorage::DiffuseLight(ref m) => m.emitted(ray, payload, u, v, p),
+            MaterialStorage::DiffuseLight(ref m) => m.emitted(wi, payload, u, v, p),
             _ => Vec3::ZERO,
         }
     }

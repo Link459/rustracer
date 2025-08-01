@@ -42,12 +42,12 @@ impl ScatterPayload {
 }
 
 pub trait Material: Send + Sync {
-    fn f(&self, wi: Vec3, wo: Vec3) -> Vec3 {
+    fn f(&self, _wi: Vec3, _wo: Vec3) -> Vec3 {
         return Vec3::ZERO;
     }
 
     fn scatter(&self, wi: &Vec3, payload: &HitPayload) -> Option<ScatterPayload>;
-    fn emitted(&self, _ray: &Ray, _payload: &HitPayload, _u: Float, _v: Float, _p: &Vec3) -> Vec3 {
+    fn emitted(&self, _wi: &Vec3, _payload: &HitPayload, _u: Float, _v: Float, _p: &Vec3) -> Vec3 {
         return Vec3::ZERO;
     }
 
