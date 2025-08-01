@@ -33,6 +33,7 @@ pub struct ImageIntegrator<I> {
     config: RenderSettings,
     integrator: I,
     pub image: Option<Image>,
+    use_samples: bool,
     proxy: EventLoopProxy<PresentationEvent>,
     //sampler: Box<dyn Sampler>,
 }
@@ -45,6 +46,7 @@ where
         camera: Camera,
         config: RenderSettings,
         integrator: I,
+        use_samples: bool,
         proxy: EventLoopProxy<PresentationEvent>,
         //sampler: impl Sampler + 'static,
     ) -> Self {
@@ -53,8 +55,8 @@ where
             config,
             integrator,
             image: None,
+            use_samples,
             proxy,
-            //sampler: Box::new(sampler),
         }
     }
 
@@ -63,12 +65,21 @@ where
         let render_time = Instant::now();
         let mut image = Image::from(&self.config);
 
-        image.compute_parallel_present(
-            |w, h| {
-                return self.trace_ray(w, h);
-            },
-            self.proxy.clone(),
-        );
+        if self.use_samples {
+            image.compute_parallel_present(
+                |w, h| {
+                    return self.trace_ray(w, h);
+                },
+                self.proxy.clone(),
+            );
+        } else {
+            image.compute_parallel_present(
+                |w, h| {
+                    return self.trace_ray_sampleless(w, h);
+                },
+                self.proxy.clone(),
+            );
+        }
 
         self.image = Some(image);
 
@@ -102,6 +113,20 @@ where
         }
 
         return color / self.config.samples as Float;
+    }
+
+    #[inline(always)]
+    pub fn trace_ray_sampleless(&self, w: u32, h: u32) -> Vec3 {
+        let mut rng = rand::rng();
+        let mut color = Vec3::ZERO;
+
+        let u =
+            (w as Float + rng.random_range(0.0..1.0) as Float) / (self.config.width - 1) as Float;
+        let v =
+            (h as Float + rng.random_range(0.0..1.0) as Float) / (self.config.height - 1) as Float;
+        let r = self.get_ray(u, v);
+        color += self.integrator.pixel(&r);
+        return color;
     }
 
     #[inline(always)]

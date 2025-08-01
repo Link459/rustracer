@@ -48,6 +48,7 @@ mod hittable;
 mod image;
 mod integrator;
 mod interval;
+mod light;
 mod material;
 mod model;
 mod moving_sphere;
@@ -155,6 +156,7 @@ fn main() -> Result<()> {
         camera.clone(),
         settings.render_settings.clone(),
         integrator,
+        true,
         proxy.clone(),
     );
 
@@ -162,6 +164,7 @@ fn main() -> Result<()> {
         camera.clone(),
         settings.render_settings.clone(),
         AlbedoIntegrator::new(world.clone()),
+        false,
         proxy.clone(),
     );
 
@@ -169,6 +172,7 @@ fn main() -> Result<()> {
         camera,
         settings.render_settings.clone(),
         NormalIntegrator::new(world),
+        false,
         proxy,
     );
 

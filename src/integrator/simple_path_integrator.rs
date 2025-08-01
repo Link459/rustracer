@@ -24,7 +24,7 @@ where
     }
 
     fn li(&self, mut ray: Ray, mut depth: u32) -> Vec3 {
-        if depth > self.config.max_depth {
+        /*if depth > self.config.max_depth {
             return Vec3::ZERO;
         }
 
@@ -54,28 +54,31 @@ where
             let color = emitted + f;
 
             return color;
-        }
+        }*/
 
-        /*let mut beta = Vec3::ONE;
+        let mut beta = Vec3::ONE;
         let mut l = Vec3::ZERO;
 
-        let mut specular_bounce = false;
+        let mut specular_bounce = true;
 
         while beta != Vec3::ZERO {
             let Some((payload, material)) =
                 self.world.hit(&ray, Interval::new(0.001, Float::INFINITY))
             else {
-                return self.config.background.call(&ray);
+                l += beta * self.config.background.call(&ray);
+                break;
             };
+
+            if specular_bounce {
+                let emitted = material.emitted(&ray, &payload, payload.u, payload.v, &payload.p);
+
+                l += beta * emitted;
+            }
 
             depth += 1;
             if depth > self.config.max_depth {
                 break;
             }
-
-            let emitted = material.emitted(&ray, &payload, payload.u, payload.v, &payload.p);
-
-            l += beta * emitted;
 
             let wi = ray.dir;
 
@@ -85,13 +88,15 @@ where
 
             ray = Ray::new(payload.p, material_sample.wo, ray.time);
             if material_sample.pdf == 0.0 {
-                return material_sample.f * beta;
+                specular_bounce = true;
+                //return material_sample.f * beta;
+                beta *= material_sample.f * material_sample.wo.dot(&payload.normal).abs();
             } else {
                 beta *= (material_sample.f * material_sample.wo.dot(&payload.normal).abs())
                     / material_sample.pdf;
             }
         }
-        return l;*/
+        return l;
     }
 }
 

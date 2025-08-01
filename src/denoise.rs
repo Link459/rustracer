@@ -5,6 +5,7 @@ pub fn denoise(res: &mut Image, albedo: &Image, normal: &Image) {
     oidn::RayTracing::new(&device)
         .srgb(false)
         .hdr(true)
+        .clean_aux(true)
         .image_dimensions(res.width as usize, res.height as usize)
         .albedo_normal(&albedo.buffer, &normal.buffer)
         .filter_quality(oidn::Quality::High)
