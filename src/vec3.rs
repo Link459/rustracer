@@ -188,18 +188,8 @@ impl std::fmt::Display for Vec3 {
     }
 }
 
-// This macro helps us implement math operators on Vector3
-// in such a way that it handles binary operators on any
-// combination of Vec3, &Vec3 and Float.
 macro_rules! impl_binary_operations {
-    // $VectorType is something like `Vec3`
-    // $Operation is something like `Add`
-    // $op_fn is something like `add`
-    // $op_symbol is something like `+`
     ($VectorType:ident $Operation:ident $op_fn:ident $op_symbol:tt) => {
-        // Implement a + b where a and b are both of type &VectorType.
-        // Lower down we'll implement cases where either a or b - or both
-        // - are values by forwarding through to this implementation.
         impl<'a, 'b> $Operation<&'a $VectorType> for &'b $VectorType {
             type Output = $VectorType;
             #[inline(always)]
@@ -212,13 +202,6 @@ macro_rules! impl_binary_operations {
             }
         }
 
-        // Implement a + b for the cases...
-        //
-        //   a: $VectorType,  b: &$VectorType
-        //   a: &$VectorType, b: $VectorType
-        //   a: $VectorType, b: $VectorType
-        //
-        // In each case we forward through to the implementation above.
         impl $Operation<$VectorType> for $VectorType {
             type Output = $VectorType;
 
@@ -246,7 +229,6 @@ macro_rules! impl_binary_operations {
             }
         }
 
-        // Implement a + b where a is type &$VectorType and b is type Float
         impl<'a> $Operation<Float> for &'a $VectorType {
             type Output = $VectorType;
 
@@ -260,14 +242,6 @@ macro_rules! impl_binary_operations {
             }
         }
 
-        // Implement a + b where...
-        //
-        // a is $VectorType and b is Float
-        // a is Float and b is $VectorType
-        // a is Float and b is &$VectorType
-        //
-        // In each case we forward the logic to the implementation
-        // above.
         impl $Operation<Float> for $VectorType {
             type Output = $VectorType;
 
@@ -297,16 +271,9 @@ macro_rules! impl_binary_operations {
     };
 }
 
-// It also implements unary operators like - a where a is of
-// type Vec3 or &Vec3.
 macro_rules! impl_unary_operations {
-    // $VectorType is something like `Vec3`
-    // $Operation is something like `Neg`
-    // $op_fn is something like `neg`
-    // $op_symbol is something like `-`
     ($VectorType:ident $Operation:ident $op_fn:ident $op_symbol:tt) => {
 
-        // Implement the unary operator for references
         impl<'a> $Operation for &'a $VectorType {
             type Output = $VectorType;
 
@@ -320,8 +287,6 @@ macro_rules! impl_unary_operations {
             }
         }
 
-        // Have the operator on values forward through to the implementation
-        // above
         impl $Operation for $VectorType {
             type Output = $VectorType;
 
@@ -333,16 +298,8 @@ macro_rules! impl_unary_operations {
     };
 }
 
-// Implement add-assignment operators like a += b where a and
-// b is either &Vec3 or Vec3 (in this case a is always of type
-// &mut Vec3).
 macro_rules! impl_op_assign {
-    // $VectorType is something like `Vec3`
-    // $OperationAssign is something like `AddAssign`
-    // $op_fn is something like `add_assign`
-    // $op_symbol is something like `+=`
     ($VectorType:ident $OperationAssign:ident $op_fn:ident $op_symbol:tt) => {
-        // Implement $OperationAssign for RHS &Vec3
         impl<'a> $OperationAssign<&'a $VectorType> for $VectorType {
             #[inline(always)]
             fn $op_fn(&mut self, other: &'a $VectorType) {
@@ -354,15 +311,30 @@ macro_rules! impl_op_assign {
             }
         }
 
-        // Implement $OperationAssign for RHS Vec3 by forwarding through to the
-        // implementation above
         impl $OperationAssign for $VectorType {
             #[inline(always)]
             fn $op_fn(&mut self, other: $VectorType) {
                 *self = *self $op_symbol &other
             }
         }
+
+		impl<'a> $OperationAssign<&'a Float> for $VectorType {
+            #[inline(always)]
+            fn $op_fn(&mut self, other: &'a Float) {
+                self.x = self.x $op_symbol other;
+                self.y = self.y $op_symbol other;
+                self.z = self.z $op_symbol other;
+            }
+        }
+
+		impl $OperationAssign<Float> for $VectorType {
+            #[inline(always)]
+            fn $op_fn(&mut self, other: Float) {
+                *self = *self $op_symbol other
+            }
+        }
     };
+
 }
 
 impl_binary_operations!(Vec3 Add add +);

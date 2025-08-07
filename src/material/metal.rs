@@ -29,10 +29,10 @@ impl Material for Metal {
         let scattered = reflected + self.fuzz * random_unit_sphere();
         if Vec3::dot(&scattered, &payload.normal) > 0.0 {
             return Some(ScatterPayload {
-                f: self.albedo,
+                f: self.albedo / scattered.dot(&payload.normal).abs(),
                 wo: scattered,
-                pdf: 0.0,
-                //pdf: 1.0,
+                //pdf: 0.0,
+                pdf: 1.0,
             });
         }
 

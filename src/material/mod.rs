@@ -35,7 +35,7 @@ impl ScatterPayload {
         Self {
             f: attenuation,
             wo: scattered.dir,
-            pdf: 0.0,
+            pdf: 1.0,
             //pdf_ray: RayOrPDF::Ray(scattered),
         }
     }
