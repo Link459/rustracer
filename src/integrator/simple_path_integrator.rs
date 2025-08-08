@@ -8,7 +8,7 @@ use crate::{
 pub struct SimplePathIntegrator<W> {
     camera: Camera,
     world: W,
-    lights: World,
+    lights: UniformLightSampler,
     config: RenderSettings,
 }
 
@@ -70,6 +70,14 @@ where
                 l += beta * self.config.background.call(&ray);
                 break;
             };
+
+            if !self.lights.entities.is_empty() {
+                let size = self.lights.entities.len();
+
+                let idx = rand::rng().random_range(0..size);
+                //let e = self.lights.entities[idx];
+                //e.hit();
+            }
 
             //if specular_bounce {
             let emitted = material.emitted(&ray.dir, &payload, payload.u, payload.v, &payload.p);

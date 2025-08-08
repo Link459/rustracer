@@ -23,6 +23,7 @@ impl Metal {
 }
 
 impl Material for Metal {
+    
     #[inline]
     fn scatter(&self, wi: &Vec3, payload: &HitPayload) -> Option<ScatterPayload> {
         let reflected = wi.normalize().reflect(&payload.normal);
@@ -31,7 +32,6 @@ impl Material for Metal {
             return Some(ScatterPayload {
                 f: self.albedo / scattered.dot(&payload.normal).abs(),
                 wo: scattered,
-                //pdf: 0.0,
                 pdf: 1.0,
             });
         }
