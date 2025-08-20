@@ -5,7 +5,7 @@ use crate::{
     aabb::AABB,
     hittable::{HitPayload, Hittable},
     interval::Interval,
-    material::MaterialStorage,
+    material::MaterialId,
     onb::ONB,
     ray::Ray,
     vec3::Vec3,
@@ -16,11 +16,11 @@ use crate::{
 pub struct Sphere {
     pub center: Vec3,
     pub radius: Float,
-    pub material: MaterialStorage,
+    pub material: MaterialId,
 }
 
 impl Sphere {
-    pub fn new(center: Vec3, radius: Float, material: impl Into<MaterialStorage>) -> Self {
+    pub fn new(center: Vec3, radius: Float, material: MaterialId) -> Self {
         return Self {
             center,
             radius,
@@ -39,7 +39,7 @@ impl Sphere {
 
 impl Hittable for Sphere {
     #[inline]
-    fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<(HitPayload, MaterialStorage)> {
+    fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<(HitPayload, MaterialId)> {
         let oc = ray.orig - self.center;
         let a = ray.dir.length().powi(2);
         let half_b = oc.dot(&ray.dir);

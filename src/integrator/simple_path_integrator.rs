@@ -1,14 +1,24 @@
 use rand::Rng;
 
 use crate::{
-    camera::Camera, hittable::Hittable, integrator::Integrator, interval::Interval,
-    material::Material, ray::Ray, render::RenderSettings, vec3::Vec3, world::World, Float,
+    camera::Camera,
+    hittable::Hittable,
+    integrator::Integrator,
+    interval::Interval,
+    light::UniformLightSampler,
+    material::{Material, MaterialStore},
+    ray::Ray,
+    render::RenderSettings,
+    vec3::Vec3,
+    world::World,
+    Float,
 };
 
 pub struct SimplePathIntegrator<W> {
     camera: Camera,
     world: W,
-    lights: UniformLightSampler,
+    lights: World, //UniformLightSampler,
+    materials: MaterialStore,
     config: RenderSettings,
 }
 
@@ -16,11 +26,18 @@ impl<W> SimplePathIntegrator<W>
 where
     W: Hittable,
 {
-    pub fn new(camera: Camera, world: W, lights: World, config: RenderSettings) -> Self {
+    pub fn new(
+        camera: Camera,
+        world: W,
+        lights: World,
+        materials: MaterialStore,
+        config: RenderSettings,
+    ) -> Self {
         Self {
             camera,
             world,
             lights,
+            materials,
             config,
         }
     }
@@ -64,7 +81,7 @@ where
         //let mut specular_bounce = true;
 
         while beta != Vec3::ZERO {
-            let Some((payload, material)) =
+            let Some((payload, material_id)) =
                 self.world.hit(&ray, Interval::new(0.001, Float::INFINITY))
             else {
                 l += beta * self.config.background.call(&ray);
@@ -78,6 +95,8 @@ where
                 //let e = self.lights.entities[idx];
                 //e.hit();
             }
+
+            let material = self.materials.get(material_id);
 
             //if specular_bounce {
             let emitted = material.emitted(&ray.dir, &payload, payload.u, payload.v, &payload.p);
@@ -97,13 +116,6 @@ where
             };
 
             ray = Ray::new(payload.p, material_sample.wo, ray.time);
-            /*if material_sample.pdf == 0.0 {
-                specular_bounce = true;
-                beta *= material_sample.f * material_sample.wo.dot(&payload.normal).abs();
-            } else {
-                beta *= (material_sample.f * material_sample.wo.dot(&payload.normal).abs())
-                    / material_sample.pdf;
-            }*/
 
             beta *= (material_sample.f * material_sample.wo.dot(&payload.normal).abs())
                 / material_sample.pdf;

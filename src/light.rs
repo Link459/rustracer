@@ -9,7 +9,7 @@ pub struct LightSampleContext {
 }
 
 pub trait Light {
-    fn l(&self, p: Vec3, n: Vec3, uv: [Float; 2], w: Vec3) -> Vec3 {
+    fn l(&self, _p: Vec3, _n: Vec3, _uv: [Float; 2], _w: Vec3) -> Vec3 {
         return Vec3::ZERO;
     }
 

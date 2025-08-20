@@ -6,7 +6,9 @@ use crate::{
     bvh::BvhNode,
     camera::CameraConfig,
     interval::Interval,
-    material::{Dielectric, DiffuseLight, Lambertian, MaterialStorage, Metal},
+    material::{
+        Dielectric, DiffuseLight, Lambertian, MaterialId, MaterialStorage, MaterialStore, Metal,
+    },
     model::{
         quad::Quad,
         sphere::Sphere,
@@ -30,6 +32,8 @@ pub fn random_world() -> Scene {
     let origin = Vec3::new(4.0, 0.2, 0.0);
     let mut world = World::default();
 
+    let mut materials = MaterialStore::new();
+
     let chess = ChessTexture::new(
         SolidColor::new(Vec3::new(0.2, 0.3, 0.1)),
         SolidColor::new(Vec3::new(0.9, 0.9, 0.9)),
@@ -37,7 +41,7 @@ pub fn random_world() -> Scene {
     world.add(Sphere::new(
         Vec3::new(0.0, -1000.0, 0.0),
         1000.0,
-        Lambertian::new(chess),
+        materials.add(Lambertian::new(chess)),
     ));
     for a in -11..11 {
         for b in -11..11 {
@@ -53,29 +57,33 @@ pub fn random_world() -> Scene {
                     world.add(Sphere::new(
                         center,
                         0.2,
-                        Lambertian::new(SolidColor::new(Vec3::new(
+                        materials.add(Lambertian::new(SolidColor::new(Vec3::new(
                             rng.random::<Float>() * rng.random::<Float>(),
                             rng.random::<Float>() * rng.random::<Float>(),
                             rng.random::<Float>() * rng.random::<Float>(),
-                        ))),
+                        )))),
                     ));
                 } else if choose_material < 0.95 {
                     // metal
                     world.add(Sphere::new(
                         center,
                         0.2,
-                        Metal::new(
+                        materials.add(Metal::new(
                             Vec3::new(
                                 0.5 * (1.0 + rng.random::<Float>()),
                                 0.5 * (1.0 + rng.random::<Float>()),
                                 0.5 * (1.0 + rng.random::<Float>()),
                             ),
                             0.5 * rng.random::<Float>(),
-                        ),
+                        )),
                     ));
                 } else {
                     // glass
-                    world.add(Sphere::new(center, 0.2, Dielectric::new(1.5)));
+                    world.add(Sphere::new(
+                        center,
+                        0.2,
+                        materials.add(Dielectric::new(1.5)),
+                    ));
                 }
             }
         }
@@ -83,17 +91,17 @@ pub fn random_world() -> Scene {
     world.add(Sphere::new(
         Vec3::new(0.0, 1.0, 0.0),
         1.0,
-        Dielectric::new(1.5),
+        materials.add(Dielectric::new(1.5)),
     ));
     world.add(Sphere::new(
         Vec3::new(-4.0, 1.0, 0.0),
         1.0,
-        Lambertian::new(SolidColor::new(Vec3::new(0.4, 0.2, 0.1))),
+        materials.add(Lambertian::new(SolidColor::new(Vec3::new(0.4, 0.2, 0.1)))),
     ));
     world.add(Sphere::new(
         Vec3::new(4.0, 1.0, 0.0),
         1.0,
-        Metal::new(Vec3::new(0.7, 0.6, 0.5), 0.0),
+        materials.add(Metal::new(Vec3::new(0.7, 0.6, 0.5), 0.0)),
     ));
 
     let config = RenderSettings::with_aspect_ratio(16.0 / 9.0, 500, 100, 50);
@@ -107,6 +115,7 @@ pub fn random_world() -> Scene {
         camera: CameraConfig {
             ..Default::default()
         },
+        materials,
     };
 }
 
@@ -115,6 +124,8 @@ pub fn random_world_moving() -> Scene {
     let origin = Vec3::new(4.0, 0.2, 0.0);
     let mut world = World::default();
 
+    let mut materials = MaterialStore::new();
+
     let chess = ChessTexture::new(
         SolidColor::new(Vec3::new(0.2, 0.3, 0.1)),
         SolidColor::new(Vec3::new(0.9, 0.9, 0.9)),
@@ -122,7 +133,7 @@ pub fn random_world_moving() -> Scene {
     world.add(Sphere::new(
         Vec3::new(0.0, -1000.0, 0.0),
         1000.0,
-        Lambertian::new(chess),
+        materials.add(Lambertian::new(chess)),
     ));
     for a in -11..11 {
         for b in -11..11 {
@@ -142,29 +153,33 @@ pub fn random_world_moving() -> Scene {
                         0.0,
                         1.0,
                         0.2,
-                        Lambertian::new(SolidColor::new(Vec3::new(
+                        materials.add(Lambertian::new(SolidColor::new(Vec3::new(
                             rng.random::<Float>() * rng.random::<Float>(),
                             rng.random::<Float>() * rng.random::<Float>(),
                             rng.random::<Float>() * rng.random::<Float>(),
-                        ))),
+                        )))),
                     ));
                 } else if choose_material < 0.95 {
                     // metal
                     world.add(Sphere::new(
                         center,
                         0.2,
-                        Metal::new(
+                        materials.add(Metal::new(
                             Vec3::new(
                                 0.5 * (1.0 + rng.random::<Float>()),
                                 0.5 * (1.0 + rng.random::<Float>()),
                                 0.5 * (1.0 + rng.random::<Float>()),
                             ),
                             0.5 * rng.random::<Float>(),
-                        ),
+                        )),
                     ));
                 } else {
                     // glass
-                    world.add(Sphere::new(center, 0.2, Dielectric::new(1.5)));
+                    world.add(Sphere::new(
+                        center,
+                        0.2,
+                        materials.add(Dielectric::new(1.5)),
+                    ));
                 }
             }
         }
@@ -172,17 +187,17 @@ pub fn random_world_moving() -> Scene {
     world.add(Sphere::new(
         Vec3::new(0.0, 1.0, 0.0),
         1.0,
-        Dielectric::new(1.5),
+        materials.add(Dielectric::new(1.5)),
     ));
     world.add(Sphere::new(
         Vec3::new(-4.0, 1.0, 0.0),
         1.0,
-        Lambertian::new(SolidColor::new(Vec3::new(0.4, 0.2, 0.1))),
+        materials.add(Lambertian::new(SolidColor::new(Vec3::new(0.4, 0.2, 0.1)))),
     ));
     world.add(Sphere::new(
         Vec3::new(4.0, 1.0, 0.0),
         1.0,
-        Metal::new(Vec3::new(0.7, 0.6, 0.5), 0.0),
+        materials.add(Metal::new(Vec3::new(0.7, 0.6, 0.5), 0.0)),
     ));
 
     let config = RenderSettings::with_aspect_ratio(16.0 / 9.0, 300, 50, 50);
@@ -194,11 +209,13 @@ pub fn random_world_moving() -> Scene {
         camera: CameraConfig {
             ..Default::default()
         },
+        materials,
     };
 }
 
 pub fn two_chess_spheres() -> Scene {
     let mut world = World::default();
+    let mut materials = MaterialStore::new();
     let chess = ChessTexture::new(
         SolidColor::new(Vec3::new(0.2, 0.3, 0.1)),
         SolidColor::new(Vec3::new(0.9, 0.9, 0.9)),
@@ -207,43 +224,57 @@ pub fn two_chess_spheres() -> Scene {
     world.add(Sphere::new(
         Vec3::new(0.0, -10.0, 0.0),
         10.0,
-        Lambertian::new(chess.clone()),
+        materials.add(Lambertian::new(chess.clone())),
     ));
     world.add(Sphere::new(
         Vec3::new(0.0, 10.0, 0.0),
         10.0,
-        Lambertian::new(chess),
+        materials.add(Lambertian::new(chess)),
     ));
 
-    return (world, CameraConfig::default()).into();
+    return Scene {
+        camera: CameraConfig::default(),
+        config: RenderSettings::default(),
+        world,
+        lights: World::new(),
+        materials,
+    };
 }
 
 #[inline]
 pub fn two_perlin_spheres() -> Scene {
     let mut world = World::default();
+    let mut materials = MaterialStore::new();
     let perlin = NoiseTexture::new(4.0);
 
     world.add(Sphere::new(
         Vec3::new(0.0, -1000.0, 0.0),
         1000.0,
-        Lambertian::new(perlin.clone()),
+        materials.add(Lambertian::new(perlin.clone())),
     ));
     world.add(Sphere::new(
         Vec3::new(0.0, 2.0, 0.0),
         2.0,
-        Lambertian::new(perlin),
+        materials.add(Lambertian::new(perlin)),
     ));
 
-    return (world, CameraConfig::default()).into();
+    return Scene {
+        camera: CameraConfig::default(),
+        config: RenderSettings::default(),
+        world,
+        lights: World::new(),
+        materials,
+    };
 }
 
 pub fn overlapping() -> Scene {
     let mut world = World::new();
+    let mut materials = MaterialStore::new();
     let earth = ImageTexture::new("assets/earthmap.jpg");
-    let earth_surface = Lambertian::new(earth);
+    let earth_surface = materials.add(Lambertian::new(earth));
     let globe = Sphere::new(Vec3::ZERO, 2.0, earth_surface);
     world.add(globe);
-    let solid = Lambertian::new(SolidColor::new(Vec3::new(0.5, 0.3, 0.1)));
+    let solid = materials.add(Lambertian::new(SolidColor::new(Vec3::new(0.5, 0.3, 0.1))));
     let sphere = Sphere::new(Vec3::new(0.5, 0.5, 0.5), 2.0, solid);
     world.add(sphere);
 
@@ -251,6 +282,7 @@ pub fn overlapping() -> Scene {
     return Scene {
         world,
         config,
+        materials,
         ..Default::default()
     };
 }
@@ -258,15 +290,17 @@ pub fn overlapping() -> Scene {
 #[inline]
 pub fn earth() -> Scene {
     let mut world = World::new();
+    let mut materials = MaterialStore::new();
     let earth = ImageTexture::new("assets/earthmap.jpg");
     let earth_surface = Lambertian::new(earth);
-    let globe = Sphere::new(Vec3::ZERO, 2.0, earth_surface);
+    let globe = Sphere::new(Vec3::ZERO, 2.0, materials.add(earth_surface));
     world.add(globe);
 
     let config = RenderSettings::with_aspect_ratio(16.0 / 9.0, 200, 50, 50);
     return Scene {
         world,
         config,
+        materials,
         ..Default::default()
     };
 }
@@ -274,11 +308,22 @@ pub fn earth() -> Scene {
 #[inline]
 pub fn quads() -> Scene {
     let mut world = World::default();
-    let left_red = MaterialStorage::Lambertian(Lambertian::from(Vec3::new(1.0, 0.2, 0.2)));
-    let back_green = MaterialStorage::Lambertian(Lambertian::from(Vec3::new(0.2, 1.0, 0.2)));
-    let right_blue = MaterialStorage::Lambertian(Lambertian::from(Vec3::new(0.2, 0.2, 1.0)));
-    let upper_orange = MaterialStorage::Lambertian(Lambertian::from(Vec3::new(1.0, 0.5, 0.0)));
-    let lower_teal = MaterialStorage::Lambertian(Lambertian::from(Vec3::new(0.2, 0.8, 0.8)));
+    let mut materials = MaterialStore::new();
+    let left_red = materials.add(MaterialStorage::Lambertian(Lambertian::from(Vec3::new(
+        1.0, 0.2, 0.2,
+    ))));
+    let back_green = materials.add(MaterialStorage::Lambertian(Lambertian::from(Vec3::new(
+        0.2, 1.0, 0.2,
+    ))));
+    let right_blue = materials.add(MaterialStorage::Lambertian(Lambertian::from(Vec3::new(
+        0.2, 0.2, 1.0,
+    ))));
+    let upper_orange = materials.add(MaterialStorage::Lambertian(Lambertian::from(Vec3::new(
+        1.0, 0.5, 0.0,
+    ))));
+    let lower_teal = materials.add(MaterialStorage::Lambertian(Lambertian::from(Vec3::new(
+        0.2, 0.8, 0.8,
+    ))));
 
     // Quads
     world.add(Quad::new(
@@ -337,6 +382,7 @@ pub fn quads() -> Scene {
         world,
         camera,
         config,
+        materials,
         ..Default::default()
     };
     //return (world, camera).into();
@@ -347,8 +393,10 @@ pub fn simple_light() -> Scene {
     let mut world = World::default();
     let mut lights = World::default();
 
+    let mut materials = MaterialStore::new();
+
     let pertext = NoiseTexture::new(4.0);
-    let difflight = DiffuseLight::new(SolidColor::new(Vec3::new(4.0, 4.0, 4.0)));
+    let difflight = materials.add(DiffuseLight::new(SolidColor::new(Vec3::new(4.0, 4.0, 4.0))));
 
     lights.add(Sphere::new(
         Vec3::new(0.0, 7.0, 0.0),
@@ -358,12 +406,12 @@ pub fn simple_light() -> Scene {
     world.add(Sphere::new(
         Vec3::new(0.0, -1000.0, 0.0),
         1000.0,
-        Lambertian::new(pertext.clone()),
+        materials.add(Lambertian::new(pertext.clone())),
     ));
     world.add(Sphere::new(
         Vec3::new(0.0, 2.0, 0.0),
         2.0,
-        Lambertian::new(pertext),
+        materials.add(Lambertian::new(pertext)),
     ));
 
     lights.add(Quad::new(
@@ -391,11 +439,13 @@ pub fn simple_light() -> Scene {
         config,
         world,
         lights,
+        materials,
     };
 }
 
 pub fn simple_skybox() -> Scene {
     let mut world = World::default();
+    let mut materials = MaterialStore::new();
 
     let chess = ChessTexture::new(
         SolidColor::new(Vec3::new(0.2, 0.3, 0.1)),
@@ -404,23 +454,23 @@ pub fn simple_skybox() -> Scene {
     world.add(Sphere::new(
         Vec3::new(0.0, -1000.0, 0.0),
         1000.0,
-        Lambertian::new(chess),
+        materials.add(Lambertian::new(chess)),
     ));
 
     world.add(Sphere::new(
         Vec3::new(0.0, 1.0, 0.0),
         1.0,
-        Dielectric::new(1.5),
+        materials.add(Dielectric::new(1.5)),
     ));
     world.add(Sphere::new(
         Vec3::new(-4.0, 1.0, 0.0),
         1.0,
-        Lambertian::new(SolidColor::new(Vec3::new(0.4, 0.2, 0.1))),
+        materials.add(Lambertian::new(SolidColor::new(Vec3::new(0.4, 0.2, 0.1)))),
     ));
     world.add(Sphere::new(
         Vec3::new(4.0, 1.0, 0.0),
         1.0,
-        Metal::new(Vec3::new(0.7, 0.6, 0.5), 0.0),
+        materials.add(Metal::new(Vec3::new(0.7, 0.6, 0.5), 0.0)),
     ));
 
     let hdri = load_hdri("assets/skybox.hdr").unwrap();
@@ -436,7 +486,7 @@ pub fn simple_skybox() -> Scene {
 }
 
 #[inline]
-fn box_of_quads(a: &Vec3, b: &Vec3, mat: impl Into<MaterialStorage> + Clone) -> Model {
+fn box_of_quads(a: &Vec3, b: &Vec3, mat: MaterialId) -> Model {
     // Returns the 3D box (six sides) that contains the two opposite vertices a & b.
 
     let mut sides = World::default();
@@ -500,11 +550,20 @@ fn box_of_quads(a: &Vec3, b: &Vec3, mat: impl Into<MaterialStorage> + Clone) -> 
 #[inline]
 pub fn cornell_box() -> Scene {
     let mut world = World::default();
+    let mut materials = MaterialStore::new();
     let mut lights = World::default();
-    let red = Lambertian::new(SolidColor::new(Vec3::new(0.65, 0.05, 0.05)));
-    let white = Lambertian::new(SolidColor::new(Vec3::new(0.73, 0.73, 0.73)));
-    let green = Lambertian::new(SolidColor::new(Vec3::new(0.12, 0.45, 0.15)));
-    let light = DiffuseLight::new(SolidColor::new(Vec3::new(15.0, 15.0, 15.0)));
+    let red = materials.add(Lambertian::new(SolidColor::new(Vec3::new(
+        0.65, 0.05, 0.05,
+    ))));
+    let white = materials.add(Lambertian::new(SolidColor::new(Vec3::new(
+        0.73, 0.73, 0.73,
+    ))));
+    let green = materials.add(Lambertian::new(SolidColor::new(Vec3::new(
+        0.12, 0.45, 0.15,
+    ))));
+    let light = materials.add(DiffuseLight::new(SolidColor::new(Vec3::new(
+        15.0, 15.0, 15.0,
+    ))));
 
     world.add(Quad::new(
         Vec3::new(555.0, 0.0, 0.0),
@@ -561,7 +620,7 @@ pub fn cornell_box() -> Scene {
         1 => box_of_quads(
             &Vec3::new(0.0, 0.0, 0.0),
             &Vec3::new(165.0, 330.0, 165.0),
-            Metal::new(Vec3::new(0.8, 0.85, 0.88), 0.0),
+            materials.add(Metal::new(Vec3::new(0.8, 0.85, 0.88), 0.0)),
         ),
 
         _ => panic!(),
@@ -602,6 +661,7 @@ pub fn cornell_box() -> Scene {
         config,
         world,
         lights,
+        materials,
     };
 }
 
@@ -609,10 +669,20 @@ pub fn cornell_box() -> Scene {
 pub fn cornell_smoke() -> Scene {
     let mut world = World::default();
     let mut lights = World::default();
-    let red = Lambertian::new(SolidColor::new(Vec3::new(0.65, 0.05, 0.05)));
-    let white = Lambertian::new(SolidColor::new(Vec3::new(0.73, 0.73, 0.73)));
-    let green = Lambertian::new(SolidColor::new(Vec3::new(0.12, 0.45, 0.15)));
-    let light = DiffuseLight::new(SolidColor::new(Vec3::new(15.0, 15.0, 15.0)));
+
+    let mut materials = MaterialStore::new();
+    let red = materials.add(Lambertian::new(SolidColor::new(Vec3::new(
+        0.65, 0.05, 0.05,
+    ))));
+    let white = materials.add(Lambertian::new(SolidColor::new(Vec3::new(
+        0.73, 0.73, 0.73,
+    ))));
+    let green = materials.add(Lambertian::new(SolidColor::new(Vec3::new(
+        0.12, 0.45, 0.15,
+    ))));
+    let light = materials.add(DiffuseLight::new(SolidColor::new(Vec3::new(
+        15.0, 15.0, 15.0,
+    ))));
 
     world.add(Quad::new(
         Vec3::new(555.0, 0.0, 0.0),
@@ -660,7 +730,7 @@ pub fn cornell_smoke() -> Scene {
     let box1 = RotateY::new(box1, 15.0);
     let box1 = Translate::new(box1, Vec3::new(265.0, 0.0, 295.0));
 
-    world.add(ConstantMedium::new(box1, 0.01, Vec3::ZERO));
+    world.add(ConstantMedium::new(box1, 0.01, Vec3::ZERO, &mut materials));
 
     let box2 = box_of_quads(
         &Vec3::new(0.0, 0.0, 0.0),
@@ -671,7 +741,7 @@ pub fn cornell_smoke() -> Scene {
     let box2 = RotateY::new(box2, -18.0);
     let box2 = Translate::new(box2, Vec3::new(130.0, 0.0, 65.0));
 
-    world.add(ConstantMedium::new(box2, 0.01, Vec3::ONE));
+    world.add(ConstantMedium::new(box2, 0.01, Vec3::ONE, &mut materials));
 
     let mut config = RenderSettings::with_aspect_ratio(1.0, 200, 500, 50);
     config.background = Background::Night;
@@ -691,13 +761,19 @@ pub fn cornell_smoke() -> Scene {
         config,
         world,
         lights,
+        materials,
     };
 }
 
 pub fn final_world() -> Scene {
     let mut box_world = World::new();
     let mut lights = World::new();
-    let ground = Lambertian::new(SolidColor::new(Vec3::new(0.48, 0.83, 0.53)));
+    let materials = MaterialStore::new();
+
+    let mut materials = MaterialStore::new();
+    let ground = materials.add(Lambertian::new(SolidColor::new(Vec3::new(
+        0.48, 0.83, 0.53,
+    ))));
     let box_per_side = 20;
     for i in 0..box_per_side {
         for j in 0..box_per_side {
@@ -719,7 +795,7 @@ pub fn final_world() -> Scene {
     let mut world = World::new();
     world.add(BvhNode::from_world(box_world));
 
-    let light = DiffuseLight::new(SolidColor::new(Vec3::new(7.0, 7.0, 7.0)));
+    let light = materials.add(DiffuseLight::new(SolidColor::new(Vec3::new(7.0, 7.0, 7.0))));
     lights.add(Quad::new(
         Vec3::new(123.0, 554.0, 147.0),
         Vec3::new(300.0, 0.0, 0.0),
@@ -729,7 +805,7 @@ pub fn final_world() -> Scene {
 
     let center1 = Vec3::new(400.0, 400.0, 200.0);
     let center2 = center1 + Vec3::new(30.0, 0.0, 0.0);
-    let sphere_material = Lambertian::new(SolidColor::new(Vec3::new(0.7, 0.3, 0.1)));
+    let sphere_material = materials.add(Lambertian::new(SolidColor::new(Vec3::new(0.7, 0.3, 0.1))));
     world.add(MovingSphere::new(
         center1,
         center2,
@@ -742,35 +818,51 @@ pub fn final_world() -> Scene {
     world.add(Sphere::new(
         Vec3::new(260.0, 150.0, 45.0),
         50.0,
-        Dielectric::new(1.5),
+        materials.add(Dielectric::new(1.5)),
     ));
     world.add(Sphere::new(
         Vec3::new(0.0, 150.0, 145.0),
         50.0,
-        Metal::new(Vec3::new(0.8, 0.8, 0.9), 1.0),
+        materials.add(Metal::new(Vec3::new(0.8, 0.8, 0.9), 1.0)),
     ));
 
-    let boundary = Sphere::new(Vec3::new(360.0, 150.0, 145.0), 70.0, Dielectric::new(1.5));
+    let boundary = Sphere::new(
+        Vec3::new(360.0, 150.0, 145.0),
+        70.0,
+        materials.add(Dielectric::new(1.5)),
+    );
     world.add(boundary.clone());
-    world.add(ConstantMedium::new(boundary, 0.2, Vec3::new(0.2, 0.4, 0.9)));
-    let boundary = Sphere::new(Vec3::new(0.0, 0.0, 0.0), 5000.0, Dielectric::new(1.5));
+    world.add(ConstantMedium::new(
+        boundary,
+        0.2,
+        Vec3::new(0.2, 0.4, 0.9),
+        &mut materials,
+    ));
+    let boundary = Sphere::new(
+        Vec3::new(0.0, 0.0, 0.0),
+        5000.0,
+        materials.add(Dielectric::new(1.5)),
+    );
     world.add(ConstantMedium::new(
         boundary,
         0.0001,
         Vec3::new(1.0, 1.0, 1.0),
+        &mut materials,
     ));
 
-    let emat = Lambertian::new(ImageTexture::new("assets/earthmap.jpg"));
+    let emat = materials.add(Lambertian::new(ImageTexture::new("assets/earthmap.jpg")));
     world.add(Sphere::new(Vec3::new(400.0, 200.0, 400.0), 100.0, emat));
     let pertext = NoiseTexture::new(0.2);
     world.add(Sphere::new(
         Vec3::new(220.0, 280.0, 300.0),
         80.0,
-        Lambertian::new(pertext),
+        materials.add(Lambertian::new(pertext)),
     ));
 
     let mut box_world = World::new();
-    let white = Lambertian::new(SolidColor::new(Vec3::new(0.73, 0.73, 0.73)));
+    let white = materials.add(Lambertian::new(SolidColor::new(Vec3::new(
+        0.73, 0.73, 0.73,
+    ))));
     for _ in 0..1000 {
         box_world.add(Sphere::new(
             Vec3::random(&mut rand::rng(), 0.0..165.0),
@@ -800,6 +892,7 @@ pub fn final_world() -> Scene {
         config,
         world,
         lights,
+        materials,
     };
 }
 

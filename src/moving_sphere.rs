@@ -4,10 +4,11 @@ use crate::{
     aabb::AABB,
     hittable::{HitPayload, Hittable},
     interval::Interval,
-    material::MaterialStorage,
+    material::{MaterialId},
     model::sphere::Sphere,
     ray::Ray,
-    vec3::Vec3, Float,
+    vec3::Vec3,
+    Float,
 };
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -17,7 +18,7 @@ pub struct MovingSphere {
     pub time0: Float,
     pub time1: Float,
     pub radius: Float,
-    pub material: MaterialStorage,
+    pub material: MaterialId,
 }
 
 impl MovingSphere {
@@ -27,7 +28,7 @@ impl MovingSphere {
         time0: Float,
         time1: Float,
         radius: Float,
-        material: impl Into<MaterialStorage>,
+        material: MaterialId,
     ) -> Self {
         return Self {
             center0,
@@ -35,7 +36,7 @@ impl MovingSphere {
             time0,
             time1,
             radius,
-            material: material.into(),
+            material: material,
         };
     }
 
@@ -48,7 +49,7 @@ impl MovingSphere {
 
 impl Hittable for MovingSphere {
     #[inline]
-    fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<(HitPayload, MaterialStorage)> {
+    fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<(HitPayload, MaterialId)> {
         let oc = ray.orig - self.center(ray.time);
         let a = ray.dir.length().powi(2);
         let half_b = oc.dot(&ray.dir);

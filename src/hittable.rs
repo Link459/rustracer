@@ -3,7 +3,14 @@ use std::{
     write,
 };
 
-use crate::{aabb::AABB, interval::Interval, material::MaterialStorage, ray::Ray, vec3::Vec3, Float};
+use crate::{
+    aabb::AABB,
+    interval::Interval,
+    material::{MaterialId, MaterialStorage},
+    ray::Ray,
+    vec3::Vec3,
+    Float,
+};
 
 #[derive(Default, Debug)]
 pub struct HitPayload {
@@ -53,7 +60,8 @@ impl Display for HitPayload {
 }
 
 pub trait Hittable: Send + Sync {
-    fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<(HitPayload, MaterialStorage)>;
+    //fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<(HitPayload, MaterialStorage)>;
+    fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<(HitPayload, MaterialId)>;
     fn bounding_box(&self) -> AABB;
     fn pdf_value(&self, _origin: &Vec3, _dir: &Vec3) -> Float {
         return 0.0;

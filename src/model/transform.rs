@@ -1,9 +1,11 @@
 use crate::{
     aabb::AABB,
     hittable::Hittable,
+    material::MaterialId,
     model::{HitPayload, Interval, MaterialStorage, Model},
     ray::Ray,
-    vec3::Vec3, Float,
+    vec3::Vec3,
+    Float,
 };
 use serde::{Deserialize, Serialize};
 
@@ -23,7 +25,7 @@ impl Translate {
 }
 
 impl Hittable for Translate {
-    fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<(HitPayload, MaterialStorage)> {
+    fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<(HitPayload, MaterialId)> {
         let offset_ray = Ray::new(ray.orig - self.offset, ray.dir, ray.time);
 
         if let Some((mut payload, material)) = self.model.hit(&offset_ray, ray_t) {
@@ -62,7 +64,7 @@ impl RotateY {
 }
 
 impl Hittable for RotateY {
-    fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<(HitPayload, MaterialStorage)> {
+    fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<(HitPayload, MaterialId)> {
         let mut origin = ray.orig;
         let mut direction = ray.dir;
 

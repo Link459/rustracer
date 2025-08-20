@@ -3,7 +3,6 @@ use serde::{Deserialize, Serialize};
 use crate::{
     hittable::HitPayload,
     material::{lambertian::random_unit_vector, ScatterPayload},
-    pdf::SpherePDF,
     ray::Ray,
     texture::{SolidColor, Texture, TextureStorage},
     vec3::Vec3,

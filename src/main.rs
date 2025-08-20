@@ -92,6 +92,7 @@ fn main() -> Result<()> {
         config: render_settings,
         mut world,
         lights,
+        materials,
     } = scene;
 
     let mut settings = Settings {
@@ -143,6 +144,7 @@ fn main() -> Result<()> {
         camera.clone(),
         world.clone(),
         lights,
+        materials.clone(),
         settings.render_settings.clone(),
     );
 
@@ -163,7 +165,7 @@ fn main() -> Result<()> {
     let mut albedo_integrator = ImageIntegrator::new(
         camera.clone(),
         settings.render_settings.clone(),
-        AlbedoIntegrator::new(world.clone()),
+        AlbedoIntegrator::new(world.clone(), materials),
         false,
         proxy.clone(),
     );

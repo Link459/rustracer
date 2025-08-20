@@ -56,6 +56,49 @@ pub trait Material: Send + Sync {
     }
 }
 
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug, Serialize, Deserialize)]
+pub struct MaterialId(u32);
+
+#[derive(Default,Clone)]
+pub struct MaterialStore {
+    //materials: Vec<Box<dyn Material>>,
+    materials: Vec<MaterialStorage>,
+    current_id: u32,
+}
+
+impl MaterialStore {
+    pub fn new() -> Self {
+        return Self {
+            materials: Vec::new(),
+            current_id: 0,
+        };
+    }
+
+    pub fn add<M>(&mut self, mat: M) -> MaterialId
+    where
+        //M: Material + 'static,
+        M: Into<material_storage::MaterialStorage>,
+    {
+        //self.materials.push(Box::new(mat));
+        self.materials.push(mat.into());
+        let id = self.current_id;
+        self.current_id += 1;
+        return MaterialId(id);
+    }
+
+    pub fn get(&self, id: MaterialId) -> &dyn Material {
+        //return &*self.materials[id.0 as usize];
+        return &self.materials[id.0 as usize];
+    }
+}
+
+
+impl std::fmt::Debug for MaterialStore {
+    fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        Ok(())
+    }
+}
+
 #[derive(Debug, Clone, Copy, Default, Serialize, Deserialize)]
 pub struct DefaultMaterial;
 

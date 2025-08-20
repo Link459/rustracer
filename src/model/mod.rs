@@ -14,7 +14,7 @@ use crate::{
     bvh::{Bvh, BvhNode},
     hittable::{HitPayload, Hittable},
     interval::Interval,
-    material::MaterialStorage,
+    material::{MaterialId, MaterialStorage},
     model::{
         quad::Quad,
         sphere::Sphere,
@@ -24,7 +24,8 @@ use crate::{
     moving_sphere::MovingSphere,
     ray::Ray,
     vec3::Vec3,
-    world::World, Float,
+    world::World,
+    Float,
 };
 
 //TODO: improve the size of this, bvh,world etc. don't need to be in here. Quad is also really big,
@@ -73,7 +74,7 @@ impl Model {
 }
 
 impl Hittable for Model {
-    fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<(HitPayload, MaterialStorage)> {
+    fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<(HitPayload, MaterialId)> {
         match self {
             Model::Sphere(ref m) => m.hit(ray, ray_t),
             Model::MovingSphere(ref m) => m.hit(ray, ray_t),

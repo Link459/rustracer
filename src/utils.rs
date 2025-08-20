@@ -14,16 +14,17 @@ pub fn serialize_scene(scene: &Scene, path: &str) -> Result<()> {
     let config = ron::ser::PrettyConfig::new()
         .struct_names(false)
         .extensions(extensions);
-    let data = ron::ser::to_string_pretty(&scene, config)?;
+    /*let data = ron::ser::to_string_pretty(&scene, config)?;
     let mut file = File::create(path)?;
-    file.write_all(data.as_bytes())?;
+    file.write_all(data.as_bytes())?;*/
     return Ok(());
 }
 
 pub fn deserialize_scene(path: &str) -> Result<Scene> {
     let data = fs::read_to_string(path)?;
-    let world = ron::from_str::<Scene>(&data)?;
-    return Ok(world);
+    //let world = ron::from_str::<Scene>(&data)?;
+    //return Ok(world);
+    return Err(anyhow::anyhow!(""));
 }
 
 pub fn get_time_prediction(rays: u32, _camera: &Camera, _world: &impl Hittable) -> Duration {

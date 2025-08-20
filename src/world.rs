@@ -2,7 +2,7 @@ use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 use crate::interval::Interval;
-use crate::material::MaterialStorage;
+use crate::material::{MaterialId, MaterialStorage};
 use crate::model::Model;
 use crate::ray::Ray;
 use crate::vec3::Vec3;
@@ -50,7 +50,7 @@ impl World {
 
 impl Hittable for World {
     #[inline]
-    fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<(HitPayload, MaterialStorage)> {
+    fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<(HitPayload, MaterialId)> {
         let mut closest_so_far = ray_t.max;
         let mut res = None;
 

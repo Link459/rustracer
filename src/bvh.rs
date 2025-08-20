@@ -4,7 +4,7 @@ use crate::{
     aabb::AABB,
     hittable::{HitPayload, Hittable},
     interval::Interval,
-    material::MaterialStorage,
+    material::{MaterialId, MaterialStorage},
     model::Model,
     ray::Ray,
     vec3::Vec3,
@@ -165,7 +165,6 @@ impl Bvh {
             return;
         }
 
-
         for i in 0..node.primitive_count {
             let model = &self.models[self.prim_indices[(node.first_idx + i) as usize]];
             node.bbox = AABB::from((node.bbox, model.bounding_box()));
@@ -215,7 +214,7 @@ impl Bvh {
 }
 
 impl Hittable for Bvh {
-    fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<(HitPayload, MaterialStorage)> {
+    fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<(HitPayload, MaterialId)> {
         let mut stack = VecDeque::new();
         stack.push_back(0);
 
@@ -339,7 +338,7 @@ impl BvhNode {
 
 impl Hittable for BvhNode {
     #[inline(always)]
-    fn hit(&self, ray: &Ray, mut ray_t: Interval) -> Option<(HitPayload, MaterialStorage)> {
+    fn hit(&self, ray: &Ray, mut ray_t: Interval) -> Option<(HitPayload, MaterialId)> {
         if !self.bbox.hit(ray, ray_t) {
             return None;
         }

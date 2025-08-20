@@ -1,13 +1,12 @@
-use serde::{Deserialize, Serialize};
+use crate::{camera::CameraConfig, material::MaterialStore, render::RenderSettings, world::World};
 
-use crate::{camera::CameraConfig, render::RenderSettings, world::World};
-
-#[derive(Default, Clone, Serialize, Deserialize)]
+#[derive(Default, Clone)]
 pub struct Scene {
     pub camera: CameraConfig,
-    pub config:RenderSettings,
+    pub config: RenderSettings,
     pub world: World,
     pub lights: World,
+    pub materials: MaterialStore,
 }
 
 impl From<(World, CameraConfig)> for Scene {

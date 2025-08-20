@@ -5,7 +5,7 @@ use crate::{
     aabb::AABB,
     hittable::{HitPayload, Hittable},
     interval::Interval,
-    material::MaterialStorage,
+    material::{MaterialId, },
     ray::Ray,
     vec3::Vec3,
     Float,
@@ -16,7 +16,7 @@ pub struct Quad {
     q: Vec3,
     u: Vec3,
     v: Vec3,
-    material: MaterialStorage,
+    material: MaterialId,
     #[serde(skip)]
     bbox: AABB,
     normal: Vec3,
@@ -26,7 +26,7 @@ pub struct Quad {
 }
 
 impl Quad {
-    pub fn new(q: Vec3, u: Vec3, v: Vec3, material: impl Into<MaterialStorage>) -> Self {
+    pub fn new(q: Vec3, u: Vec3, v: Vec3, material: MaterialId) -> Self {
         let n = u.cross(&v);
         let normal = n.normalize();
         let d = normal.dot(&q);
@@ -63,7 +63,7 @@ impl Quad {
 }
 
 impl Hittable for Quad {
-    fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<(HitPayload, MaterialStorage)> {
+    fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<(HitPayload, MaterialId)> {
         let denom = self.normal.dot(&ray.dir);
 
         // No hit if the ray is parallel to the plane.
@@ -110,7 +110,8 @@ impl Hittable for Quad {
 
     fn random(&self, origin: &Vec3) -> Vec3 {
         let mut rng = rand::rng();
-        let p = self.q + (rng.random_range(0.0..1.0) * self.u) + (rng.random_range(0.0..1.0) * self.v);
+        let p =
+            self.q + (rng.random_range(0.0..1.0) * self.u) + (rng.random_range(0.0..1.0) * self.v);
         return p - origin;
     }
 }
