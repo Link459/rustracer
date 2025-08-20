@@ -1,11 +1,6 @@
 use crate::{
-    hittable::Hittable,
-    integrator::Integrator,
-    interval::Interval,
-    material::{self, Material, MaterialStore},
-    ray::Ray,
-    vec3::Vec3,
-    Float,
+    hittable::Hittable, integrator::Integrator, interval::Interval, material::MaterialStore,
+    ray::Ray, vec3::Vec3, Float,
 };
 
 pub struct NormalIntegrator<W> {

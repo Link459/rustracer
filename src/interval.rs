@@ -62,8 +62,10 @@ impl Add<Float> for Interval {
 impl Default for Interval {
     fn default() -> Self {
         Self {
-            min: (Float::INFINITY),
-            max: (-Float::INFINITY),
+            //min: (Float::INFINITY),
+            //max: (-Float::INFINITY),
+            min: (-Float::MAX),
+            max: (Float::MAX),
         }
     }
 }

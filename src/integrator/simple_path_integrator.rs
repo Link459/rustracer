@@ -2,22 +2,21 @@ use rand::Rng;
 
 use crate::{
     camera::Camera,
-    hittable::Hittable,
+    hittable::{HitPayload, Hittable},
     integrator::Integrator,
     interval::Interval,
-    light::UniformLightSampler,
-    material::{Material, MaterialStore},
+    light::{LightSampleContext, LightStore, UniformLightSampler},
+    material::MaterialStore,
     ray::Ray,
     render::RenderSettings,
     vec3::Vec3,
-    world::World,
     Float,
 };
 
 pub struct SimplePathIntegrator<W> {
     camera: Camera,
     world: W,
-    lights: World, //UniformLightSampler,
+    lights: UniformLightSampler,
     materials: MaterialStore,
     config: RenderSettings,
 }
@@ -29,14 +28,14 @@ where
     pub fn new(
         camera: Camera,
         world: W,
-        lights: World,
+        lights: LightStore,
         materials: MaterialStore,
         config: RenderSettings,
     ) -> Self {
         Self {
             camera,
             world,
-            lights,
+            lights: UniformLightSampler::new(lights.lights),
             materials,
             config,
         }
@@ -88,15 +87,24 @@ where
                 break;
             };
 
-            if !self.lights.entities.is_empty() {
-                let size = self.lights.entities.len();
-
-                let idx = rand::rng().random_range(0..size);
-                //let e = self.lights.entities[idx];
-                //e.hit();
-            }
-
             let material = self.materials.get(material_id);
+
+            let wi = -ray.dir;
+            if let Some(sampled_light) = self.lights.sample() {
+                let ctx = LightSampleContext {
+                    p: payload.p,
+                    n: payload.normal,
+                };
+
+                if let Some(sample) = sampled_light.light.sample_li(&ctx) {
+                    let wo = sample.wo;
+                    let f = material.f(wi, wo) * wo.dot(&ctx.n).abs();
+
+                    if self.unnocluded(payload.p, Vec3::new(343.0, 554.0, 332.0)) {
+                        l += beta * f * sample.l / (sampled_light.p * sample.pdf);
+                    }
+                }
+            }
 
             //if specular_bounce {
             let emitted = material.emitted(&ray.dir, &payload, payload.u, payload.v, &payload.p);
@@ -129,6 +137,12 @@ where
             beta /= p;
         }
         return l;
+    }
+
+    fn unnocluded(&self, p0: Vec3, p1: Vec3) -> bool {
+        let ray = Ray::new_ray_to(p0, p1, 0.0);
+        let hit = self.world.hit(&ray, Interval::default());
+        return hit.is_none();
     }
 }
 

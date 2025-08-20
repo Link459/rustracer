@@ -59,7 +59,7 @@ pub trait Material: Send + Sync {
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug, Serialize, Deserialize)]
 pub struct MaterialId(u32);
 
-#[derive(Default,Clone)]
+#[derive(Default, Clone, Serialize, Deserialize)]
 pub struct MaterialStore {
     //materials: Vec<Box<dyn Material>>,
     materials: Vec<MaterialStorage>,
@@ -91,7 +91,6 @@ impl MaterialStore {
         return &self.materials[id.0 as usize];
     }
 }
-
 
 impl std::fmt::Debug for MaterialStore {
     fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

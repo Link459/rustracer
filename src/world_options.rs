@@ -6,6 +6,7 @@ use crate::{
     bvh::BvhNode,
     camera::CameraConfig,
     interval::Interval,
+    light::{AreaLight, LightStore},
     material::{
         Dielectric, DiffuseLight, Lambertian, MaterialId, MaterialStorage, MaterialStore, Metal,
     },
@@ -106,16 +107,14 @@ pub fn random_world() -> Scene {
 
     let config = RenderSettings::with_aspect_ratio(16.0 / 9.0, 500, 100, 50);
 
-    let lights = World::new();
-
     return Scene {
         world,
         config,
-        lights,
         camera: CameraConfig {
             ..Default::default()
         },
         materials,
+        ..Default::default()
     };
 }
 
@@ -204,12 +203,12 @@ pub fn random_world_moving() -> Scene {
 
     return Scene {
         world,
-        lights: World::default(),
         config,
         camera: CameraConfig {
             ..Default::default()
         },
         materials,
+        ..Default::default()
     };
 }
 
@@ -236,8 +235,8 @@ pub fn two_chess_spheres() -> Scene {
         camera: CameraConfig::default(),
         config: RenderSettings::default(),
         world,
-        lights: World::new(),
         materials,
+        ..Default::default()
     };
 }
 
@@ -262,8 +261,8 @@ pub fn two_perlin_spheres() -> Scene {
         camera: CameraConfig::default(),
         config: RenderSettings::default(),
         world,
-        lights: World::new(),
         materials,
+        ..Default::default()
     };
 }
 
@@ -391,18 +390,18 @@ pub fn quads() -> Scene {
 #[inline]
 pub fn simple_light() -> Scene {
     let mut world = World::default();
-    let mut lights = World::default();
+    let mut lights = LightStore::new();
 
     let mut materials = MaterialStore::new();
 
     let pertext = NoiseTexture::new(4.0);
     let difflight = materials.add(DiffuseLight::new(SolidColor::new(Vec3::new(4.0, 4.0, 4.0))));
 
-    lights.add(Sphere::new(
+    lights.add(AreaLight::new(Sphere::new(
         Vec3::new(0.0, 7.0, 0.0),
         2.0,
         difflight.clone(),
-    ));
+    )));
     world.add(Sphere::new(
         Vec3::new(0.0, -1000.0, 0.0),
         1000.0,
@@ -414,12 +413,12 @@ pub fn simple_light() -> Scene {
         materials.add(Lambertian::new(pertext)),
     ));
 
-    lights.add(Quad::new(
+    lights.add(AreaLight::new(Quad::new(
         Vec3::new(3.0, 1.0, -2.0),
         Vec3::new(2.0, 0.0, 0.0),
         Vec3::new(0.0, 2.0, 0.0),
         difflight,
-    ));
+    )));
 
     let mut config = RenderSettings::with_aspect_ratio(16.0 / 9.0, 400, 300, 50);
     config.background = Background::Night;
@@ -551,7 +550,7 @@ fn box_of_quads(a: &Vec3, b: &Vec3, mat: MaterialId) -> Model {
 pub fn cornell_box() -> Scene {
     let mut world = World::default();
     let mut materials = MaterialStore::new();
-    let mut lights = World::default();
+    let mut lights = LightStore::new();
     let red = materials.add(Lambertian::new(SolidColor::new(Vec3::new(
         0.65, 0.05, 0.05,
     ))));
@@ -578,13 +577,19 @@ pub fn cornell_box() -> Scene {
         green,
     ));
 
-    lights.add(Quad::new(
+    lights.add(AreaLight::new(Quad::new(
         Vec3::new(343.0, 554.0, 332.0),
         Vec3::new(-130.0, 0.0, 0.0),
         Vec3::new(0.0, 0.0, -105.0),
-        //DefaultMaterial::new(),
         light,
-    ));
+    )));
+
+    /*world.add(Quad::new(
+        Vec3::new(343.0, 554.0, 332.0),
+        Vec3::new(-130.0, 0.0, 0.0),
+        Vec3::new(0.0, 0.0, -105.0),
+        light,
+    ));*/
 
     world.add(Quad::new(
         Vec3::new(0.0, 0.0, 0.0),
@@ -668,7 +673,7 @@ pub fn cornell_box() -> Scene {
 #[inline]
 pub fn cornell_smoke() -> Scene {
     let mut world = World::default();
-    let mut lights = World::default();
+    let mut lights = LightStore::new();
 
     let mut materials = MaterialStore::new();
     let red = materials.add(Lambertian::new(SolidColor::new(Vec3::new(
@@ -696,12 +701,12 @@ pub fn cornell_smoke() -> Scene {
         Vec3::new(0.0, 0.0, 555.0),
         green,
     ));
-    lights.add(Quad::new(
+    lights.add(AreaLight::new(Quad::new(
         Vec3::new(113.0, 554.0, 127.0),
         Vec3::new(330.0, 0.0, 0.0),
         Vec3::new(0.0, 0.0, 305.0),
         light,
-    ));
+    )));
     world.add(Quad::new(
         Vec3::new(0.0, 0.0, 0.0),
         Vec3::new(555.0, 0.0, 0.0),
@@ -767,10 +772,9 @@ pub fn cornell_smoke() -> Scene {
 
 pub fn final_world() -> Scene {
     let mut box_world = World::new();
-    let mut lights = World::new();
-    let materials = MaterialStore::new();
-
+    let mut lights = LightStore::new();
     let mut materials = MaterialStore::new();
+
     let ground = materials.add(Lambertian::new(SolidColor::new(Vec3::new(
         0.48, 0.83, 0.53,
     ))));
@@ -796,12 +800,12 @@ pub fn final_world() -> Scene {
     world.add(BvhNode::from_world(box_world));
 
     let light = materials.add(DiffuseLight::new(SolidColor::new(Vec3::new(7.0, 7.0, 7.0))));
-    lights.add(Quad::new(
+    lights.add(AreaLight::new(Quad::new(
         Vec3::new(123.0, 554.0, 147.0),
         Vec3::new(300.0, 0.0, 0.0),
         Vec3::new(0.0, 0.0, 265.0),
         light,
-    ));
+    )));
 
     let center1 = Vec3::new(400.0, 400.0, 200.0);
     let center2 = center1 + Vec3::new(30.0, 0.0, 0.0);

@@ -14,6 +14,11 @@ impl Ray {
         return Self { orig, dir, time };
     }
 
+    pub fn new_ray_to(from: Vec3,  to: Vec3, time: Float) -> Self {
+        let d = to - from;
+        return Self::new(from, d, time);
+    }
+
     pub fn at(&self, t: Float) -> Vec3 {
         return self.orig + t * self.dir;
     }

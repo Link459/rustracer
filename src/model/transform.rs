@@ -2,7 +2,7 @@ use crate::{
     aabb::AABB,
     hittable::Hittable,
     material::MaterialId,
-    model::{HitPayload, Interval, MaterialStorage, Model},
+    model::{HitPayload, Interval, Model},
     ray::Ray,
     vec3::Vec3,
     Float,

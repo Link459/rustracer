@@ -7,7 +7,10 @@ use std::{
     time::{Duration, Instant},
 };
 
-use crate::{camera::Camera, hittable::Hittable, image::Image, scene::Scene, settings::Settings};
+use crate::{
+    camera::Camera, hittable::Hittable, image::Image, scene::Scene, settings::Settings,
+    world::World,
+};
 
 pub fn serialize_scene(scene: &Scene, path: &str) -> Result<()> {
     let extensions = ron::extensions::Extensions::UNWRAP_VARIANT_NEWTYPES;
@@ -24,7 +27,7 @@ pub fn deserialize_scene(path: &str) -> Result<Scene> {
     let data = fs::read_to_string(path)?;
     //let world = ron::from_str::<Scene>(&data)?;
     //return Ok(world);
-    return Err(anyhow::anyhow!(""));
+    return Ok(Scene::default());
 }
 
 pub fn get_time_prediction(rays: u32, _camera: &Camera, _world: &impl Hittable) -> Duration {

@@ -24,6 +24,10 @@ impl Dielectric {
 }
 
 impl Material for Dielectric {
+    fn f(&self, _wi: Vec3, _wo: Vec3) -> Vec3 {
+        return Vec3::ZERO;
+    }
+
     #[inline]
     //fn scatter(&self, ray: &Ray, payload: &HitPayload) -> Option<ScatterPayload> {
     fn scatter(&self, wi: &Vec3, payload: &HitPayload) -> Option<ScatterPayload> {

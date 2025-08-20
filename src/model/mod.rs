@@ -14,7 +14,7 @@ use crate::{
     bvh::{Bvh, BvhNode},
     hittable::{HitPayload, Hittable},
     interval::Interval,
-    material::{MaterialId, MaterialStorage},
+    material::MaterialId,
     model::{
         quad::Quad,
         sphere::Sphere,

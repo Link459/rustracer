@@ -104,7 +104,7 @@ fn main() -> Result<()> {
     println!(
         "objects: {}\nlights: {}",
         world.entities.len(),
-        lights.entities.len()
+        lights.lights.len()
     );
     cmd_seperator("Camera");
     println!("{}", camera);
@@ -112,7 +112,7 @@ fn main() -> Result<()> {
     println!("{}", settings.render_settings);
     cmd_seperator("BVH");
 
-    world.extend(lights.clone());
+    //world.extend(lights.clone());
     let camera_config = camera;
 
     println!("generating bvh...");

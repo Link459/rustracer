@@ -36,9 +36,9 @@ impl From<Vec3> for Lambertian {
 
 impl Material for Lambertian {
     fn f(&self, wi: Vec3, wo: Vec3) -> Vec3 {
-        if !same_hemisphere(wi, wo) {
+        /*if !same_hemisphere(wi, wo) {
             return Vec3::ZERO;
-        }
+        }*/
         return self.albedo.value(0.0, 0.0, &Vec3::ZERO) / crate::consts::PI;
     }
 

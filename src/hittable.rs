@@ -3,14 +3,7 @@ use std::{
     write,
 };
 
-use crate::{
-    aabb::AABB,
-    interval::Interval,
-    material::{MaterialId, MaterialStorage},
-    ray::Ray,
-    vec3::Vec3,
-    Float,
-};
+use crate::{aabb::AABB, interval::Interval, material::MaterialId, ray::Ray, vec3::Vec3, Float};
 
 #[derive(Default, Debug)]
 pub struct HitPayload {

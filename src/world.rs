@@ -2,7 +2,7 @@ use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 use crate::interval::Interval;
-use crate::material::{MaterialId, MaterialStorage};
+use crate::material::{MaterialId};
 use crate::model::Model;
 use crate::ray::Ray;
 use crate::vec3::Vec3;
