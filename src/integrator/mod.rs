@@ -61,7 +61,7 @@ where
     }
 
     pub fn render(&mut self) {
-        println!("starting the render using {}...", I::name());
+        println!("rendering using {}...", I::name());
         let render_time = Instant::now();
         let mut image = Image::from(&self.config);
 

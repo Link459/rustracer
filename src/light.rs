@@ -30,6 +30,7 @@ pub struct LightSample {
     pub l: Vec3,
     pub wo: Vec3,
     pub pdf: Float,
+    pub p: Vec3,
     //pub light: HitPayload,
 }
 
@@ -66,26 +67,28 @@ unsafe impl Send for UniformLightSampler {}
 
 pub struct AreaLight {
     prim: Model,
+    origin: Vec3,
 }
 
 impl AreaLight {
     pub fn new(prim: impl Into<Model>) -> Self {
-        return Self { prim: prim.into() };
+        let prim = prim.into();
+        let origin = prim.bounding_box().center();
+        return Self { prim, origin };
     }
 }
 
 impl Light for AreaLight {
     fn sample_li(&self, ctx: &LightSampleContext) -> Option<LightSample> {
-        let wo = self.prim.random(&ctx.n);
-        let ray = Ray::new_ray_to(ctx.p, wo, 0.0);
-        /*let Some((payload, _)) = self.prim.hit(&ray, Interval::default()) else {
-            return None;
-        };*/
+        let wo = self.prim.random(&ctx.p);
+        let p = self.origin;
+        
 
         return Some(LightSample {
             l: Vec3::ONE,
             wo,
-            pdf: self.prim.pdf_value(&ctx.n, &wo),
+            pdf: self.prim.pdf_value(&ctx.p, &wo),
+            p,
             //light: payload,
         });
     }

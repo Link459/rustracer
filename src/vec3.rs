@@ -1,6 +1,6 @@
 use core::panic;
 use std::ops::{
-    Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Range, Sub, SubAssign,
+    Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Not, Range, Sub, SubAssign
 };
 
 use serde::{Deserialize, Serialize};
@@ -137,6 +137,8 @@ impl Vec3 {
         r_out_perp + r_out_parallel
     }
 }
+
+
 
 impl From<Float> for Vec3 {
     #[inline(always)]

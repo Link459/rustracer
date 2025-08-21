@@ -6,7 +6,7 @@ use crate::{
     integrator::Integrator,
     interval::Interval,
     light::{LightSampleContext, LightStore, UniformLightSampler},
-    material::MaterialStore,
+    material::{lambertian::random_unit_vector, MaterialStore},
     ray::Ray,
     render::RenderSettings,
     vec3::Vec3,
@@ -42,38 +42,6 @@ where
     }
 
     fn li(&self, mut ray: Ray, mut depth: u32) -> Vec3 {
-        /*if depth > self.config.max_depth {
-            return Vec3::ZERO;
-        }
-
-        let Some((payload, material)) = self.world.hit(&ray, Interval::new(0.001, Float::INFINITY))
-        else {
-            return self.config.background.call(&ray);
-        };
-
-        let emitted = material.emitted(&ray, &payload, payload.u, payload.v, &payload.p);
-
-        let Some(scatter_payload) = material.scatter(&ray.dir, &payload) else {
-            return emitted;
-        };
-
-        let scattered = Ray::new(payload.p, scatter_payload.wo, ray.time);
-        let pdf_value = scatter_payload.pdf;
-
-        let beta = self.li(scattered, depth + 1);
-
-        if pdf_value == 0.0 {
-            //return scatter_payload.f * scatter_payload.wo.dot(&payload.normal).abs() * beta;
-            return scatter_payload.f * beta;
-        } else {
-            let f = (scatter_payload.f * scatter_payload.wo.dot(&payload.normal).abs() * beta)
-                / pdf_value;
-
-            let color = emitted + f;
-
-            return color;
-        }*/
-
         let mut beta = Vec3::ONE;
         let mut l = Vec3::ZERO;
 
@@ -89,7 +57,10 @@ where
 
             let material = self.materials.get(material_id);
 
-            let wi = -ray.dir;
+            //TODO: get direct light sampling (nee) to work properly
+
+            /*let wi = -ray.dir;
+            //let wi = ray.dir;
             if let Some(sampled_light) = self.lights.sample() {
                 let ctx = LightSampleContext {
                     p: payload.p,
@@ -100,11 +71,11 @@ where
                     let wo = sample.wo;
                     let f = material.f(wi, wo) * wo.dot(&ctx.n).abs();
 
-                    if self.unnocluded(payload.p, Vec3::new(343.0, 554.0, 332.0)) {
-                        l += beta * f * sample.l / (sampled_light.p * sample.pdf);
+                    if self.unnocluded(payload.p, sample.p) {
+                        l += (beta * f * sample.l) / (sampled_light.p * sample.pdf);
                     }
                 }
-            }
+            }*/
 
             //if specular_bounce {
             let emitted = material.emitted(&ray.dir, &payload, payload.u, payload.v, &payload.p);
@@ -141,7 +112,7 @@ where
 
     fn unnocluded(&self, p0: Vec3, p1: Vec3) -> bool {
         let ray = Ray::new_ray_to(p0, p1, 0.0);
-        let hit = self.world.hit(&ray, Interval::default());
+        let hit = self.world.hit(&ray, Interval::new(0.0, 1.0 - 0.0005));
         return hit.is_none();
     }
 }
