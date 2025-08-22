@@ -2,11 +2,11 @@ use rand::Rng;
 
 use crate::{
     camera::Camera,
-    hittable::{HitPayload, Hittable},
+    hittable::Hittable,
     integrator::Integrator,
     interval::Interval,
     light::{LightSampleContext, LightStore, UniformLightSampler},
-    material::{lambertian::random_unit_vector, MaterialStore},
+    material::MaterialStore,
     ray::Ray,
     render::RenderSettings,
     vec3::Vec3,
@@ -59,8 +59,7 @@ where
 
             //TODO: get direct light sampling (nee) to work properly
 
-            /*let wi = -ray.dir;
-            //let wi = ray.dir;
+            let wi = -ray.dir;
             if let Some(sampled_light) = self.lights.sample() {
                 let ctx = LightSampleContext {
                     p: payload.p,
@@ -72,15 +71,14 @@ where
                     let f = material.f(wi, wo) * wo.dot(&ctx.n).abs();
 
                     if self.unnocluded(payload.p, sample.p) {
-                        l += (beta * f * sample.l) / (sampled_light.p * sample.pdf);
+                        l += beta * f * sample.l / (sampled_light.p * sample.pdf);
                     }
                 }
-            }*/
+            }
 
             //if specular_bounce {
-            let emitted = material.emitted(&ray.dir, &payload, payload.u, payload.v, &payload.p);
-
-            l += beta * emitted;
+            //let emitted = material.emitted(&ray.dir, &payload, payload.u, payload.v, &payload.p);
+            //l += beta * emitted;
             //}
 
             depth += 1;

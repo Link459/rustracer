@@ -52,10 +52,26 @@ impl Display for HitPayload {
     }
 }
 
+pub struct HitSample {
+    pub p: Vec3,
+    pub pdf: Float,
+}
+
+pub struct HitSampleContext {
+    pub origin: Vec3,
+}
+
 pub trait Hittable: Send + Sync {
     //fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<(HitPayload, MaterialStorage)>;
     fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<(HitPayload, MaterialId)>;
     fn bounding_box(&self) -> AABB;
+    fn sample(&self, ctx: &HitSampleContext) -> Option<HitSample> {
+        let p = self.random(&ctx.origin);
+        let pdf = self.pdf_value(&ctx.origin, &p);
+
+        return Some(HitSample { p, pdf });
+    }
+
     fn pdf_value(&self, _origin: &Vec3, _dir: &Vec3) -> Float {
         return 0.0;
     }

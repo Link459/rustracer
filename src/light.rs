@@ -1,7 +1,7 @@
 use rand::Rng;
 
 use crate::{
-    hittable::{HitPayload, Hittable},
+    hittable::{HitPayload, HitSampleContext, Hittable},
     interval::Interval,
     model::Model,
     ray::Ray,
@@ -27,16 +27,15 @@ pub trait Light {
 }
 
 pub struct LightSample {
-    pub l: Vec3,
-    pub wo: Vec3,
-    pub pdf: Float,
-    pub p: Vec3,
-    //pub light: HitPayload,
+    pub l: Vec3,    // light
+    pub wo: Vec3,   // direction towards the light
+    pub pdf: Float, // pdf for the direction towards to the light
+    pub p: Vec3,    // position on the light
 }
 
 pub struct SampledLight<'a> {
     pub light: &'a dyn Light,
-    pub p: Float,
+    pub p: Float, // probability of choosing this light
 }
 
 pub struct UniformLightSampler {
@@ -67,29 +66,37 @@ unsafe impl Send for UniformLightSampler {}
 
 pub struct AreaLight {
     prim: Model,
-    origin: Vec3,
 }
 
 impl AreaLight {
     pub fn new(prim: impl Into<Model>) -> Self {
         let prim = prim.into();
-        let origin = prim.bounding_box().center();
-        return Self { prim, origin };
+        return Self { prim };
     }
 }
 
 impl Light for AreaLight {
     fn sample_li(&self, ctx: &LightSampleContext) -> Option<LightSample> {
-        let wo = self.prim.random(&ctx.p);
-        let p = self.origin;
-        
+        let hit_ctx = HitSampleContext { origin: ctx.p };
+
+        let Some(sample) = self.prim.sample(&hit_ctx) else {
+            return None;
+        };
+
+        if sample.pdf == 0.0 || (sample.p - ctx.p).length_squared() == 0.0 {
+            //println!("no pdf: {}", sample.pdf);
+            return None;
+        }
+
+        //println!("pdf: {}", sample.pdf);
+
+        let wo = (sample.p - ctx.p).normalize();
 
         return Some(LightSample {
             l: Vec3::ONE,
             wo,
-            pdf: self.prim.pdf_value(&ctx.p, &wo),
-            p,
-            //light: payload,
+            pdf: sample.pdf,
+            p: sample.p,
         });
     }
 }

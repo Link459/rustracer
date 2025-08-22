@@ -5,7 +5,7 @@ use crate::{
     aabb::AABB,
     hittable::{HitPayload, Hittable},
     interval::Interval,
-    material::{MaterialId, },
+    material::MaterialId,
     ray::Ray,
     vec3::Vec3,
     Float,
@@ -98,8 +98,9 @@ impl Hittable for Quad {
 
     fn pdf_value(&self, origin: &Vec3, dir: &Vec3) -> Float {
         let ray = Ray::new(*origin, *dir, 0.0);
-        //let Some((payload, _material)) = self.hit(&ray, Interval::new(0.001, Float::INFINITY)) else {
-        let Some((payload, _material)) = self.hit(&ray, Interval::UNIVERSE) else {
+
+        let Some((payload, _material)) = self.hit(&ray, Interval::new(0.01, Float::INFINITY)) else {
+            //let Some((payload, _material)) = self.hit(&ray, Interval::UNIVERSE) else {
             return 0.0;
         };
 
