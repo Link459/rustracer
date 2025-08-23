@@ -591,6 +591,7 @@ pub fn cornell_box() -> Scene {
         Vec3::new(0.0, 0.0, -105.0),
         light,
     ));
+    dbg!(light);
 
     world.add(Quad::new(
         Vec3::new(0.0, 0.0, 0.0),

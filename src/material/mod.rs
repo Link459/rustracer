@@ -57,7 +57,7 @@ pub trait Material: Send + Sync {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug, Serialize, Deserialize)]
-pub struct MaterialId(u32);
+pub struct MaterialId(pub u32);
 
 #[derive(Default, Clone, Serialize, Deserialize)]
 pub struct MaterialStore {

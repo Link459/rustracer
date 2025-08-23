@@ -6,7 +6,7 @@ use crate::{
     integrator::Integrator,
     interval::Interval,
     light::{LightSampleContext, LightStore, UniformLightSampler},
-    material::MaterialStore,
+    material::{MaterialId, MaterialStore},
     ray::Ray,
     render::RenderSettings,
     vec3::Vec3,
@@ -110,7 +110,9 @@ where
 
     fn unnocluded(&self, p0: Vec3, p1: Vec3) -> bool {
         let ray = Ray::new_ray_to(p0, p1, 0.0);
-        let hit = self.world.hit(&ray, Interval::new(0.0, 1.0 - 0.0005));
+        let dist = (p1 - p0).length();
+        let hit = self.world.hit(&ray, Interval::new(1.0, dist - 0.0005));
+        //let hit = self.world.hit(&ray, Interval::new(0.0, Float::INFINITY));
         return hit.is_none();
     }
 }
