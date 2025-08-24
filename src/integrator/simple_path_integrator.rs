@@ -6,7 +6,7 @@ use crate::{
     integrator::Integrator,
     interval::Interval,
     light::{LightSampleContext, LightStore, UniformLightSampler},
-    material::{MaterialId, MaterialStore},
+    material::MaterialStore,
     ray::Ray,
     render::RenderSettings,
     vec3::Vec3,
@@ -59,7 +59,7 @@ where
 
             //TODO: get direct light sampling (nee) to work properly
 
-            let wi = -ray.dir;
+            let wi = ray.dir;
             if let Some(sampled_light) = self.lights.sample() {
                 let ctx = LightSampleContext {
                     p: payload.p,
@@ -86,16 +86,14 @@ where
                 break;
             }
 
-            let wi = ray.dir;
-
             let Some(material_sample) = material.scatter(&wi, &payload) else {
                 break;
             };
 
-            ray = Ray::new(payload.p, material_sample.wo, ray.time);
+            let wo = material_sample.wo;
+            ray = Ray::new(payload.p, wo, ray.time);
 
-            beta *= (material_sample.f * material_sample.wo.dot(&payload.normal).abs())
-                / material_sample.pdf;
+            beta *= (material_sample.f * wo.dot(&payload.normal).abs()) / material_sample.pdf;
 
             // Russian-Roulette
             let p = luminance(beta);
@@ -109,10 +107,14 @@ where
     }
 
     fn unnocluded(&self, p0: Vec3, p1: Vec3) -> bool {
-        let ray = Ray::new_ray_to(p0, p1, 0.0);
-        let dist = (p1 - p0).length();
+        let dir = p1 - p0;
+        let ray = Ray::new(p0, dir, 0.0);
+
+        /*let dir = p0 - p1;
+        let ray = Ray::new(p1, dir, 0.0);*/
+        let dist = dir.length();
         let hit = self.world.hit(&ray, Interval::new(1.0, dist - 0.0005));
-        //let hit = self.world.hit(&ray, Interval::new(0.0, Float::INFINITY));
+        //let hit = self.world.hit(&ray, Interval::new(0.0, 1.0));
         return hit.is_none();
     }
 }
