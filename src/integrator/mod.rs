@@ -1,3 +1,4 @@
+pub mod accumulating_integrator;
 pub mod auxiliary_integrator;
 pub mod random_integrator;
 pub mod simple_path_integrator;
@@ -34,7 +35,7 @@ pub struct ImageIntegrator<I> {
     integrator: I,
     pub image: Option<Image>,
     use_samples: bool,
-    proxy: EventLoopProxy<PresentationEvent>,
+    proxy: Option<EventLoopProxy<PresentationEvent>>,
     //sampler: Box<dyn Sampler>,
 }
 
@@ -47,7 +48,7 @@ where
         config: RenderSettings,
         integrator: I,
         use_samples: bool,
-        proxy: EventLoopProxy<PresentationEvent>,
+        proxy: Option<EventLoopProxy<PresentationEvent>>,
         //sampler: impl Sampler + 'static,
     ) -> Self {
         Self {
@@ -62,26 +63,48 @@ where
 
     pub fn render(&mut self) {
         println!("rendering using {}...", I::name());
+        let Self {
+            camera,
+            config,
+            integrator,
+            image,
+            use_samples,
+            proxy,
+        } = self;
         let render_time = Instant::now();
-        let mut image = Image::from(&self.config);
-
-        if self.use_samples {
-            image.compute_parallel_present(
-                |w, h| {
-                    return self.trace_ray(w, h);
-                },
-                self.proxy.clone(),
-            );
-        } else {
-            image.compute_parallel_present(
-                |w, h| {
-                    return self.trace_ray_sampleless(w, h);
-                },
-                self.proxy.clone(),
-            );
+        if image.is_none() {
+            *image = Some(Image::from(&*config));
         }
 
-        self.image = Some(image);
+        let image = image.as_mut().unwrap();
+
+        if let Some(proxy) = &proxy {
+            if *use_samples {
+                image.compute_parallel_present(
+                    |w, h| {
+                        return Self::trace_ray(&camera, &config, integrator, w, h);
+                    },
+                    proxy.clone(),
+                );
+            } else {
+                image.compute_parallel_present(
+                    |w, h| {
+                        return Self::trace_ray_sampleless(&camera, &config, integrator, w, h);
+                    },
+                    proxy.clone(),
+                );
+            }
+        } else {
+            if *use_samples {
+                image.compute_parallel(|w, h| {
+                    return Self::trace_ray(&camera, &config, integrator, w, h);
+                });
+            } else {
+                image.compute_parallel(|w, h| {
+                    return Self::trace_ray_sampleless(&camera, &config, integrator, w, h);
+                });
+            }
+        }
 
         let time_took = format!("rendering took: {:?}", render_time.elapsed());
         println!("{time_took}");
@@ -94,78 +117,93 @@ where
         panic!();
     }
 
+    pub fn get_image_ref(&self) -> &Image {
+        if let Some(img) = &self.image {
+            return img;
+        }
+        panic!();
+    }
+
     #[inline(always)]
-    pub fn trace_ray(&self, w: u32, h: u32) -> Vec3 {
+    fn trace_ray(
+        camera: &Camera,
+        config: &RenderSettings,
+        integrator: &impl Integrator,
+        w: u32,
+        h: u32,
+    ) -> Vec3 {
         let mut rng = rand::rng();
         let mut color = Vec3::ZERO;
 
-        for s_i in 0..self.camera.sqrt_samples as u64 {
-            for s_j in 0..self.camera.sqrt_samples as u64 {
+        for s_i in 0..camera.sqrt_samples as u64 {
+            for s_j in 0..camera.sqrt_samples as u64 {
                 let u = (w as Float + rng.random_range(0.0..1.0) as Float)
-                    / (self.config.width - 1) as Float;
+                    / (config.width - 1) as Float;
                 let v = (h as Float + rng.random_range(0.0..1.0) as Float)
-                    / (self.config.height - 1) as Float;
-                let r = self.get_ray_stratified(u, v, s_i as Float, s_j as Float);
+                    / (config.height - 1) as Float;
+                let r = Self::get_ray_stratified(camera, u, v, s_i as Float, s_j as Float);
                 //let r = self.get_ray(u, v);
-                color += self.integrator.pixel(&r);
+                color += integrator.pixel(&r);
                 //return self.integrator.pixel(ray, &*self.sampler);
             }
         }
 
-        return color / self.config.samples as Float;
+        return color / config.samples as Float;
     }
 
     #[inline(always)]
-    pub fn trace_ray_sampleless(&self, w: u32, h: u32) -> Vec3 {
+    fn trace_ray_sampleless(
+        camera: &Camera,
+        config: &RenderSettings,
+        integrator: &impl Integrator,
+        w: u32,
+        h: u32,
+    ) -> Vec3 {
         let mut rng = rand::rng();
         let mut color = Vec3::ZERO;
 
-        let u =
-            (w as Float + rng.random_range(0.0..1.0) as Float) / (self.config.width - 1) as Float;
-        let v =
-            (h as Float + rng.random_range(0.0..1.0) as Float) / (self.config.height - 1) as Float;
-        let r = self.get_ray(u, v);
-        color += self.integrator.pixel(&r);
+        let u = (w as Float + rng.random_range(0.0..1.0) as Float) / (config.width - 1) as Float;
+        let v = (h as Float + rng.random_range(0.0..1.0) as Float) / (config.height - 1) as Float;
+        let r = Self::get_ray(camera, u, v);
+        color += integrator.pixel(&r);
         return color;
     }
 
     #[inline(always)]
-    pub fn get_ray(&self, s: Float, t: Float) -> Ray {
-        let origin = if self.camera.lens_radius <= 0.0 {
-            self.camera.origin
+    fn get_ray(camera: &Camera, s: Float, t: Float) -> Ray {
+        let origin = if camera.lens_radius <= 0.0 {
+            camera.origin
         } else {
-            let rd = self.camera.lens_radius * random_in_unit_disk();
-            self.camera.origin + self.camera.cu * rd.x + self.camera.cv * rd.y
+            let rd = camera.lens_radius * random_in_unit_disk();
+            camera.origin + camera.cu * rd.x + camera.cv * rd.y
         };
 
         let dir =
-            self.camera.lower_left_corner + s * self.camera.horizontal + t * self.camera.vertical
-                - self.camera.origin;
+            camera.lower_left_corner + s * camera.horizontal + t * camera.vertical - camera.origin;
 
         Ray::new(
             origin,
             dir,
-            rand::rng().random_range(self.camera.time.min..self.camera.time.max),
+            rand::rng().random_range(camera.time.min..camera.time.max),
         )
     }
 
     #[inline(always)]
-    pub fn get_ray_stratified(&self, s: Float, t: Float, s_i: Float, s_j: Float) -> Ray {
-        let offset = self.camera.sample_square_stratified(s_i, s_j);
-        let origin = if self.camera.lens_radius <= 0.0 {
-            self.camera.origin
+    fn get_ray_stratified(camera: &Camera, s: Float, t: Float, s_i: Float, s_j: Float) -> Ray {
+        let offset = camera.sample_square_stratified(s_i, s_j);
+        let origin = if camera.lens_radius <= 0.0 {
+            camera.origin
         } else {
-            self.camera.origin + offset
+            camera.origin + offset
         };
 
         let dir =
-            self.camera.lower_left_corner + s * self.camera.horizontal + t * self.camera.vertical
-                - self.camera.origin;
+            camera.lower_left_corner + s * camera.horizontal + t * camera.vertical - camera.origin;
 
         Ray::new(
             origin,
             dir,
-            rand::rng().random_range(self.camera.time.min..self.camera.time.max),
+            rand::rng().random_range(camera.time.min..camera.time.max),
         )
     }
 }

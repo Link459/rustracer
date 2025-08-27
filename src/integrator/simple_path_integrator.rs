@@ -60,7 +60,7 @@ where
             //TODO: get direct light sampling (nee) to work properly
 
             let wi = ray.dir;
-            if let Some(sampled_light) = self.lights.sample() {
+            /*if let Some(sampled_light) = self.lights.sample() {
                 let ctx = LightSampleContext {
                     p: payload.p,
                     n: payload.normal,
@@ -74,7 +74,7 @@ where
                         l += beta * f * sample.l / (sampled_light.p * sample.pdf);
                     }
                 }
-            }
+            }*/
 
             //if specular_bounce {
             //let emitted = material.emitted(&ray.dir, &payload, payload.u, payload.v, &payload.p);

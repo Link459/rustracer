@@ -25,6 +25,8 @@ impl Image {
             height,
         };
         unsafe { img.buffer.set_len(len) };
+
+        img.buffer.fill(0.0);
         return img;
     }
 
@@ -86,6 +88,28 @@ impl Image {
             ptr::write(ptr.add(index + 1), color.y);
             ptr::write(ptr.add(index + 2), color.z);
         }
+    }
+
+    #[inline(always)]
+    pub fn read(&self, index: usize) -> Vec3 {
+        let ptr = self.buffer.as_ptr() as *mut Float;
+        let mut color = Vec3::ZERO;
+        unsafe {
+            color.x = ptr::read(ptr.add(index));
+            color.y = ptr::read(ptr.add(index + 1));
+            color.z = ptr::read(ptr.add(index + 2));
+        }
+        return color;
+    }
+
+    pub fn read_ptr(ptr: *mut Float, index: usize) -> Vec3 {
+        let mut color = Vec3::ZERO;
+        unsafe {
+            color.x = ptr::read(ptr.add(index));
+            color.y = ptr::read(ptr.add(index + 1));
+            color.z = ptr::read(ptr.add(index + 2));
+        }
+        return color;
     }
 
     pub fn into_image_buffer(self) -> ImageBufferGlue {

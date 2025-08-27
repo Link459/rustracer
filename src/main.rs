@@ -158,16 +158,18 @@ fn main() -> Result<()> {
         camera.clone(),
         settings.render_settings.clone(),
         integrator,
-        true,
-        proxy.clone(),
+        false, //true,
+        Some(proxy.clone()),
     );
+
+    let mut accumulator = integrator::accumulating_integrator::AccumulatingIntegrator::new(render);
 
     let mut albedo_integrator = ImageIntegrator::new(
         camera.clone(),
         settings.render_settings.clone(),
         AlbedoIntegrator::new(world.clone(), materials),
         false,
-        proxy.clone(),
+        Some(proxy.clone()),
     );
 
     let mut normal_integrator = ImageIntegrator::new(
@@ -175,10 +177,12 @@ fn main() -> Result<()> {
         settings.render_settings.clone(),
         NormalIntegrator::new(world),
         false,
-        proxy,
+        Some(proxy),
     );
 
     let handle = std::thread::spawn(move || -> Result<()> {
+        accumulator.render();
+        panic!("");
         normal_integrator.render();
         let normal = normal_integrator.get_image();
         //normal.clone().save("normal.png")?;
@@ -187,7 +191,7 @@ fn main() -> Result<()> {
         let albedo = albedo_integrator.get_image();
         //albedo.clone().save("albedo.png")?;
 
-        render.render();
+        /*render.render();
         let mut result = render.get_image();
         //result.clone().save("out.png")?;
 
@@ -198,7 +202,7 @@ fn main() -> Result<()> {
 
         let end = start.elapsed();
         println!("Denoised image in {:?}", end);
-        result.save(&settings, "denoised.png")?;
+        result.save(&settings, "denoised.png")?;*/
         return Ok(());
     });
 
