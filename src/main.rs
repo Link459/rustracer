@@ -5,12 +5,14 @@ use anyhow::Result;
 use bvh::BvhNode;
 use camera::Camera;
 use present::Presentation;
+use rand::{distr::uniform::UniformSampler, rngs::SmallRng, SeedableRng};
 use scene::Scene;
 use std::{env, path::PathBuf, time::Instant};
 
 use crate::{
     denoise::denoise,
     integrator::{AlbedoIntegrator, ImageIntegrator, NormalIntegrator, SimplePathIntegrator},
+    sampler::IndependentSampler,
     settings::Settings,
     utils::cmd_seperator,
 };
@@ -56,6 +58,7 @@ mod onb;
 mod pdf;
 mod perlin;
 mod present;
+mod random;
 mod ray;
 mod render;
 mod sampler;
@@ -95,10 +98,7 @@ fn main() -> Result<()> {
         materials,
     } = scene;
 
-    let mut settings = Settings {
-        output: PathBuf::from("out/"),
-        render_settings,
-    };
+    let settings = Settings::parse(&args, render_settings);
 
     cmd_seperator("Scene");
     println!(
@@ -123,8 +123,6 @@ fn main() -> Result<()> {
 
     cmd_seperator("Statistics");
 
-    settings.render_settings = settings::parse_render_settings(&args, settings.render_settings);
-
     let camera = Camera::from_camera_config(camera_config, &settings.render_settings);
 
     let rays_to_trace = settings.render_settings.width
@@ -140,6 +138,12 @@ fn main() -> Result<()> {
     let event_loop = present::create_present_loop()?;
     let proxy = event_loop.create_proxy();
 
+    let mut app = Presentation::new(
+        settings.render_settings.width,
+        settings.render_settings.height,
+        settings.render_settings.samples as Float,
+    );
+
     let integrator = SimplePathIntegrator::new(
         camera.clone(),
         world.clone(),
@@ -148,27 +152,27 @@ fn main() -> Result<()> {
         settings.render_settings.clone(),
     );
 
-    let mut app = Presentation::new(
-        settings.render_settings.width,
-        settings.render_settings.height,
-        settings.render_settings.samples as Float,
-    );
+    let sampler = IndependentSampler::new(SmallRng::from_os_rng());
+    let use_samples = match settings.present_settings {
+        settings::PresentSettings::OnceDone => true,
+        settings::PresentSettings::Accumulate => false,
+    };
 
     let mut render = ImageIntegrator::new(
         camera.clone(),
         settings.render_settings.clone(),
         integrator,
-        false, //true,
+        use_samples,
+        sampler.clone(),
         Some(proxy.clone()),
     );
-
-    let mut accumulator = integrator::accumulating_integrator::AccumulatingIntegrator::new(render);
 
     let mut albedo_integrator = ImageIntegrator::new(
         camera.clone(),
         settings.render_settings.clone(),
         AlbedoIntegrator::new(world.clone(), materials),
         false,
+        sampler.clone(),
         Some(proxy.clone()),
     );
 
@@ -177,34 +181,43 @@ fn main() -> Result<()> {
         settings.render_settings.clone(),
         NormalIntegrator::new(world),
         false,
+        sampler,
         Some(proxy),
     );
 
-    let handle = std::thread::spawn(move || -> Result<()> {
-        accumulator.render();
-        panic!("");
-        normal_integrator.render();
-        let normal = normal_integrator.get_image();
-        //normal.clone().save("normal.png")?;
+    let handle = match settings.present_settings {
+        settings::PresentSettings::OnceDone => std::thread::spawn(move || -> Result<()> {
+            normal_integrator.render();
+            let normal = normal_integrator.get_image();
+            //normal.clone().save(&settings, "normal.png")?;
 
-        albedo_integrator.render();
-        let albedo = albedo_integrator.get_image();
-        //albedo.clone().save("albedo.png")?;
+            albedo_integrator.render();
+            let albedo = albedo_integrator.get_image();
+            //albedo.clone().save(&settings, "albedo.png")?;
 
-        /*render.render();
-        let mut result = render.get_image();
-        //result.clone().save("out.png")?;
+            render.render();
+            let mut result = render.get_image();
+            //result.clone().save(&settings, "out.png")?;
 
-        utils::save_images(&settings, result.clone(), albedo.clone(), normal.clone())?;
+            utils::save_images(&settings, result.clone(), albedo.clone(), normal.clone())?;
 
-        let start = Instant::now();
-        denoise(&mut result, &albedo, &normal);
+            let start = Instant::now();
+            denoise(&mut result, &albedo, &normal);
 
-        let end = start.elapsed();
-        println!("Denoised image in {:?}", end);
-        result.save(&settings, "denoised.png")?;*/
-        return Ok(());
-    });
+            let end = start.elapsed();
+            println!("Denoised image in {:?}", end);
+            result.save(&settings, "denoised.png")?;
+            cmd_seperator("");
+            return Ok(());
+        }),
+        settings::PresentSettings::Accumulate => std::thread::spawn(move || -> Result<()> {
+            let mut accumulator =
+                integrator::accumulating_integrator::AccumulatingIntegrator::new(render);
+            accumulator.render();
+
+            return Ok(());
+        }),
+    };
 
     event_loop.run_app(&mut app)?;
 

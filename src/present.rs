@@ -71,9 +71,11 @@ impl ApplicationHandler<PresentationEvent> for Presentation {
 
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _id: WindowId, event: WindowEvent) {
         match event {
+            WindowEvent::Destroyed => {}
             WindowEvent::CloseRequested => {
                 event_loop.exit();
-                std::process::exit(0);
+
+                //std::process::exit(0);
             }
             WindowEvent::RedrawRequested => {
                 let surface = self.surface.as_mut().unwrap();

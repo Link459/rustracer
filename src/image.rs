@@ -70,11 +70,10 @@ impl Image {
             (0..self.width).into_par_iter().rev().for_each(|w| {
                 let color = work_load(w, h);
                 let index = self.index(h, w);
-                //let index = self.index(w, h);
 
-                proxy
-                    .send_event(PresentationEvent { color, x: w, y: h })
-                    .unwrap();
+                let _ = proxy.send_event(PresentationEvent { color, x: w, y: h });
+
+                //.unwrap();
                 self.write(color, index);
             })
         })

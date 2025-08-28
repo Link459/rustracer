@@ -8,12 +8,13 @@ pub trait Sampler {
     fn sample_2d(&mut self) -> [Float; 2];
 }
 
+#[derive(Clone)]
 pub struct IndependentSampler {
     rng: SmallRng,
 }
 
 impl IndependentSampler {
-    pub fn new(rng: SmallRng) -> Self{
+    pub fn new(rng: SmallRng) -> Self {
         return Self { rng };
     }
 }

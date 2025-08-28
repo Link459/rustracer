@@ -5,9 +5,82 @@ use crate::{
     texture::{ImageTexture, TextureStorage},
 };
 
+#[derive(Default)]
+pub enum PresentSettings {
+    #[default]
+    OnceDone,
+    Accumulate,
+}
+
 pub struct Settings {
     pub output: PathBuf,
+    pub present_settings: PresentSettings,
+    pub log_messages: bool,
     pub render_settings: RenderSettings,
+}
+
+impl Settings {
+    pub fn new(render_settings: RenderSettings) -> Self {
+        return Self {
+            output: PathBuf::from("out/"),
+            present_settings: PresentSettings::OnceDone,
+            log_messages: false,
+            render_settings,
+        };
+    }
+
+    pub fn parse(options: &[String], render_settings: RenderSettings) -> Self {
+        let mut settings = Self::new(render_settings);
+
+        for option_value in options.chunks(2) {
+            let get_val = || option_value[1].parse::<u32>().unwrap();
+            match option_value[0].as_str() {
+                "--samples" => {
+                    settings.render_settings.samples = get_val();
+                }
+                "--width" => {
+                    settings.render_settings.width = get_val();
+                }
+                "--height" => {
+                    settings.render_settings.height = get_val();
+                }
+                "--present" => match option_value[1].as_str() {
+                    "once" => {
+                        settings.present_settings = PresentSettings::OnceDone;
+                    }
+                    "accumulate" => {
+                        settings.present_settings = PresentSettings::Accumulate;
+                    }
+                    _ => {}
+                },
+                "--background" => match option_value[1].as_str() {
+                    "Night" => {
+                        settings.render_settings.background = Background::Night;
+                    }
+                    "Sky" => {
+                        settings.render_settings.background = Background::Sky;
+                    }
+                    x => {
+                        settings.render_settings.background =
+                            Background::Hdri(TextureStorage::Image(ImageTexture::new(x)));
+                    }
+                },
+                _ => {}
+            };
+        }
+        return settings;
+    }
+}
+
+impl Default for Settings {
+    fn default() -> Self {
+        return Self {
+            output: PathBuf::from("out/"),
+            present_settings: PresentSettings::OnceDone,
+            log_messages: false,
+            render_settings: RenderSettings::default(),
+        };
+    }
 }
 
 fn parse_settings(mut settings: Settings, args: &[String]) -> Settings {
@@ -28,6 +101,11 @@ pub fn parse_render_settings(options: &[String], mut orig: RenderSettings) -> Re
             "--height" => {
                 orig.height = get_val();
             }
+            "--present" => match option_value[1].as_str() {
+                "once" => {}
+                "accumulate" => {}
+                _ => {}
+            },
             "--background" => match option_value[1].as_str() {
                 "Night" => {
                     orig.background = Background::Night;

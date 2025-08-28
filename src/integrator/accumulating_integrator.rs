@@ -3,21 +3,23 @@ use std::process::exit;
 use crate::{
     image::Image,
     integrator::{ImageIntegrator, Integrator},
+    sampler::Sampler,
     Float,
 };
 
-pub struct AccumulatingIntegrator<I> {
-    integrator: ImageIntegrator<I>,
+pub struct AccumulatingIntegrator<I, S> {
+    integrator: ImageIntegrator<I, S>,
     accumulating_image: Option<Image>,
     present_image: Option<Image>,
     current_samples: u32,
 }
 
-impl<I> AccumulatingIntegrator<I>
+impl<I, S> AccumulatingIntegrator<I, S>
 where
     I: Integrator + Sync,
+    S: Sampler + Sync,
 {
-    pub fn new(integrator: ImageIntegrator<I>) -> Self {
+    pub fn new(integrator: ImageIntegrator<I, S>) -> Self {
         Self {
             integrator,
             accumulating_image: None,

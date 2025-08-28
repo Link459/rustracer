@@ -16,6 +16,7 @@ use crate::{
     present::PresentationEvent,
     ray::Ray,
     render::RenderSettings,
+    sampler::Sampler,
     vec3::Vec3,
     Float,
 };
@@ -29,25 +30,27 @@ pub trait Integrator {
     }
 }
 
-pub struct ImageIntegrator<I> {
+pub struct ImageIntegrator<I, S> {
     camera: Camera,
     config: RenderSettings,
     integrator: I,
     pub image: Option<Image>,
     use_samples: bool,
+    sampler: S,
     proxy: Option<EventLoopProxy<PresentationEvent>>,
-    //sampler: Box<dyn Sampler>,
 }
 
-impl<I> ImageIntegrator<I>
+impl<I, S> ImageIntegrator<I, S>
 where
     I: Integrator + Sync,
+    S: Sampler + Sync,
 {
     pub fn new(
         camera: Camera,
         config: RenderSettings,
         integrator: I,
         use_samples: bool,
+        sampler: S,
         proxy: Option<EventLoopProxy<PresentationEvent>>,
         //sampler: impl Sampler + 'static,
     ) -> Self {
@@ -57,6 +60,7 @@ where
             integrator,
             image: None,
             use_samples,
+            sampler: sampler,
             proxy,
         }
     }
@@ -69,6 +73,7 @@ where
             integrator,
             image,
             use_samples,
+            sampler,
             proxy,
         } = self;
         let render_time = Instant::now();
@@ -127,6 +132,7 @@ where
     #[inline(always)]
     fn trace_ray(
         camera: &Camera,
+        //sampler: &impl Sampler,
         config: &RenderSettings,
         integrator: &impl Integrator,
         w: u32,
@@ -137,14 +143,15 @@ where
 
         for s_i in 0..camera.sqrt_samples as u64 {
             for s_j in 0..camera.sqrt_samples as u64 {
+                //let pixel = sampler.sample_pixel(w, h, 0);
                 let u = (w as Float + rng.random_range(0.0..1.0) as Float)
                     / (config.width - 1) as Float;
                 let v = (h as Float + rng.random_range(0.0..1.0) as Float)
                     / (config.height - 1) as Float;
+
                 let r = Self::get_ray_stratified(camera, u, v, s_i as Float, s_j as Float);
-                //let r = self.get_ray(u, v);
+                //let r = Self::get_ray(camera, u, v);
                 color += integrator.pixel(&r);
-                //return self.integrator.pixel(ray, &*self.sampler);
             }
         }
 
