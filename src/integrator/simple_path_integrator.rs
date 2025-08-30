@@ -45,7 +45,7 @@ where
         let mut beta = Vec3::ONE;
         let mut l = Vec3::ZERO;
 
-        //let mut specular_bounce = true;
+        let mut specular_bounce = true;
 
         while beta != Vec3::ZERO {
             let Some((payload, material_id)) =
@@ -59,8 +59,8 @@ where
 
             //TODO: get direct light sampling (nee) to work properly
 
-            let wi = ray.dir;
-            /*if let Some(sampled_light) = self.lights.sample() {
+            let wi = -ray.dir;
+            if let Some(sampled_light) = self.lights.sample() {
                 let ctx = LightSampleContext {
                     p: payload.p,
                     n: payload.normal,
@@ -71,15 +71,16 @@ where
                     let f = material.f(wi, wo) * wo.dot(&ctx.n).abs();
 
                     if self.unnocluded(payload.p, sample.p) {
-                        l += beta * f * sample.l / (sampled_light.p * sample.pdf);
+                        l += (beta * f * sample.l) / (sampled_light.p * sample.pdf);
                     }
                 }
-            }*/
+            }
 
-            //if specular_bounce {
-            //let emitted = material.emitted(&ray.dir, &payload, payload.u, payload.v, &payload.p);
-            //l += beta * emitted;
-            //}
+            if specular_bounce {
+                let emitted =
+                    material.emitted(&ray.dir, &payload, payload.u, payload.v, &payload.p);
+                l += beta * emitted;
+            }
 
             depth += 1;
             if depth > self.config.max_depth {
@@ -94,6 +95,7 @@ where
             ray = Ray::new(payload.p, wo, ray.time);
 
             beta *= (material_sample.f * wo.dot(&payload.normal).abs()) / material_sample.pdf;
+            //specular_bounce = material_sample.is_specular;
 
             // Russian-Roulette
             let p = luminance(beta);
@@ -113,8 +115,8 @@ where
         /*let dir = p0 - p1;
         let ray = Ray::new(p1, dir, 0.0);*/
         let dist = dir.length();
-        let hit = self.world.hit(&ray, Interval::new(1.0, dist - 0.0005));
-        //let hit = self.world.hit(&ray, Interval::new(0.0, 1.0));
+        let hit = self.world.hit(&ray, Interval::new(0.0, dist - 0.0005));
+        //let hit = self.world.hit(&ray, Interval::new(0.0, 1.0 - 0.0005));
         return hit.is_none();
     }
 }

@@ -36,9 +36,9 @@ impl From<Vec3> for Lambertian {
 
 impl Material for Lambertian {
     fn f(&self, wi: Vec3, wo: Vec3) -> Vec3 {
-        /*if !same_hemisphere(wi, wo) {
+        if !same_hemisphere(wi, wo) {
             return Vec3::ZERO;
-        }*/
+        }
         return self.albedo.value(0.0, 0.0, &Vec3::ZERO) / crate::consts::PI;
     }
 
@@ -51,16 +51,18 @@ impl Material for Lambertian {
             f: albedo,
             wo,
             pdf: pdf.value(&wo),
+            ..Default::default()
         });
     }
 
-    fn pdf(&self, _incoming: &Ray, payload: &HitPayload, scattered: &Ray) -> Float {
-        let cos_theta = payload.normal.dot(&scattered.dir.normalize());
+    fn pdf(&self, wi: &Ray, payload: &HitPayload, wo: &Ray) -> Float {
+        let cos_theta = payload.normal.dot(&wo.dir.normalize());
         return if cos_theta < 0.0 {
             0.0
         } else {
             cos_theta / crate::consts::PI
         };
+        //return 1.0 / (crate::consts::PI * 2.0);
     }
 }
 

@@ -585,12 +585,12 @@ pub fn cornell_box() -> Scene {
     )));
 
     //TODO: get rid of having duplicate lights in the world and light store
-    /*world.add(Quad::new(
+    world.add(Quad::new(
         Vec3::new(343.0, 554.0, 332.0),
         Vec3::new(-130.0, 0.0, 0.0),
         Vec3::new(0.0, 0.0, -105.0),
         light,
-    ));*/
+    ));
 
     world.add(Quad::new(
         Vec3::new(0.0, 0.0, 0.0),

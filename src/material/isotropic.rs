@@ -41,6 +41,7 @@ impl Material for Isotropic {
             f: attenuation,
             wo: scattered,
             pdf,
+            ..Default::default()
         });
         //return Some(ScatterPayload::new(attenuation, SpherePDF {}));
     }

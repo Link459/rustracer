@@ -19,6 +19,7 @@ pub struct ScatterPayload {
     pub f: Vec3,
     pub wo: Vec3, // -> outgoing direction
     pub pdf: Float,
+    pub is_specular: bool,
 }
 
 impl ScatterPayload {
@@ -28,6 +29,7 @@ impl ScatterPayload {
             f: attenuation,
             wo,
             pdf: pdf.value(&wo), //pdf_ray: RayOrPDF::PDF(Box::new(pdf)),
+            is_specular: false,
         }
     }
 
@@ -36,8 +38,19 @@ impl ScatterPayload {
             f: attenuation,
             wo: scattered.dir,
             pdf: 1.0,
-            //pdf_ray: RayOrPDF::Ray(scattered),
+            is_specular: false,
         }
+    }
+}
+
+impl Default for ScatterPayload {
+    fn default() -> Self {
+        return Self {
+            f: Vec3::ZERO,
+           	wo: Vec3::ZERO,
+            pdf: 0.0,
+            is_specular: false,
+        };
     }
 }
 
@@ -114,5 +127,6 @@ impl Material for DefaultMaterial {
 }
 
 fn same_hemisphere(w: Vec3, wp: Vec3) -> bool {
-    return w.z * wp.z > 0.0;
+    return w.dot(&wp).is_sign_positive();
+    //return w.z * wp.z > 0.0;
 }

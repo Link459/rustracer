@@ -84,13 +84,11 @@ impl Light for AreaLight {
         };
 
         if sample.pdf == 0.0 || (sample.p - ctx.p).length_squared() == 0.0 {
-            //println!("no pdf: {}", sample.pdf);
             return None;
         }
 
-        //println!("pdf: {}", sample.pdf);
-
         let wo = (sample.p - ctx.p).normalize();
+        //let wo = (ctx.p - sample.p).normalize();
 
         return Some(LightSample {
             l: Vec3::ONE,

@@ -36,6 +36,7 @@ impl Material for Metal {
                 f: self.albedo / scattered.dot(&payload.normal).abs(),
                 wo: scattered,
                 pdf: 1.0,
+                is_specular: true,
             });
         }
 
