@@ -2,6 +2,7 @@ use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 use crate::{
+    camera::random_in_unit_disk,
     hittable::HitPayload,
     material::{same_hemisphere, ScatterPayload},
     pdf::{CosinePDF, PDF},
@@ -45,23 +46,30 @@ impl Material for Lambertian {
     #[inline]
     fn scatter(&self, _wi: &Vec3, payload: &HitPayload) -> Option<ScatterPayload> {
         let albedo = self.albedo.value(payload.u, payload.v, &payload.p) / crate::consts::PI;
+        //let d = random_in_unit_disk();
+        //let z = (1.0 - (d.x * d.x) - (d.y * d.y)).sqrt().max(0.0);
+        //let wo = Vec3::new(d.x, d.y, z);
         let pdf = CosinePDF::new(&payload.normal);
         let wo = pdf.generate();
+        let cos_theta = wo.dot(&payload.normal).abs();
+        //pdf.value(&wo),
         return Some(ScatterPayload {
             f: albedo,
             wo,
-            pdf: pdf.value(&wo),
+            pdf: cos_theta / crate::consts::PI,
             ..Default::default()
         });
     }
 
-    fn pdf(&self, wi: &Ray, payload: &HitPayload, wo: &Ray) -> Float {
-        let cos_theta = payload.normal.dot(&wo.dir.normalize());
+    fn pdf(&self, _wi: &Ray, payload: &HitPayload, wo: &Ray) -> Float {
+        let cos_theta = wo.dir.dot(&payload.normal).abs();
+        return cos_theta / crate::consts::PI;
+        /*let cos_theta = payload.normal.dot(&wo.dir.normalize());
         return if cos_theta < 0.0 {
             0.0
         } else {
             cos_theta / crate::consts::PI
-        };
+        };*/
         //return 1.0 / (crate::consts::PI * 2.0);
     }
 }
