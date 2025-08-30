@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::material::ScatterPayload;
+use crate::material::{same_hemisphere, ScatterPayload};
 use crate::vec3::Vec3;
 
 use crate::hittable::HitPayload;
@@ -29,17 +29,39 @@ impl Material for Metal {
 
     #[inline]
     fn scatter(&self, wi: &Vec3, payload: &HitPayload) -> Option<ScatterPayload> {
-        let reflected = wi.normalize().reflect(&payload.normal);
-        let scattered = reflected + self.fuzz * random_unit_sphere();
-        if Vec3::dot(&scattered, &payload.normal) > 0.0 {
-            return Some(ScatterPayload {
-                f: self.albedo / scattered.dot(&payload.normal).abs(),
-                wo: scattered,
-                pdf: 1.0,
-                is_specular: true,
-            });
-        }
+        let reflected = (-wi).normalize().reflect(&payload.normal);
+        let wo = reflected + self.fuzz * random_unit_sphere();
+        let f = self.albedo / wo.dot(&payload.normal).abs();
+        //let f = self.albedo / wi.dot(&payload.normal).abs();
+        return Some(ScatterPayload {
+            f,
+            wo,
+            pdf: 1.0,
+            is_specular: true,
+        });
+        //}
 
-        return None;
+        //return None;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        hittable::HitPayload,
+        material::{Material, Metal},
+        vec3::Vec3,
+    };
+
+    #[test]
+    fn equivalence_of_reflectance() {
+        let metal = Metal::new(Vec3::ONE, 0.0);
+        let payload = HitPayload::new(Vec3::ZERO, Vec3::new(0.0, 1.0, 0.0), 0.0, 0.0, 0.0);
+
+        let wi = -(Vec3::ZERO - Vec3::new(10.0, 10.0, 10.0)).normalize();
+        if let Some(sample) = metal.scatter(&wi, &payload) {
+            let wo = sample.wo;
+        }
+        panic!("No Sample");
     }
 }

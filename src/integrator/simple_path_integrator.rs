@@ -57,7 +57,7 @@ where
 
             let material = self.materials.get(material_id);
 
-            //TODO: get direct light sampling (nee) to work properly
+            //TODO: shadowing artifaces on the bottom and left side
 
             let wi = -ray.dir;
             if let Some(sampled_light) = self.lights.sample() {
@@ -95,7 +95,7 @@ where
             ray = Ray::new(payload.p, wo, ray.time);
 
             beta *= (material_sample.f * wo.dot(&payload.normal).abs()) / material_sample.pdf;
-            //specular_bounce = material_sample.is_specular;
+            specular_bounce = material_sample.is_specular;
 
             // Russian-Roulette
             let p = luminance(beta);
@@ -108,15 +108,15 @@ where
         return l;
     }
 
+    //TODO: fix this function, does not correctly determine if a light can be hit
     fn unnocluded(&self, p0: Vec3, p1: Vec3) -> bool {
-        let dir = p1 - p0;
+        let epsilon = 0.0001;
+        let dir = (p1 - p0).normalize();
         let ray = Ray::new(p0, dir, 0.0);
 
-        /*let dir = p0 - p1;
-        let ray = Ray::new(p1, dir, 0.0);*/
         let dist = dir.length();
-        let hit = self.world.hit(&ray, Interval::new(0.0, dist - 0.0005));
-        //let hit = self.world.hit(&ray, Interval::new(0.0, 1.0 - 0.0005));
+        let hit = self.world.hit(&ray, Interval::new(epsilon, dist - epsilon));
+        //let hit = self.world.hit(&ray, Interval::new(epsilon, 1.0 - epsilon));
         return hit.is_none();
     }
 }

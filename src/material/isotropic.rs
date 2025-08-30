@@ -43,7 +43,6 @@ impl Material for Isotropic {
             pdf,
             ..Default::default()
         });
-        //return Some(ScatterPayload::new(attenuation, SpherePDF {}));
     }
 
     fn pdf(&self, _incoming: &Ray, _payload: &HitPayload, _scattered: &Ray) -> Float {

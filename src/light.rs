@@ -66,12 +66,13 @@ unsafe impl Send for UniformLightSampler {}
 
 pub struct AreaLight {
     prim: Model,
+    emit: Vec3,
 }
 
 impl AreaLight {
-    pub fn new(prim: impl Into<Model>) -> Self {
+    pub fn new(prim: impl Into<Model>, emit: Vec3) -> Self {
         let prim = prim.into();
-        return Self { prim };
+        return Self { prim, emit };
     }
 }
 
@@ -91,7 +92,7 @@ impl Light for AreaLight {
         //let wo = (ctx.p - sample.p).normalize();
 
         return Some(LightSample {
-            l: Vec3::ONE,
+            l: self.emit,
             wo,
             pdf: sample.pdf,
             p: sample.p,
@@ -135,7 +136,7 @@ impl LightStore {
         self.lights.push(Box::new(light));
     }
 
-    pub fn add_area_light(&mut self, model: impl Into<Model>) {
-        self.add(AreaLight::new(model));
+    pub fn add_area_light(&mut self, model: impl Into<Model>,emit: Vec3) {
+        self.add(AreaLight::new(model,emit));
     }
 }

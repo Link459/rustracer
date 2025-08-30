@@ -38,7 +38,7 @@ impl Material for Dielectric {
         };
 
         //let unit_direction = ray.dir.normalize();
-        let unit_direction = wi.normalize();
+        let unit_direction = -wi.normalize();
 
         let cos_theta = ((-1.0) * unit_direction).dot(&payload.normal).min(1.0);
         let sin_theta = (1.0 - cos_theta.powi(2)).sqrt();

@@ -395,13 +395,14 @@ pub fn simple_light() -> Scene {
     let mut materials = MaterialStore::new();
 
     let pertext = NoiseTexture::new(4.0);
-    let difflight = materials.add(DiffuseLight::new(SolidColor::new(Vec3::new(4.0, 4.0, 4.0))));
 
-    lights.add(AreaLight::new(Sphere::new(
-        Vec3::new(0.0, 7.0, 0.0),
-        2.0,
-        difflight.clone(),
-    )));
+    let light_color = Vec3::new(4.0, 4.0, 4.0);
+    let difflight = materials.add(DiffuseLight::new(SolidColor::new(light_color)));
+
+    /*lights.add(AreaLight::new(
+        Sphere::new(Vec3::new(0.0, 7.0, 0.0), 2.0, difflight.clone()),
+        light_color,
+    ));*/
     world.add(Sphere::new(
         Vec3::new(0.0, -1000.0, 0.0),
         1000.0,
@@ -413,12 +414,21 @@ pub fn simple_light() -> Scene {
         materials.add(Lambertian::new(pertext)),
     ));
 
-    lights.add(AreaLight::new(Quad::new(
+    lights.add(AreaLight::new(
+        Quad::new(
+            Vec3::new(3.0, 1.0, -2.0),
+            Vec3::new(2.0, 0.0, 0.0),
+            Vec3::new(0.0, 2.0, 0.0),
+            difflight,
+        ),
+        light_color,
+    ));
+    world.add(Quad::new(
         Vec3::new(3.0, 1.0, -2.0),
         Vec3::new(2.0, 0.0, 0.0),
         Vec3::new(0.0, 2.0, 0.0),
         difflight,
-    )));
+    ));
 
     let mut config = RenderSettings::with_aspect_ratio(16.0 / 9.0, 400, 300, 50);
     config.background = Background::Night;
@@ -577,12 +587,15 @@ pub fn cornell_box() -> Scene {
         green,
     ));
 
-    lights.add(AreaLight::new(Quad::new(
-        Vec3::new(343.0, 554.0, 332.0),
-        Vec3::new(-130.0, 0.0, 0.0),
-        Vec3::new(0.0, 0.0, -105.0),
-        light,
-    )));
+    lights.add(AreaLight::new(
+        Quad::new(
+            Vec3::new(343.0, 554.0, 332.0),
+            Vec3::new(-130.0, 0.0, 0.0),
+            Vec3::new(0.0, 0.0, -105.0),
+            light,
+        ),
+        Vec3::new(15.0, 15.0, 15.0),
+    ));
 
     //TODO: get rid of having duplicate lights in the world and light store
     world.add(Quad::new(
@@ -612,7 +625,7 @@ pub fn cornell_box() -> Scene {
         white.clone(),
     ));
 
-    println!("[0] = normal\n[1] = aluminium");
+    /*println!("[0] = normal\n[1] = aluminium");
     let mut buf = String::new();
     stdin().read_line(&mut buf).expect("failed to read line");
     let choice = buf.trim().parse::<usize>().unwrap();
@@ -646,7 +659,7 @@ pub fn cornell_box() -> Scene {
     let box2 = RotateY::new(box2, -18.0);
     let box2 = Translate::new(box2, Vec3::new(130.0, 0.0, 65.0));
 
-    world.add(box2);
+    world.add(box2);*/
 
     let samples = 1000;
     let mut config = RenderSettings::with_aspect_ratio(1.0, 400, samples, 50);
@@ -702,12 +715,15 @@ pub fn cornell_smoke() -> Scene {
         Vec3::new(0.0, 0.0, 555.0),
         green,
     ));
-    lights.add(AreaLight::new(Quad::new(
-        Vec3::new(113.0, 554.0, 127.0),
-        Vec3::new(330.0, 0.0, 0.0),
-        Vec3::new(0.0, 0.0, 305.0),
-        light,
-    )));
+    lights.add(AreaLight::new(
+        Quad::new(
+            Vec3::new(113.0, 554.0, 127.0),
+            Vec3::new(330.0, 0.0, 0.0),
+            Vec3::new(0.0, 0.0, 305.0),
+            light,
+        ),
+        Vec3::new(15.0, 15.0, 15.0),
+    ));
     world.add(Quad::new(
         Vec3::new(0.0, 0.0, 0.0),
         Vec3::new(555.0, 0.0, 0.0),
@@ -801,12 +817,15 @@ pub fn final_world() -> Scene {
     world.add(BvhNode::from_world(box_world));
 
     let light = materials.add(DiffuseLight::new(SolidColor::new(Vec3::new(7.0, 7.0, 7.0))));
-    lights.add(AreaLight::new(Quad::new(
-        Vec3::new(123.0, 554.0, 147.0),
-        Vec3::new(300.0, 0.0, 0.0),
-        Vec3::new(0.0, 0.0, 265.0),
-        light,
-    )));
+    lights.add(AreaLight::new(
+        Quad::new(
+            Vec3::new(123.0, 554.0, 147.0),
+            Vec3::new(300.0, 0.0, 0.0),
+            Vec3::new(0.0, 0.0, 265.0),
+            light,
+        ),
+        Vec3::new(7.0, 7.0, 7.0),
+    ));
 
     let center1 = Vec3::new(400.0, 400.0, 200.0);
     let center2 = center1 + Vec3::new(30.0, 0.0, 0.0);
