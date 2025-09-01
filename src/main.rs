@@ -5,9 +5,9 @@ use anyhow::Result;
 use bvh::BvhNode;
 use camera::Camera;
 use present::Presentation;
-use rand::{distr::uniform::UniformSampler, rngs::SmallRng, SeedableRng};
+use rand::{rngs::SmallRng, SeedableRng};
 use scene::Scene;
-use std::{env, path::PathBuf, time::Instant};
+use std::{env, time::Instant};
 
 use crate::{
     denoise::denoise,
@@ -93,7 +93,7 @@ fn main() -> Result<()> {
     let Scene {
         camera,
         config: render_settings,
-        mut world,
+        world,
         lights,
         materials,
     } = scene;

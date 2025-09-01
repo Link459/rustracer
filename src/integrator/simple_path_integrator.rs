@@ -72,6 +72,7 @@ where
 
                     if self.unnocluded(payload.p, sample.p) {
                         l += (beta * f * sample.l) / (sampled_light.p * sample.pdf);
+                        break;
                     }
                 }
             }
@@ -98,12 +99,13 @@ where
             specular_bounce = material_sample.is_specular;
 
             // Russian-Roulette
-            let p = luminance(beta);
-
-            if rand::rng().random::<Float>() > p {
-                break;
+            if depth > 1 {
+                let p = luminance(beta);
+                if rand::rng().random::<Float>() > p {
+                    break;
+                }
+                beta /= p;
             }
-            beta /= p;
         }
         return l;
     }
@@ -122,7 +124,7 @@ where
 }
 
 fn luminance(f: Vec3) -> Float {
-    f.dot(&Vec3::new(0.2126, 0.7152, 0.0722))
+    f.dot(&Vec3::new(0.2125, 0.7154, 0.0721))
 }
 
 impl<W> Integrator for SimplePathIntegrator<W>

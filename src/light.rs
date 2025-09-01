@@ -1,10 +1,8 @@
 use rand::Rng;
 
 use crate::{
-    hittable::{HitPayload, HitSampleContext, Hittable},
-    interval::Interval,
+    hittable::{HitSampleContext, Hittable},
     model::Model,
-    ray::Ray,
     vec3::Vec3,
     Float,
 };
@@ -108,8 +106,8 @@ pub struct PointLight {
 
 impl Light for PointLight {
     fn sample_li(&self, ctx: &LightSampleContext) -> Option<LightSample> {
-        let wo = (self.p - ctx.p).normalize();
-        let li = self.scale * self.albedo / distance_squared(self.p, ctx.p);
+        let _wo = (self.p - ctx.p).normalize();
+        let _li = self.scale * self.albedo / distance_squared(self.p, ctx.p);
         return None;
         //return LightSample { l: li, wo, pdf: 1 };
     }
@@ -136,7 +134,7 @@ impl LightStore {
         self.lights.push(Box::new(light));
     }
 
-    pub fn add_area_light(&mut self, model: impl Into<Model>,emit: Vec3) {
-        self.add(AreaLight::new(model,emit));
+    pub fn add_area_light(&mut self, model: impl Into<Model>, emit: Vec3) {
+        self.add(AreaLight::new(model, emit));
     }
 }

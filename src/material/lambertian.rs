@@ -2,7 +2,6 @@ use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    camera::random_in_unit_disk,
     hittable::HitPayload,
     material::{same_hemisphere, ScatterPayload},
     pdf::{CosinePDF, PDF},
