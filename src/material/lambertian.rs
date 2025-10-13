@@ -35,11 +35,12 @@ impl From<Vec3> for Lambertian {
 }
 
 impl Material for Lambertian {
-    fn f(&self, wi: Vec3, wo: Vec3, payload: &HitPayload) -> Vec3 {
-        if !same_hemisphere(wi, wo) {
+    fn f(&self, _wi: Vec3, _wo: Vec3) -> Vec3 {
+        //BUG: The same hemisphere check does not work
+        /*if !same_hemisphere(wi, wo) {
             return Vec3::ZERO;
-        }
-        return self.albedo.value(payload.u, payload.v, &payload.p) / crate::consts::PI;
+        }*/
+        return self.albedo.value(0.0, 0.0, &Vec3::ZERO) / crate::consts::PI;
     }
 
     #[inline]

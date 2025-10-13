@@ -55,7 +55,7 @@ impl Default for ScatterPayload {
 }
 
 pub trait Material: Send + Sync {
-    fn f(&self, _wi: Vec3, _wo: Vec3, _payload: &HitPayload) -> Vec3 {
+    fn f(&self, _wi: Vec3, _wo: Vec3) -> Vec3 {
         return Vec3::ZERO;
     }
 

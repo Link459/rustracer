@@ -58,10 +58,9 @@ where
             let material = self.materials.get(material_id);
 
             //TODO: NEE
-            // - fix shadowing artifacts on the bottom and left side
+            // - fix unoccludded checking not working properly
 
             let wi = -ray.dir;
-            /*
             if let Some(sampled_light) = self.lights.sample() {
                 let ctx = LightSampleContext {
                     p: payload.p,
@@ -72,12 +71,12 @@ where
                     let wo = sample.wo;
                     let f = material.f(wi, wo) * wo.dot(&ctx.n).abs();
 
-                    if self.unnocluded(payload.p, sample.p) {
+                    if self.unoccluded(payload.p, sample.p) {
                         l += (beta * f * sample.l) / (sampled_light.p * sample.pdf);
                         break;
                     }
                 }
-            }*/
+            }
 
             if specular_bounce {
                 let emitted =
@@ -113,8 +112,9 @@ where
     }
 
     //TODO: fix this function, does not correctly determine if a light can be hit
-    fn unnocluded(&self, p0: Vec3, p1: Vec3) -> bool {
+    fn unoccluded(&self, p0: Vec3, p1: Vec3) -> bool {
         let epsilon = 0.0001;
+        //let dir = (p0 - p1).normalize();
         let dir = (p1 - p0).normalize();
         let ray = Ray::new(p0, dir, 0.0);
 

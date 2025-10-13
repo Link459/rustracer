@@ -625,7 +625,7 @@ pub fn cornell_box() -> Scene {
         white.clone(),
     ));
 
-    /*println!("[0] = normal\n[1] = aluminium");
+    println!("[0] = normal\n[1] = aluminium");
     let mut buf = String::new();
     stdin().read_line(&mut buf).expect("failed to read line");
     let choice = buf.trim().parse::<usize>().unwrap();
@@ -659,7 +659,7 @@ pub fn cornell_box() -> Scene {
     let box2 = RotateY::new(box2, -18.0);
     let box2 = Translate::new(box2, Vec3::new(130.0, 0.0, 65.0));
 
-    world.add(box2);*/
+    world.add(box2);
 
     let samples = 1000;
     let mut config = RenderSettings::with_aspect_ratio(1.0, 400, samples, 50);

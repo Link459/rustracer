@@ -82,12 +82,15 @@ impl Light for AreaLight {
             return None;
         };
 
-        if sample.pdf == 0.0 || (sample.p - ctx.p).length_squared() == 0.0 {
+        let wo = sample.p - ctx.p;
+        //let wo = ctx.p - sample.p;
+
+        //ensures the light itself gets lit properly
+        if sample.pdf == 0.0 || wo.length_squared() == 0.0 {
             return None;
         }
 
-        let wo = (sample.p - ctx.p).normalize();
-        //let wo = (ctx.p - sample.p).normalize();
+        let wo = wo.normalize();
 
         return Some(LightSample {
             l: self.emit,

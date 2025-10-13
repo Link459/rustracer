@@ -18,18 +18,18 @@ pub enum MaterialStorage {
 }
 
 impl Material for MaterialStorage {
-    fn f(&self, wi: Vec3, wo: Vec3, payload: &HitPayload) -> Vec3 {
+    fn f(&self, wi: Vec3, wo: Vec3) -> Vec3 {
         match self {
-            MaterialStorage::Lambertian(ref m) => m.f(wi, wo, payload),
-            MaterialStorage::Metal(ref m) => m.f(wi, wo, payload),
-            MaterialStorage::Dielectric(ref m) => m.f(wi, wo, payload),
-            MaterialStorage::DiffuseLight(ref m) => m.f(wi, wo, payload),
-            MaterialStorage::Isotropic(ref m) => m.f(wi, wo, payload),
-            MaterialStorage::Default(ref m) => m.f(wi, wo, payload),
+            MaterialStorage::Lambertian(ref m) => m.f(wi, wo),
+            MaterialStorage::Metal(ref m) => m.f(wi, wo),
+            MaterialStorage::Dielectric(ref m) => m.f(wi, wo),
+            MaterialStorage::DiffuseLight(ref m) => m.f(wi, wo),
+            MaterialStorage::Isotropic(ref m) => m.f(wi, wo),
+            MaterialStorage::Default(ref m) => m.f(wi, wo),
         }
     }
+
     #[inline]
-    //fn scatter(&self, ray: &Ray, payload: &HitPayload) -> Option<ScatterPayload> {
     fn scatter(&self, ray: &Vec3, payload: &HitPayload) -> Option<ScatterPayload> {
         match self {
             MaterialStorage::Lambertian(ref m) => m.scatter(ray, payload),
