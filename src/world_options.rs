@@ -949,8 +949,8 @@ pub fn choose_scene() -> Scene {
     print!("choose a scene to render: ");
     stdout().flush().unwrap();
     let mut buf = String::new();
-    //stdin().read_line(&mut buf).expect("failed to read line");
-    buf = String::from("9");
+    stdin().read_line(&mut buf).expect("failed to read line");
+    //buf = String::from("9");
     let choice = buf.trim().parse::<usize>().unwrap();
     println!();
     println!("choose scene: {}", options[choice].0);

@@ -117,8 +117,9 @@ fn main() -> Result<()> {
 
     println!("generating bvh...");
     let now = Instant::now();
-    let world = BvhNode::from_world(world);
-    //let world = Bvh::from_world(world);
+    //let world = bvh::BvhNode::from_world(world);
+    let world = bvh::Bvh::from_world(world);
+    //println!("{}", world);
     println!("time to generate bvh: {:?}", now.elapsed());
 
     cmd_seperator("Statistics");

@@ -23,10 +23,6 @@ impl Metal {
 }
 
 impl Material for Metal {
-    fn f(&self, _wi: Vec3, _wo: Vec3) -> Vec3 {
-        return Vec3::ZERO;
-    }
-
     #[inline]
     fn scatter(&self, wi: &Vec3, payload: &HitPayload) -> Option<ScatterPayload> {
         let reflected = (-wi).normalize().reflect(&payload.normal);

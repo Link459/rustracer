@@ -185,7 +185,7 @@ impl Bvh {
 
         let left_count = start - node.first_idx as usize;
 
-        //no split possible
+        // no split possible
         if left_count == 0 || left_count == node.primitive_count as usize {
             return;
         }
@@ -198,16 +198,17 @@ impl Bvh {
         let first_idx = node.first_idx;
         let primitive_count = node.primitive_count;
 
-        //setup split
+        // setup split
         self.nodes[left_child_idx].first_idx = first_idx;
         self.nodes[left_child_idx].primitive_count = left_count as u32;
         self.nodes[right_child_idx].first_idx = start as u32;
         self.nodes[right_child_idx].primitive_count = primitive_count - left_count as u32;
 
-        //add leaf
+        // turn current node into leaf
         self.nodes[node_idx].primitive_count = 0;
         self.nodes[node_idx].first_idx = left_child_idx as u32;
 
+        // build child nodes
         self.build_recursive(left_child_idx, node_count);
         self.build_recursive(right_child_idx, node_count);
     }
@@ -226,15 +227,27 @@ impl Hittable for Bvh {
             }
 
             if node.is_leaf() {
+                // we keep track of the most current hit and check the distance to ensure that only
+                // the primitive nearest to the camera is returned
+                let mut current: Option<(HitPayload, MaterialId)> = None;
+
                 for i in 0..node.primitive_count {
                     let prim_index = self.prim_indices[(node.first_idx + i) as usize];
 
                     let model = &self.models[prim_index];
 
-                    if let Some((payload, material)) = model.hit(ray, ray_t) {
-                        return Some((payload, material));
+                    if let Some(x) = model.hit(ray, ray_t) {
+                        if let Some(ref y) = current {
+                            if x.0.t < y.0.t {
+                                current = Some(x);
+                            }
+                        } else {
+                            current = Some(x);
+                        }
                     }
                 }
+
+                return current;
             } else {
                 stack.push_back(node.first_idx as usize);
                 stack.push_back(node.first_idx as usize + 1);

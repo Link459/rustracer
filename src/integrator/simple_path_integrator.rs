@@ -57,9 +57,11 @@ where
 
             let material = self.materials.get(material_id);
 
-            //TODO: shadowing artifaces on the bottom and left side
+            //TODO: NEE
+            // - fix shadowing artifacts on the bottom and left side
 
             let wi = -ray.dir;
+            /*
             if let Some(sampled_light) = self.lights.sample() {
                 let ctx = LightSampleContext {
                     p: payload.p,
@@ -75,7 +77,7 @@ where
                         break;
                     }
                 }
-            }
+            }*/
 
             if specular_bounce {
                 let emitted =
@@ -96,7 +98,7 @@ where
             ray = Ray::new(payload.p, wo, ray.time);
 
             beta *= (material_sample.f * wo.dot(&payload.normal).abs()) / material_sample.pdf;
-            specular_bounce = material_sample.is_specular;
+            //specular_bounce = material_sample.is_specular;
 
             // Russian-Roulette
             if depth > 1 {
