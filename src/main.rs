@@ -2,7 +2,6 @@
 #![allow(clippy::needless_return)]
 
 use anyhow::Result;
-use bvh::BvhNode;
 use camera::Camera;
 use present::Presentation;
 use rand::{rngs::SmallRng, SeedableRng};

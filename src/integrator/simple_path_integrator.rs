@@ -1,3 +1,5 @@
+use core::f64;
+
 use rand::Rng;
 
 use crate::{
@@ -58,7 +60,7 @@ where
             let material = self.materials.get(material_id);
 
             //TODO: NEE
-            // - fix unoccludded checking not working properly
+            // - fix unoccluded checking not working properly
 
             let wi = -ray.dir;
             if let Some(sampled_light) = self.lights.sample() {
@@ -73,7 +75,6 @@ where
 
                     if self.unoccluded(payload.p, sample.p) {
                         l += (beta * f * sample.l) / (sampled_light.p * sample.pdf);
-                        break;
                     }
                 }
             }
@@ -97,10 +98,10 @@ where
             ray = Ray::new(payload.p, wo, ray.time);
 
             beta *= (material_sample.f * wo.dot(&payload.normal).abs()) / material_sample.pdf;
-            //specular_bounce = material_sample.is_specular;
+            specular_bounce = material_sample.is_specular;
 
             // Russian-Roulette
-            if depth > 1 {
+            if depth > 2 {
                 let p = luminance(beta);
                 if rand::rng().random::<Float>() > p {
                     break;
@@ -114,13 +115,18 @@ where
     //TODO: fix this function, does not correctly determine if a light can be hit
     fn unoccluded(&self, p0: Vec3, p1: Vec3) -> bool {
         let epsilon = 0.0001;
-        //let dir = (p0 - p1).normalize();
-        let dir = (p1 - p0).normalize();
-        let ray = Ray::new(p0, dir, 0.0);
 
+        //let dir = p0 - p1;
+        let dir = p1 - p0;
         let dist = dir.length();
-        let hit = self.world.hit(&ray, Interval::new(epsilon, dist - epsilon));
-        //let hit = self.world.hit(&ray, Interval::new(epsilon, 1.0 - epsilon));
+        let dir = dir.normalize();
+
+        let ray = Ray::new(p0 + epsilon * dir, dir, 0.0);
+
+        //let interval = Interval::new(epsilon, 1.0 - epsilon);
+        let interval = Interval::new(0.001, dist - epsilon);
+
+        let hit = self.world.hit(&ray, interval);
         return hit.is_none();
     }
 }
