@@ -7,113 +7,19 @@ use crate::{
     material::MaterialId,
     model::Model,
     ray::Ray,
-    vec3::Vec3,
     world::World,
-    Float,
 };
-
-pub struct BvhBuildConfig {
-    min_prims: usize,
-    max_prims: usize,
-    traversal_cost: Float,
-}
-
-impl Default for BvhBuildConfig {
-    fn default() -> Self {
-        Self {
-            min_prims: 2,
-            max_prims: 8,
-            traversal_cost: 1.0,
-        }
-    }
-}
 
 #[derive(Default, Debug, Clone, Copy)]
 pub struct Node {
-    bbox: AABB,
-    primitive_count: u32,
-    first_idx: u32,
+    pub bbox: AABB,
+    pub primitive_count: u32,
+    pub first_idx: u32,
 }
 
 impl Node {
     fn is_leaf(&self) -> bool {
         return self.primitive_count != 0;
-    }
-}
-
-#[derive(Default, Clone, Copy)]
-struct Bin {
-    bbox: AABB,
-    primitive_count: usize,
-}
-
-impl Bin {
-    fn extend(&mut self, other: &Bin) {
-        self.bbox = AABB::from((self.bbox, other.bbox));
-        self.primitive_count += other.primitive_count;
-    }
-
-    fn cost(&self) -> Float {
-        return self.bbox.half_area() * self.primitive_count as Float;
-    }
-}
-
-const BIN_COUNT: usize = 16;
-const BIN_COUNT_FLOAT: Float = 16.0;
-
-fn bin_index(axis: usize, bbox: AABB, center: Vec3) -> usize {
-    let index = (center.axis(axis) - bbox.min_axis(axis))
-        * (BIN_COUNT_FLOAT / (bbox.max_axis(axis) - bbox.min_axis(axis)));
-    let null: Float = 0.0;
-    let idx = null.max(index);
-    return (BIN_COUNT - 1).min((idx) as usize);
-}
-
-struct Split {
-    axis: usize,
-    cost: Float,
-    right_bin: usize,
-}
-
-impl Split {
-    pub fn find_best_split(axis: usize, bvh: &Bvh, node_idx: usize) -> Split {
-        let node = &bvh.nodes[node_idx];
-        let mut bins = [Bin::default(); BIN_COUNT];
-
-        for i in 0..node.primitive_count {
-            let prim_idx = node.first_idx + i;
-            let bin = &mut bins[bin_index(axis, node.bbox, node.bbox.center())];
-
-            let model = &bvh.models[bvh.prim_indices[prim_idx as usize]];
-            bin.bbox = AABB::from((bin.bbox, model.bounding_box()));
-            bin.primitive_count += 1;
-        }
-
-        let mut right_cost = [0.0; BIN_COUNT];
-        let mut left_accum = Bin::default();
-        let mut right_accum = Bin::default();
-
-        for i in (0..BIN_COUNT).rev() {
-            right_accum.extend(&bins[i]);
-            right_cost[i] = right_accum.cost();
-        }
-
-        let mut split = Split {
-            axis,
-            cost: Float::MAX,
-            right_bin: 0,
-        };
-
-        for i in 0..(BIN_COUNT - 1) {
-            left_accum.extend(&bins[i]);
-            let cost = left_accum.cost() + right_cost[i + 1];
-
-            if cost < split.cost {
-                split.cost = cost;
-                split.right_bin = i + 1;
-            }
-        }
-        return split;
     }
 }
 
@@ -125,92 +31,12 @@ pub struct Bvh {
 }
 
 impl Bvh {
-    pub fn new(models: Vec<Model>) -> Self {
-        let primitive_count = models.len();
-        let nodes = Vec::new();
-        let prim_indices = Vec::new();
-        let mut bvh = Bvh {
+    pub fn new(nodes: Vec<Node>, prim_indices: Vec<usize>, models: Vec<Model>) -> Self {
+        Self {
             nodes,
             prim_indices,
             models,
-        };
-
-        bvh.build(primitive_count);
-        return bvh;
-    }
-
-    pub fn from_world(world: World) -> Self {
-        return Self::new(world.entities);
-    }
-
-    fn build(&mut self, prim_count: usize) {
-        self.prim_indices = (0..prim_count).collect::<Vec<_>>();
-
-        let node_count = 2 * prim_count - 1;
-        self.nodes.resize_with(node_count, || Node::default());
-        let root = &mut self.nodes[0];
-        root.primitive_count = prim_count as u32;
-        root.first_idx = 0;
-
-        let mut node_count = 1;
-        self.build_recursive(0, &mut node_count);
-    }
-
-    fn build_recursive(&mut self, node_idx: usize, node_count: &mut usize) {
-        let node = &mut self.nodes[node_idx];
-
-        node.bbox = AABB::EMPTY;
-
-        if node.primitive_count <= 2 {
-            return;
         }
-
-        for i in 0..node.primitive_count {
-            let model = &self.models[self.prim_indices[(node.first_idx + i) as usize]];
-            node.bbox = AABB::from((node.bbox, model.bounding_box()));
-        }
-
-        let axis = node.bbox.longest_axis();
-
-        let start = node.first_idx as usize;
-        let end = start + node.primitive_count as usize;
-
-        let sorted = &mut self.prim_indices[start..end];
-        sorted.sort_unstable_by(|a, b| {
-            let a_center = self.models[*a].bounding_box().center().axis(axis);
-            let b_center = self.models[*b].bounding_box().center().axis(axis);
-
-            return a_center.total_cmp(&b_center);
-        });
-
-        let left_count = start - node.first_idx as usize;
-
-        // no split possible
-        if left_count == 0 || left_count == node.primitive_count as usize {
-            return;
-        }
-
-        let left_child_idx = *node_count + 0;
-        let right_child_idx = *node_count + 1;
-        *node_count += 2;
-
-        let node = &self.nodes[node_idx];
-        let first_idx = node.first_idx;
-        let primitive_count = node.primitive_count;
-
-        // setup split
-        self.nodes[left_child_idx].first_idx = first_idx;
-        self.nodes[left_child_idx].primitive_count = left_count as u32;
-        self.nodes[right_child_idx].first_idx = start as u32;
-        self.nodes[right_child_idx].primitive_count = primitive_count - left_count as u32;
-
-        // turn current node into leaf
-        self.nodes[node_idx].primitive_count = 0;
-        self.nodes[node_idx].first_idx = left_child_idx as u32;
-
-        // build child nodes
-        self.build_recursive(left_child_idx, node_count);
-        self.build_recursive(right_child_idx, node_count);
     }
 }
 

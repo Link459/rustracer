@@ -117,7 +117,8 @@ fn main() -> Result<()> {
     println!("generating bvh...");
     let now = Instant::now();
     //let world = bvh::BvhNode::from_world(world);
-    let world = bvh::Bvh::from_world(world);
+    //let world = bvh::Bvh::from_world(world);
+    let world = bvh::builder::BvhBuilder::from_world(world).build();
     //println!("{}", world);
     println!("time to generate bvh: {:?}", now.elapsed());
 
