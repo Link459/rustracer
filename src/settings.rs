@@ -24,7 +24,7 @@ impl Settings {
         return Self {
             output: PathBuf::from("out/"),
             present_settings: PresentSettings::OnceDone,
-            log_messages: false,
+            log_messages: true,
             render_settings,
         };
     }

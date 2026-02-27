@@ -7,11 +7,20 @@ use present::Presentation;
 use rand::{rngs::SmallRng, SeedableRng};
 use scene::Scene;
 use std::{env, time::Instant};
+use winit::event_loop::EventLoopProxy;
 
 use crate::{
+    bvh::BvhNode,
     denoise::denoise,
-    integrator::{AlbedoIntegrator, ImageIntegrator, NormalIntegrator, SimplePathIntegrator},
-    sampler::IndependentSampler,
+    hittable::Hittable,
+    integrator::{
+        auxiliary_integrator::GBufferIntegrators, AlbedoIntegrator, ImageIntegrator,
+        NormalIntegrator, SimplePathIntegrator,
+    },
+    light::{LightStorage, LightStore},
+    material::MaterialStore,
+    present::PresentationEvent,
+    sampler::{IndependentSampler, Sampler},
     settings::Settings,
     utils::cmd_seperator,
 };
@@ -69,6 +78,62 @@ mod vec3;
 mod world;
 mod world_options;
 
+fn create_integrators<'world, W: Hittable + Clone, S: Sampler + Clone + Sync>(
+    camera: Camera,
+    lights: LightStore,
+    materials: MaterialStore,
+    sampler: S,
+    settings: &Settings,
+    use_samples: bool,
+    bvh: &'world W,
+    proxy: EventLoopProxy<PresentationEvent>,
+) -> (
+    ImageIntegrator<SimplePathIntegrator<'world, W>, S>,
+    GBufferIntegrators<'world, W, S>,
+) {
+    let integrator = SimplePathIntegrator::new(
+        camera.clone(),
+        bvh,
+        lights,
+        materials.clone(),
+        settings.render_settings.clone(),
+    );
+    let render = ImageIntegrator::new(
+        camera.clone(),
+        integrator,
+        &settings,
+        use_samples,
+        sampler.clone(),
+        Some(proxy.clone()),
+    );
+
+    let albedo_integrator = ImageIntegrator::new(
+        camera.clone(),
+        AlbedoIntegrator::new(bvh, materials),
+        &settings,
+        false,
+        sampler.clone(),
+        Some(proxy.clone()),
+    );
+
+    let normal_integrator = ImageIntegrator::new(
+        camera,
+        NormalIntegrator::new(bvh),
+        &settings,
+        false,
+        sampler,
+        Some(proxy),
+    );
+
+    return (
+        render,
+        GBufferIntegrators {
+            normal: normal_integrator,
+            albedo: albedo_integrator,
+        },
+    );
+}
+
 fn main() -> Result<()> {
     let args = env::args().skip(1).collect::<Vec<_>>();
 
@@ -116,9 +181,10 @@ fn main() -> Result<()> {
 
     println!("generating bvh...");
     let now = Instant::now();
-    //let world = bvh::BvhNode::from_world(world);
-    //let world = bvh::Bvh::from_world(world);
-    let world = bvh::builder::BvhBuilder::from_world(world).build();
+    let bvh = BvhNode::from_world(world);
+    //BUG: New bvh is horrificly slow
+    //let bvh = bvh::builder::BvhBuilder::from_world(world).build();
+
     //println!("{}", world);
     println!("time to generate bvh: {:?}", now.elapsed());
 
@@ -129,7 +195,7 @@ fn main() -> Result<()> {
     let rays_to_trace = settings.render_settings.width
         * settings.render_settings.height
         * settings.render_settings.samples;
-    let ray_time = utils::get_time_prediction(rays_to_trace, &camera, &world);
+    let ray_time = utils::get_time_prediction(rays_to_trace, &camera, &bvh);
 
     let rays_to_trace = utils::number_with_decimals(rays_to_trace as usize);
     println!("rays to be traced: {rays_to_trace}");
@@ -145,55 +211,30 @@ fn main() -> Result<()> {
         settings.render_settings.samples as Float,
     );
 
-    let integrator = SimplePathIntegrator::new(
-        camera.clone(),
-        world.clone(),
-        lights,
-        materials.clone(),
-        settings.render_settings.clone(),
-    );
-
     let sampler = IndependentSampler::new(SmallRng::from_rng(&mut rand::rng()));
     let use_samples = match settings.present_settings {
         settings::PresentSettings::OnceDone => true,
         settings::PresentSettings::Accumulate => false,
     };
 
-    let mut render = ImageIntegrator::new(
-        camera.clone(),
-        settings.render_settings.clone(),
-        integrator,
-        use_samples,
-        sampler.clone(),
-        Some(proxy.clone()),
-    );
-
-    let mut albedo_integrator = ImageIntegrator::new(
-        camera.clone(),
-        settings.render_settings.clone(),
-        AlbedoIntegrator::new(world.clone(), materials),
-        false,
-        sampler.clone(),
-        Some(proxy.clone()),
-    );
-
-    let mut normal_integrator = ImageIntegrator::new(
-        camera,
-        settings.render_settings.clone(),
-        NormalIntegrator::new(world),
-        false,
-        sampler,
-        Some(proxy),
-    );
-
-    let handle = match settings.present_settings {
+    let render_thread_handle = match settings.present_settings {
         settings::PresentSettings::OnceDone => std::thread::spawn(move || -> Result<()> {
-            normal_integrator.render();
-            let normal = normal_integrator.get_image();
+            let (mut render, mut gbuffer) = create_integrators(
+                camera,
+                lights,
+                materials,
+                sampler,
+                &settings,
+                use_samples,
+                &bvh,
+                proxy,
+            );
+            gbuffer.normal.render();
+            let normal = gbuffer.normal.get_image();
             //normal.clone().save(&settings, "normal.png")?;
 
-            albedo_integrator.render();
-            let albedo = albedo_integrator.get_image();
+            gbuffer.albedo.render();
+            let albedo = gbuffer.albedo.get_image();
             //albedo.clone().save(&settings, "albedo.png")?;
 
             render.render();
@@ -212,6 +253,16 @@ fn main() -> Result<()> {
             return Ok(());
         }),
         settings::PresentSettings::Accumulate => std::thread::spawn(move || -> Result<()> {
+            let (mut render, _gbuffer) = create_integrators(
+                camera,
+                lights,
+                materials,
+                sampler,
+                &settings,
+                use_samples,
+                &bvh,
+                proxy,
+            );
             let mut accumulator =
                 integrator::accumulating_integrator::AccumulatingIntegrator::new(render);
             accumulator.render();
@@ -222,6 +273,6 @@ fn main() -> Result<()> {
 
     event_loop.run_app(&mut app)?;
 
-    handle.join().unwrap()?;
+    render_thread_handle.join().unwrap()?;
     return Ok(());
 }

@@ -3,17 +3,22 @@ use crate::{
     ray::Ray, vec3::Vec3, Float,
 };
 
-pub struct NormalIntegrator<W> {
-    world: W,
+pub struct GBufferIntegrators<'world, W, S> {
+    pub normal: super::ImageIntegrator<NormalIntegrator<'world, W>, S>,
+    pub albedo: super::ImageIntegrator<AlbedoIntegrator<'world, W>, S>,
 }
 
-impl<W> NormalIntegrator<W> {
-    pub fn new(world: W) -> Self {
+pub struct NormalIntegrator<'world, W> {
+    world: &'world W,
+}
+
+impl<'world, W> NormalIntegrator<'world, W> {
+    pub fn new(world: &'world W) -> Self {
         Self { world }
     }
 }
 
-impl<W> Integrator for NormalIntegrator<W>
+impl<W> Integrator for NormalIntegrator<'_, W>
 where
     W: Hittable,
 {
@@ -31,18 +36,18 @@ where
     }
 }
 
-pub struct AlbedoIntegrator<W> {
-    world: W,
+pub struct AlbedoIntegrator<'world, W> {
+    world: &'world W,
     materials: MaterialStore,
 }
 
-impl<W> AlbedoIntegrator<W> {
-    pub fn new(world: W, materials: MaterialStore) -> Self {
+impl<'world, W> AlbedoIntegrator<'world, W> {
+    pub fn new(world: &'world W, materials: MaterialStore) -> Self {
         Self { world, materials }
     }
 }
 
-impl<W> Integrator for AlbedoIntegrator<W>
+impl<W> Integrator for AlbedoIntegrator<'_, W>
 where
     W: Hittable,
 {

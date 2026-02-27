@@ -1,9 +1,9 @@
-use rand::{ RngExt};
+use rand::RngExt;
 use serde::{Deserialize, Serialize};
 
 use crate::{
     hittable::HitPayload,
-    material::{same_hemisphere, ScatterPayload},
+    material::ScatterPayload,
     pdf::{CosinePDF, PDF},
     ray::Ray,
     texture::{SolidColor, Texture, TextureStorage},

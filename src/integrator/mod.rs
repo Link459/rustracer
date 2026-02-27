@@ -17,6 +17,7 @@ use crate::{
     ray::Ray,
     render::RenderSettings,
     sampler::Sampler,
+    settings::Settings,
     vec3::Vec3,
     Float,
 };
@@ -30,7 +31,7 @@ pub trait Integrator {
     }
 }
 
-pub struct ImageIntegrator<I, S> {
+pub struct ImageIntegrator<I, S > {
     camera: Camera,
     config: RenderSettings,
     log_messages: bool,
@@ -48,8 +49,8 @@ where
 {
     pub fn new(
         camera: Camera,
-        config: RenderSettings,
         integrator: I,
+        settings: &Settings,
         use_samples: bool,
         sampler: S,
         proxy: Option<EventLoopProxy<PresentationEvent>>,
@@ -57,8 +58,8 @@ where
     ) -> Self {
         Self {
             camera,
-            config,
-            log_messages: false,
+            config: settings.render_settings.clone(),
+            log_messages: settings.log_messages,
             integrator,
             image: None,
             use_samples,

@@ -1,10 +1,4 @@
-<<<<<<< HEAD
-use core::f64;
-
-use rand::Rng;
-=======
 use rand::RngExt;
->>>>>>> 8a59ca1 (Updating all libraries)
 
 use crate::{
     camera::Camera,
@@ -19,21 +13,21 @@ use crate::{
     Float,
 };
 
-pub struct SimplePathIntegrator<W> {
+pub struct SimplePathIntegrator<'world, W> {
     camera: Camera,
-    world: W,
+    world: &'world W,
     lights: UniformLightSampler,
     materials: MaterialStore,
     config: RenderSettings,
 }
 
-impl<W> SimplePathIntegrator<W>
+impl<'world, W> SimplePathIntegrator<'world, W>
 where
     W: Hittable,
 {
     pub fn new(
         camera: Camera,
-        world: W,
+        world: &'world W,
         lights: LightStore,
         materials: MaterialStore,
         config: RenderSettings,
@@ -139,7 +133,7 @@ fn luminance(f: Vec3) -> Float {
     f.dot(&Vec3::new(0.2125, 0.7154, 0.0721))
 }
 
-impl<W> Integrator for SimplePathIntegrator<W>
+impl<'world, W> Integrator for SimplePathIntegrator<'world, W>
 where
     W: Hittable,
 {
