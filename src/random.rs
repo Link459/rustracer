@@ -1,4 +1,4 @@
-use rand::{rand_core, RngCore};
+//use rand::{rand_core, Rng, TryRng};
 
 pub struct RngState<S> {
     state: S,
@@ -25,7 +25,7 @@ pub fn pcg64_random(rng: &mut RngState<u128>) -> u64 {
     return ((xor_shifted >> rot) | (xor_shifted << ((-(rot as i128)) & 31))) as u64;
 }
 
-impl RngCore for RngState<u128> {
+/*impl Rng for RngState<u128> {
     fn next_u32(&mut self) -> u32 {
         return (self.next_u64() >> 32) as u32;
     }
@@ -35,6 +35,6 @@ impl RngCore for RngState<u128> {
     }
 
     fn fill_bytes(&mut self, dst: &mut [u8]) {
-        rand_core::impls::fill_bytes_via_next(self, dst);
+        rand_core::utils::fill_bytes_via_next_word(dst, || Result::Ok(self.next_u64()));
     }
-}
+}*/

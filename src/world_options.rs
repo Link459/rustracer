@@ -1,6 +1,7 @@
 use std::io::{stdin, stdout, Write};
 
 use rand::Rng;
+use rand::RngExt;
 
 use crate::{
     bvh::BvhNode,

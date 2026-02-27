@@ -6,7 +6,7 @@ pub mod simple_path_integrator;
 pub use auxiliary_integrator::{AlbedoIntegrator, NormalIntegrator};
 pub use simple_path_integrator::SimplePathIntegrator;
 
-use rand::Rng;
+use rand::RngExt;
 use std::time::Instant;
 use winit::event_loop::EventLoopProxy;
 
@@ -33,6 +33,7 @@ pub trait Integrator {
 pub struct ImageIntegrator<I, S> {
     camera: Camera,
     config: RenderSettings,
+    log_messages: bool,
     integrator: I,
     pub image: Option<Image>,
     use_samples: bool,
@@ -57,6 +58,7 @@ where
         Self {
             camera,
             config,
+            log_messages: false,
             integrator,
             image: None,
             use_samples,
@@ -66,16 +68,20 @@ where
     }
 
     pub fn render(&mut self) {
-        println!("rendering using {}...", I::name());
         let Self {
             camera,
             config,
+            log_messages,
             integrator,
             image,
             use_samples,
-            sampler,
+            sampler: _,
             proxy,
         } = self;
+
+        if *log_messages {
+            println!("rendering using {}...", I::name());
+        }
         let render_time = Instant::now();
         if image.is_none() {
             *image = Some(Image::from(&*config));
@@ -111,8 +117,10 @@ where
             }
         }
 
-        let time_took = format!("rendering took: {:?}", render_time.elapsed());
-        println!("{time_took}");
+        if *log_messages {
+            let time_took = format!("rendering took: {:?}", render_time.elapsed());
+            println!("{time_took}");
+        }
     }
 
     pub fn get_image(self) -> Image {

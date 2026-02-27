@@ -1,4 +1,5 @@
-use rand::Rng;
+use rand::RngExt;
+use serde::{Deserialize, Serialize};
 
 use crate::{
     hittable::{HitSampleContext, Hittable},
@@ -37,23 +38,23 @@ pub struct SampledLight<'a> {
 }
 
 pub struct UniformLightSampler {
-    lights: Vec<Box<dyn Light>>,
+    lights: LightStore,
 }
 
 impl UniformLightSampler {
-    pub fn new(lights: Vec<Box<dyn Light>>) -> Self {
+    pub fn new(lights: LightStore) -> Self {
         return Self { lights };
     }
 
     pub fn sample<'a>(&'a self) -> Option<SampledLight<'a>> {
-        if self.lights.is_empty() {
+        if self.lights.lights.is_empty() {
             return None;
         }
 
-        let size = self.lights.len();
+        let size = self.lights.lights.len();
 
         let idx = rand::rng().random_range(0..size);
-        let light = &*self.lights[idx];
+        let light = &self.lights.lights[idx];
         let p = 1.0 / size as Float;
         return Some(SampledLight { light, p });
     }
@@ -62,6 +63,7 @@ impl UniformLightSampler {
 unsafe impl Sync for UniformLightSampler {}
 unsafe impl Send for UniformLightSampler {}
 
+#[derive(Serialize, Deserialize, Clone)]
 pub struct AreaLight {
     prim: Model,
     emit: Vec3,
@@ -101,6 +103,13 @@ impl Light for AreaLight {
     }
 }
 
+impl Into<LightStorage> for AreaLight {
+    fn into(self) -> LightStorage {
+        LightStorage::AreaLight(self)
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Copy)]
 pub struct PointLight {
     scale: Float,
     albedo: Vec3,
@@ -116,13 +125,49 @@ impl Light for PointLight {
     }
 }
 
+impl Into<LightStorage> for PointLight {
+    fn into(self) -> LightStorage {
+        LightStorage::PointLight(self)
+    }
+}
+
 fn distance_squared(a: Vec3, b: Vec3) -> Float {
     return (a - b).length_squared();
 }
 
-#[derive(Default)]
+#[derive(Serialize, Deserialize, Clone)]
+pub enum LightStorage {
+    AreaLight(AreaLight),
+    PointLight(PointLight),
+}
+
+impl Light for LightStorage {
+    fn l(&self, p: Vec3, n: Vec3, uv: [Float; 2], w: Vec3) -> Vec3 {
+        match self {
+            LightStorage::AreaLight(area_light) => area_light.l(p, n, uv, w),
+            LightStorage::PointLight(point_light) => point_light.l(p, n, uv, w),
+        }
+    }
+
+    fn sample_li(&self, ctx: &LightSampleContext) -> Option<LightSample> {
+        match self {
+            LightStorage::AreaLight(area_light) => area_light.sample_li(ctx),
+            LightStorage::PointLight(point_light) => point_light.sample_li(ctx),
+        }
+    }
+
+    fn pdf(&self, ctx: &LightSampleContext) -> Float {
+        match self {
+            LightStorage::AreaLight(area_light) => area_light.pdf(ctx),
+            LightStorage::PointLight(point_light) => point_light.pdf(ctx),
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Default)]
 pub struct LightStore {
-    pub lights: Vec<Box<dyn Light>>,
+    //pub lights: Vec<Box<dyn Light>>,
+    pub lights: Vec<LightStorage>,
 }
 
 impl LightStore {
@@ -132,12 +177,21 @@ impl LightStore {
 
     pub fn add<L>(&mut self, light: L)
     where
-        L: Light + 'static,
+        //L: Light + 'static,
+        L: Into<LightStorage> + 'static,
     {
-        self.lights.push(Box::new(light));
+        self.lights.push(light.into());
     }
 
     pub fn add_area_light(&mut self, model: impl Into<Model>, emit: Vec3) {
         self.add(AreaLight::new(model, emit));
+    }
+
+    pub fn len(&self) -> usize {
+        return self.lights.len();
+    }
+
+    pub fn is_empty(&self) -> bool {
+        return self.lights.is_empty();
     }
 }

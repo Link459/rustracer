@@ -55,6 +55,11 @@ impl ApplicationHandler<PresentationEvent> for Presentation {
                 )
                 .unwrap(),
         );
+        /*let builder = egui::ViewportBuilder::default()
+            .with_inner_size(egui::Vec2::new(self.width as f32, self.height as f32))
+            .with_title("rustracer")
+            .with_resizable(false);
+        let window = Rc::new(egui_winit::create_window(&self.ctx, event_loop, &builder).unwrap());*/
 
         let ctx = softbuffer::Context::new(window.clone()).unwrap();
         let mut surface = softbuffer::Surface::new(&ctx, window.clone()).unwrap();

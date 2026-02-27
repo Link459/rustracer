@@ -2,6 +2,7 @@ use core::panic;
 use std::ops::{
     Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Range, Sub, SubAssign,
 };
+use rand::RngExt;
 
 use serde::{Deserialize, Serialize};
 

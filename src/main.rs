@@ -103,7 +103,7 @@ fn main() -> Result<()> {
     println!(
         "objects: {}\nlights: {}",
         world.entities.len(),
-        lights.lights.len()
+        lights.len()
     );
     cmd_seperator("Camera");
     println!("{}", camera);
@@ -153,7 +153,7 @@ fn main() -> Result<()> {
         settings.render_settings.clone(),
     );
 
-    let sampler = IndependentSampler::new(SmallRng::from_os_rng());
+    let sampler = IndependentSampler::new(SmallRng::from_rng(&mut rand::rng()));
     let use_samples = match settings.present_settings {
         settings::PresentSettings::OnceDone => true,
         settings::PresentSettings::Accumulate => false,

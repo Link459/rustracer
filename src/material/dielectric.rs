@@ -1,4 +1,4 @@
-use rand::Rng;
+use rand::{ RngExt};
 use serde::{Deserialize, Serialize};
 
 use crate::{hittable::HitPayload, material::ScatterPayload, ray::Ray, vec3::Vec3, Float};

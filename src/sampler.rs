@@ -1,4 +1,4 @@
-use rand::{rngs::SmallRng, Rng};
+use rand::{rngs::SmallRng, RngExt};
 
 use crate::Float;
 

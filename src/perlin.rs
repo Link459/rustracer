@@ -1,4 +1,4 @@
-use rand::Rng;
+use rand::{ RngExt};
 
 use crate::{vec3::Vec3, Float};
 

@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::material::{same_hemisphere, ScatterPayload};
+use crate::material::ScatterPayload;
 use crate::vec3::Vec3;
 
 use crate::hittable::HitPayload;
@@ -56,7 +56,7 @@ mod tests {
 
         let wi = -(Vec3::ZERO - Vec3::new(10.0, 10.0, 10.0)).normalize();
         if let Some(sample) = metal.scatter(&wi, &payload) {
-            let wo = sample.wo;
+            let _wo = sample.wo;
         }
         panic!("No Sample");
     }

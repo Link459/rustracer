@@ -5,8 +5,7 @@ use crate::{
     world::World,
 };
 
-//#[derive(Default, Clone, Serialize, Deserialize)]
-#[derive(Default)]
+#[derive(Default, Clone, Serialize, Deserialize)]
 pub struct Scene {
     pub camera: CameraConfig,
     pub config: RenderSettings,

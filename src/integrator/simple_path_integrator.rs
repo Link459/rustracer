@@ -1,6 +1,10 @@
+<<<<<<< HEAD
 use core::f64;
 
 use rand::Rng;
+=======
+use rand::RngExt;
+>>>>>>> 8a59ca1 (Updating all libraries)
 
 use crate::{
     camera::Camera,
@@ -37,7 +41,7 @@ where
         Self {
             camera,
             world,
-            lights: UniformLightSampler::new(lights.lights),
+            lights: UniformLightSampler::new(lights),
             materials,
             config,
         }
