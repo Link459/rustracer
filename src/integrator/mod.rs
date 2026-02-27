@@ -2,18 +2,17 @@ pub mod accumulating_integrator;
 pub mod auxiliary_integrator;
 pub mod random_integrator;
 pub mod simple_path_integrator;
+pub mod present_integrator;
 
 pub use auxiliary_integrator::{AlbedoIntegrator, NormalIntegrator};
 pub use simple_path_integrator::SimplePathIntegrator;
 
 use rand::RngExt;
 use std::time::Instant;
-use winit::event_loop::EventLoopProxy;
 
 use crate::{
     camera::{random_in_unit_disk, Camera},
     image::Image,
-    present::PresentationEvent,
     ray::Ray,
     render::RenderSettings,
     sampler::Sampler,
@@ -31,7 +30,7 @@ pub trait Integrator {
     }
 }
 
-pub struct ImageIntegrator<I, S > {
+pub struct ImageIntegrator<I, S> {
     camera: Camera,
     config: RenderSettings,
     log_messages: bool,
@@ -39,7 +38,6 @@ pub struct ImageIntegrator<I, S > {
     pub image: Option<Image>,
     use_samples: bool,
     sampler: S,
-    proxy: Option<EventLoopProxy<PresentationEvent>>,
 }
 
 impl<I, S> ImageIntegrator<I, S>
@@ -53,7 +51,6 @@ where
         settings: &Settings,
         use_samples: bool,
         sampler: S,
-        proxy: Option<EventLoopProxy<PresentationEvent>>,
         //sampler: impl Sampler + 'static,
     ) -> Self {
         Self {
@@ -64,7 +61,6 @@ where
             image: None,
             use_samples,
             sampler: sampler,
-            proxy,
         }
     }
 
@@ -77,7 +73,6 @@ where
             image,
             use_samples,
             sampler: _,
-            proxy,
         } = self;
 
         if *log_messages {
@@ -90,23 +85,7 @@ where
 
         let image = image.as_mut().unwrap();
 
-        if let Some(proxy) = &proxy {
-            if *use_samples {
-                image.compute_parallel_present(
-                    |w, h| {
-                        return Self::trace_ray(&camera, &config, integrator, w, h);
-                    },
-                    proxy.clone(),
-                );
-            } else {
-                image.compute_parallel_present(
-                    |w, h| {
-                        return Self::trace_ray_sampleless(&camera, &config, integrator, w, h);
-                    },
-                    proxy.clone(),
-                );
-            }
-        } else {
+        {
             if *use_samples {
                 image.compute_parallel(|w, h| {
                     return Self::trace_ray(&camera, &config, integrator, w, h);

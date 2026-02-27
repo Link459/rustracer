@@ -1,7 +1,7 @@
-
 use crate::{
     image::Image,
     integrator::{ImageIntegrator, Integrator},
+    present::PresentProxy,
     sampler::Sampler,
     Float,
 };
@@ -11,6 +11,7 @@ pub struct AccumulatingIntegrator<I, S> {
     accumulating_image: Option<Image>,
     present_image: Option<Image>,
     current_samples: u32,
+    proxy: PresentProxy,
 }
 
 impl<I, S> AccumulatingIntegrator<I, S>
@@ -18,12 +19,13 @@ where
     I: Integrator + Sync,
     S: Sampler + Sync,
 {
-    pub fn new(integrator: ImageIntegrator<I, S>) -> Self {
+    pub fn new(integrator: ImageIntegrator<I, S>, proxy: PresentProxy) -> Self {
         Self {
             integrator,
             accumulating_image: None,
             present_image: None,
             current_samples: 0,
+            proxy,
         }
     }
 
@@ -33,6 +35,7 @@ where
             accumulating_image,
             present_image,
             current_samples,
+            proxy,
         } = self;
 
         if accumulating_image.is_none() {
@@ -43,18 +46,18 @@ where
             *present_image = Some(Image::from(&integrator.config));
         }
 
-        let proxy = integrator.proxy.clone().unwrap();
-        integrator.proxy = None;
+        //let proxy = integrator.proxy.clone().unwrap();
+        //integrator.proxy = None;
 
         loop {
             integrator.render();
             let copy_image = integrator.get_image_ref();
             let accum = accumulating_image.as_mut().unwrap();
 
-            struct PtrWrapper(*mut Float);
+            struct PtrWrapper(*const Float);
             unsafe impl Sync for PtrWrapper {}
             unsafe impl Send for PtrWrapper {}
-            let buffer_ptr = PtrWrapper(accum.buffer.as_ptr() as *mut Float);
+            let buffer_ptr = PtrWrapper(accum.buffer.as_ptr());
             let buffer_ref = &buffer_ptr;
 
             accum.compute_parallel(|w, h| {
@@ -65,13 +68,13 @@ where
             });
 
             let samples = *current_samples as Float;
-            present_image.as_mut().unwrap().compute_parallel_present(
+            present_image.as_mut().unwrap().compute_present(
                 |w, h| {
                     let index = accum.index(h, w);
                     let color = accum.read(index);
                     return color / samples;
                 },
-                proxy.clone(),
+                proxy,
             );
 
             *current_samples += 1;

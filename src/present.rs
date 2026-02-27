@@ -3,7 +3,6 @@ use std::rc::Rc;
 
 use anyhow::Result;
 
-use softbuffer::Surface;
 use winit::application::ApplicationHandler;
 use winit::dpi::LogicalPosition;
 use winit::event::WindowEvent;
@@ -20,17 +19,36 @@ pub struct PresentationEvent {
     pub y: u32,
 }
 
-pub struct Presentation {
+type Surface = softbuffer::Surface<Rc<Window>, Rc<Window>>;
+pub type PresentProxy = winit::event_loop::EventLoopProxy<PresentationEvent>;
+/*pub struct PresentProxy {
+    pub p: *const PresentationApp,
+}
+
+impl PresentProxy {
+    pub fn new(present: &PresentationApp) -> Self {
+        Self { p: present }
+    }
+    pub fn send_event(&self, event: PresentationEvent) {
+        unsafe {
+            (*self.p).submit_event(event);
+        }
+    }
+}
+unsafe impl Send for PresentProxy {}
+unsafe impl Sync for PresentProxy {}*/
+
+pub struct PresentationApp {
     window: Option<Window>,
-    surface: Option<Surface<Rc<Window>, Rc<Window>>>,
+    surface: Option<Surface>,
     width: u32,
     height: u32,
     samples: Float,
 }
 
-impl Presentation {
+impl PresentationApp {
     pub fn new(width: u32, height: u32, samples: Float) -> Self {
-        Presentation {
+        PresentationApp {
             window: None,
             surface: None,
             width,
@@ -38,9 +56,33 @@ impl Presentation {
             samples,
         }
     }
+
+    pub fn submit_event(&self, event: PresentationEvent) {
+        let r = Float::sqrt(event.color.x);
+        let g = Float::sqrt(event.color.y);
+        let b = Float::sqrt(event.color.z);
+
+        let r = (256.0 * r.clamp(0.0, 0.999)) as u32;
+        let g = (256.0 * g.clamp(0.0, 0.999)) as u32;
+        let b = (256.0 * b.clamp(0.0, 0.999)) as u32;
+
+        let surface_ref = self.surface.as_ref().unwrap();
+
+        //INFO: horribly invalid but what can you do
+        let surface_ptr = surface_ref as *const Surface as *mut Surface;
+        let mut buffer = unsafe { (*surface_ptr).buffer_mut().unwrap() };
+
+        let color = b | (g << 8) | (r << 16);
+        let area = buffer.len();
+
+        let x = event.x;
+        let index = utils::linear_plane_index(area, self.width, event.y, self.width - x);
+        //let index = utils::linear_plane_index(area, self.width, event.y, x) - 1;
+        buffer[index] = color;
+    }
 }
 
-impl ApplicationHandler<PresentationEvent> for Presentation {
+impl ApplicationHandler<PresentationEvent> for PresentationApp {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         let window = Rc::new(
             event_loop

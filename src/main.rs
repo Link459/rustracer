@@ -3,11 +3,10 @@
 
 use anyhow::Result;
 use camera::Camera;
-use present::Presentation;
+use present::PresentationApp;
 use rand::{rngs::SmallRng, SeedableRng};
 use scene::Scene;
-use std::{env, time::Instant};
-use winit::event_loop::EventLoopProxy;
+use std::{default, env, time::Instant};
 
 use crate::{
     bvh::BvhNode,
@@ -17,9 +16,8 @@ use crate::{
         auxiliary_integrator::GBufferIntegrators, AlbedoIntegrator, ImageIntegrator,
         NormalIntegrator, SimplePathIntegrator,
     },
-    light::{LightStorage, LightStore},
+    light::LightStore,
     material::MaterialStore,
-    present::PresentationEvent,
     sampler::{IndependentSampler, Sampler},
     settings::Settings,
     utils::cmd_seperator,
@@ -86,7 +84,6 @@ fn create_integrators<'world, W: Hittable + Clone, S: Sampler + Clone + Sync>(
     settings: &Settings,
     use_samples: bool,
     bvh: &'world W,
-    proxy: EventLoopProxy<PresentationEvent>,
 ) -> (
     ImageIntegrator<SimplePathIntegrator<'world, W>, S>,
     GBufferIntegrators<'world, W, S>,
@@ -104,7 +101,6 @@ fn create_integrators<'world, W: Hittable + Clone, S: Sampler + Clone + Sync>(
         &settings,
         use_samples,
         sampler.clone(),
-        Some(proxy.clone()),
     );
 
     let albedo_integrator = ImageIntegrator::new(
@@ -113,7 +109,6 @@ fn create_integrators<'world, W: Hittable + Clone, S: Sampler + Clone + Sync>(
         &settings,
         false,
         sampler.clone(),
-        Some(proxy.clone()),
     );
 
     let normal_integrator = ImageIntegrator::new(
@@ -122,7 +117,6 @@ fn create_integrators<'world, W: Hittable + Clone, S: Sampler + Clone + Sync>(
         &settings,
         false,
         sampler,
-        Some(proxy),
     );
 
     return (
@@ -202,14 +196,15 @@ fn main() -> Result<()> {
     println!("estimated time: {}s", ray_time.as_secs());
     cmd_seperator("Rendering");
 
-    let event_loop = present::create_present_loop()?;
-    let proxy = event_loop.create_proxy();
-
-    let mut app = Presentation::new(
+    let mut app = PresentationApp::new(
         settings.render_settings.width,
         settings.render_settings.height,
         settings.render_settings.samples as Float,
     );
+
+    let event_loop = present::create_present_loop()?;
+    let proxy = event_loop.create_proxy();
+    //let proxy = PresentProxy::new(&app);
 
     let sampler = IndependentSampler::new(SmallRng::from_rng(&mut rand::rng()));
     let use_samples = match settings.present_settings {
@@ -227,7 +222,6 @@ fn main() -> Result<()> {
                 &settings,
                 use_samples,
                 &bvh,
-                proxy,
             );
             gbuffer.normal.render();
             let normal = gbuffer.normal.get_image();
@@ -248,12 +242,16 @@ fn main() -> Result<()> {
 
             let end = start.elapsed();
             println!("Denoised image in {:?}", end);
+
+            let mut accumulator =
+                integrator::present_integrator::PresentIntegrator::new(&result, proxy);
+            accumulator.render();
             result.save(&settings, "denoised.png")?;
             cmd_seperator("");
             return Ok(());
         }),
         settings::PresentSettings::Accumulate => std::thread::spawn(move || -> Result<()> {
-            let (mut render, _gbuffer) = create_integrators(
+            let (render, _gbuffer) = create_integrators(
                 camera,
                 lights,
                 materials,
@@ -261,10 +259,9 @@ fn main() -> Result<()> {
                 &settings,
                 use_samples,
                 &bvh,
-                proxy,
             );
             let mut accumulator =
-                integrator::accumulating_integrator::AccumulatingIntegrator::new(render);
+                integrator::accumulating_integrator::AccumulatingIntegrator::new(render, proxy);
             accumulator.render();
 
             return Ok(());

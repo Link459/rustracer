@@ -1,11 +1,14 @@
 use std::{path::Path, ptr};
 
 use crate::{
-    present::PresentationEvent, render::RenderSettings, settings::Settings, vec3::Vec3, Float,
+    present::{PresentProxy, PresentationEvent},
+    render::RenderSettings,
+    settings::Settings,
+    vec3::Vec3,
+    Float,
 };
 use image::{ImageBuffer, Rgb};
 use rayon::prelude::*;
-use winit::event_loop::EventLoopProxy;
 
 #[derive(Default, Debug, Clone)]
 pub struct Image {
@@ -59,15 +62,23 @@ impl Image {
     }
 
     #[inline]
-    pub fn compute_parallel_present<F>(
-        &mut self,
-        work_load: F,
-        proxy: EventLoopProxy<PresentationEvent>,
-    ) where
+    pub fn present(&self, proxy: &PresentProxy) {
+        (0..self.height).into_iter().for_each(|h| {
+            (0..self.width).into_iter().rev().for_each(|w| {
+                let index = self.index(h, w);
+                let color = self.read(index);
+                let _ = proxy.send_event(PresentationEvent { color, x: w, y: h });
+            })
+        })
+    }
+
+    #[inline]
+    pub fn compute_present<F>(&mut self, work_load: F, proxy: &PresentProxy)
+    where
         F: Fn(u32, u32) -> Vec3 + Send + Sync,
     {
-        (0..self.height).into_par_iter().for_each(|h| {
-            (0..self.width).into_par_iter().rev().for_each(|w| {
+        (0..self.height).into_iter().for_each(|h| {
+            (0..self.width).into_iter().rev().for_each(|w| {
                 let color = work_load(w, h);
                 let index = self.index(h, w);
 
@@ -101,7 +112,7 @@ impl Image {
         return color;
     }
 
-    pub fn read_ptr(ptr: *mut Float, index: usize) -> Vec3 {
+    pub fn read_ptr(ptr: *const Float, index: usize) -> Vec3 {
         let mut color = Vec3::ZERO;
         unsafe {
             color.x = ptr::read(ptr.add(index));
