@@ -10,7 +10,7 @@ pub struct AccumulatingIntegrator<I, S> {
     integrator: ImageIntegrator<I, S>,
     accumulating_image: Option<Image>,
     present_image: Option<Image>,
-    current_samples: u32,
+    frame: u32,
     proxy: PresentProxy,
 }
 
@@ -24,7 +24,7 @@ where
             integrator,
             accumulating_image: None,
             present_image: None,
-            current_samples: 0,
+            frame: 0,
             proxy,
         }
     }
@@ -34,7 +34,7 @@ where
             integrator,
             accumulating_image,
             present_image,
-            current_samples,
+            frame,
             proxy,
         } = self;
 
@@ -51,7 +51,7 @@ where
 
         loop {
             integrator.render();
-            let copy_image = integrator.get_image_ref();
+            let original_image = integrator.get_image_ref();
             let accum = accumulating_image.as_mut().unwrap();
 
             struct PtrWrapper(*const Float);
@@ -60,14 +60,14 @@ where
             let buffer_ptr = PtrWrapper(accum.buffer.as_ptr());
             let buffer_ref = &buffer_ptr;
 
-            accum.compute_parallel(|w, h| {
-                let index = copy_image.index(h, w);
-                let color = copy_image.read(index);
+            /*accum.compute_parallel(|w, h| {
+                let index = original_image.index(h, w);
+                let color = original_image.read(index);
                 let other = Image::read_ptr(buffer_ref.0, index);
                 return other + color;
             });
 
-            let samples = *current_samples as Float;
+            let samples = *frame as Float;
             present_image.as_mut().unwrap().compute_present(
                 |w, h| {
                     let index = accum.index(h, w);
@@ -75,11 +75,25 @@ where
                     return color / samples;
                 },
                 proxy,
+            );*/
+
+            accum.compute_present(
+                |w, h| {
+                    let index = original_image.index(h, w);
+                    let color = original_image.read(index);
+                    let prev_color = Image::read_ptr(buffer_ref.0, index);
+                    let weight = 1.0 / (*frame + 1) as Float;
+
+                    let accumulated = prev_color * (1.0 - weight) + color * weight;
+
+                    return accumulated;
+                },
+                proxy,
             );
 
-            *current_samples += 1;
-            if *current_samples % 10 == 0 {
-                println!("current samples: {}", current_samples)
+            *frame += 1;
+            if *frame % 10 == 0 {
+                println!("current samples: {}", frame)
             }
         }
     }
