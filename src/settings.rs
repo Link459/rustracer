@@ -5,7 +5,7 @@ use crate::{
     texture::{ImageTexture, TextureStorage},
 };
 
-#[derive(Default)]
+#[derive(Default, Debug, PartialEq)]
 pub enum PresentSettings {
     #[default]
     OnceDone,

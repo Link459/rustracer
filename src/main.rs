@@ -1,80 +1,31 @@
-#![allow(dead_code)]
-#![allow(clippy::needless_return)]
-
 use anyhow::Result;
-use camera::Camera;
-use present::PresentationApp;
-use rand::{rngs::SmallRng, SeedableRng};
-use scene::Scene;
-use std::{default, env, time::Instant};
+use rustracer::camera::Camera;
 
-use crate::{
+use rand::{rngs::SmallRng, SeedableRng};
+use rustracer::present::PresentationApp;
+use rustracer::scene::Scene;
+use std::{env, time::Instant};
+
+use rustracer::{
     bvh::BvhNode,
     denoise::denoise,
     hittable::Hittable,
+    integrator::{
+        accumulating_integrator::AccumulatingIntegrator, present_integrator::PresentIntegrator,
+    },
     integrator::{
         auxiliary_integrator::GBufferIntegrators, AlbedoIntegrator, ImageIntegrator,
         NormalIntegrator, SimplePathIntegrator,
     },
     light::LightStore,
     material::MaterialStore,
+    present,
     sampler::{IndependentSampler, Sampler},
-    settings::Settings,
+    settings::{PresentSettings, Settings},
+    utils,
     utils::cmd_seperator,
+    world_options, Float,
 };
-
-pub type Float = f32;
-pub mod consts {
-    use crate::Float;
-    pub const PI: Float = 3.14159265358979323846264338327950288;
-    pub const INV_PI: Float = 1.0 / PI;
-    pub const TAU: Float = 6.28318530717958647692528676655900577;
-    pub const PHI: Float = 1.618033988749894848204586834365638118;
-    pub const EGAMMA: Float = 0.577215664901532860606512090082402431;
-    pub const FRAC_PI_2: Float = 1.57079632679489661923132169163975144;
-    pub const FRAC_PI_3: Float = 1.04719755119659774615421446109316763;
-    pub const FRAC_PI_4: Float = 0.785398163397448309615660845819875721;
-    pub const FRAC_PI_6: Float = 0.52359877559829887307710723054658381;
-    pub const FRAC_PI_8: Float = 0.39269908169872415480783042290993786;
-    pub const FRAC_1_PI: Float = 0.318309886183790671537767526745028724;
-    pub const FRAC_1_SQRT_PI: Float = 0.564189583547756286948079451560772586;
-    pub const FRAC_1_SQRT_2PI: Float = 0.398942280401432677939946059934381868;
-    pub const FRAC_2_PI: Float = 0.636619772367581343075535053490057448;
-    pub const FRAC_2_SQRT_PI: Float = 1.12837916709551257389615890312154517;
-    pub const SQRT_2: Float = 1.41421356237309504880168872420969808;
-    pub const FRAC_1_SQRT_2: Float = 0.707106781186547524400844362104849039;
-    pub const SQRT_3: Float = 1.732050807568877293527446341505872367;
-    pub const FRAC_1_SQRT_3: Float = 0.577350269189625764509148780501957456;
-    pub const E: Float = 2.71828182845904523536028747135266250;
-}
-
-mod aabb;
-mod bvh;
-mod camera;
-mod denoise;
-mod hittable;
-mod image;
-mod integrator;
-mod interval;
-mod light;
-mod material;
-mod model;
-mod moving_sphere;
-mod onb;
-mod pdf;
-mod perlin;
-mod present;
-mod random;
-mod ray;
-mod render;
-mod sampler;
-mod scene;
-mod settings;
-mod texture;
-mod utils;
-mod vec3;
-mod world;
-mod world_options;
 
 fn create_integrators<'world, W: Hittable + Clone, S: Sampler + Clone + Sync>(
     camera: Camera,
@@ -189,7 +140,7 @@ fn main() -> Result<()> {
     let rays_to_trace = settings.render_settings.width
         * settings.render_settings.height
         * settings.render_settings.samples;
-    let ray_time = utils::get_time_prediction(rays_to_trace, &camera, &bvh);
+    let ray_time = rustracer::utils::get_time_prediction(rays_to_trace, &camera, &bvh);
 
     let rays_to_trace = utils::number_with_decimals(rays_to_trace as usize);
     println!("rays to be traced: {rays_to_trace}");
@@ -208,12 +159,12 @@ fn main() -> Result<()> {
 
     let sampler = IndependentSampler::new(SmallRng::from_rng(&mut rand::rng()));
     let use_samples = match settings.present_settings {
-        settings::PresentSettings::OnceDone => true,
-        settings::PresentSettings::Accumulate => false,
+        PresentSettings::OnceDone => true,
+        PresentSettings::Accumulate => false,
     };
 
     let render_thread_handle = match settings.present_settings {
-        settings::PresentSettings::OnceDone => std::thread::spawn(move || -> Result<()> {
+        PresentSettings::OnceDone => std::thread::spawn(move || -> Result<()> {
             let (mut render, mut gbuffer) = create_integrators(
                 camera,
                 lights,
@@ -243,14 +194,13 @@ fn main() -> Result<()> {
             let end = start.elapsed();
             println!("Denoised image in {:?}", end);
 
-            let mut accumulator =
-                integrator::present_integrator::PresentIntegrator::new(&result, proxy);
+            let mut accumulator = PresentIntegrator::new(&result, proxy);
             accumulator.render();
             result.save(&settings, "denoised.png")?;
             cmd_seperator("");
             return Ok(());
         }),
-        settings::PresentSettings::Accumulate => std::thread::spawn(move || -> Result<()> {
+        PresentSettings::Accumulate => std::thread::spawn(move || -> Result<()> {
             let (render, _gbuffer) = create_integrators(
                 camera,
                 lights,
@@ -260,8 +210,7 @@ fn main() -> Result<()> {
                 use_samples,
                 &bvh,
             );
-            let mut accumulator =
-                integrator::accumulating_integrator::AccumulatingIntegrator::new(render, proxy);
+            let mut accumulator = AccumulatingIntegrator::new(render, proxy);
             accumulator.render();
 
             return Ok(());

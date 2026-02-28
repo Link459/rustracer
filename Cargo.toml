@@ -3,7 +3,12 @@ name = "rustracer"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+name = "rustracer"
+path = "src/lib.rs"
+
+[workspace]
+members = ["rustracer-ui"]
 
 [dependencies]
 rand = "0.10.0"
@@ -27,9 +32,6 @@ oidn = "2.3.2"
 winit = { version = "0.30.12", features = ["rwh_06"]}
 softbuffer = "0.4.6"
 ron = "0.12.0"
-
-egui = "0.33.3"
-eframe = "0.33.3"
 
 [profile.release] 
 opt-level = 3

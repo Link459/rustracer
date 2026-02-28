@@ -1,4 +1,4 @@
-use crate::{image::Image, integrator::ImageIntegrator, present::PresentProxy, Float};
+use crate::{image::Image, present::PresentProxy};
 
 pub struct PresentIntegrator<'img> {
     image: &'img Image,
