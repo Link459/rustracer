@@ -1,4 +1,9 @@
-use std::{ffi::OsStr, path::Path};
+use std::{
+    error::Error,
+    ffi::OsStr,
+    path::Path,
+    process::{Child, Command},
+};
 
 use egui::{Align2, Id, LayerId, Popup, PopupAnchor, PopupCloseBehavior, RectAlign, RichText};
 use egui_file::FileDialog;
@@ -21,6 +26,8 @@ struct SettingsApp {
     scene_path: String,
     scene_file_dialogue: Option<FileDialog>,
     scene_idx: Option<usize>,
+
+    child: Option<Child>,
 }
 
 impl SettingsApp {
@@ -135,7 +142,9 @@ impl SettingsApp {
         if let Some(dialogue) = &mut self.scene_file_dialogue {
             if dialogue.show(ctx).selected() {
                 if let Some(file) = dialogue.path() {
-                    self.scene_path = file.to_str().unwrap().to_string();
+                    let str = file.to_str();
+                    if str.is_none() {}
+                    self.scene_path = str.unwrap().to_string();
                 }
             }
         }
@@ -152,7 +161,6 @@ impl SettingsApp {
             .selected_text(current)
             .show_ui(ui, |ui| {
                 for (name, _) in scenes {
-                    println!("{},{}", idx, name);
                     if ui.selectable_label(false, name).clicked() {
                         current = name;
                         if name == "None" {
@@ -166,27 +174,69 @@ impl SettingsApp {
             });
     }
 
-    fn runner(&mut self, ui: &mut egui::Ui) {
-        if ui.button("Start").clicked() {
-            let serialized = toml::to_string(&self.settings).unwrap();
-            std::fs::write("settings.toml", serialized).unwrap();
-
-            let handle = std::process::Command::new("cargo")
-                .arg("run")
-                .arg("-p")
-                .arg("rustracer")
-                .arg("--")
-                .arg("--settings")
-                .arg("settings.toml")
-                .spawn();
-            if handle.is_err() {
-                self.set_error("Failed to spawn rustracer");
+    fn save_settings(&mut self) {
+        let serialized = toml::to_string(&self.settings);
+        match serialized {
+            Ok(x) => {
+                if let Err(e) = std::fs::write("settings.toml", x) {
+                    self.set_error(e);
+                }
+            }
+            Err(e) => {
+                self.set_error(e);
+                return;
             }
         }
     }
 
-    fn set_error(&mut self, str: &str) {
-        self.error = str.to_string();
+    fn spawn(&mut self) {
+        if let Some(ref mut child) = self.child {
+            if let Err(e) = child.kill() {
+                self.set_error(e);
+                return;
+            }
+        }
+        let handle = Command::new("cargo")
+            .arg("run")
+            .arg("-p")
+            .arg("rustracer")
+            .arg("--")
+            .arg("--settings")
+            .arg("settings.toml")
+            .spawn();
+
+        match handle {
+            Ok(child) => self.child = Some(child),
+            Err(e) => {
+                self.set_error(e);
+                return;
+            }
+        }
+    }
+
+    fn runner(&mut self, ui: &mut egui::Ui) {
+        ui.horizontal(|ui| {
+            if ui.button("Start").clicked() {
+                self.save_settings();
+                self.spawn();
+            }
+
+            if ui.button("Kill").clicked() {
+                if let Some(ref mut child) = self.child {
+                    child.kill().unwrap();
+                    self.child = None;
+                }
+            }
+        });
+    }
+
+    fn set_error<E: Error>(&mut self, error: E) {
+        let str = format!("Error: {}", error.to_string());
+        self.set_error_string(str);
+    }
+
+    fn set_error_string(&mut self, str: String) {
+        self.error = str;
         self.error_open = true;
     }
 
@@ -194,7 +244,7 @@ impl SettingsApp {
         //self.error_open = !error.is_empty();
         let mut open = self.error_open;
 
-        let layer = LayerId::new(egui::Order::Foreground, Id::new("PopupLayer"));
+        let layer = LayerId::new(egui::Order::Foreground, Id::new("ErrorPopupLayer"));
         let align = RectAlign {
             parent: Align2::CENTER_CENTER,
             child: Align2::CENTER_CENTER,

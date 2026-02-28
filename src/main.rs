@@ -94,7 +94,8 @@ fn main() -> Result<()> {
     let scene = if args.len() == 1 {
         utils::deserialize_scene(&args[0])?
     } else {
-        world_options::choose_scene()
+        //world_options::choose_scene()
+        world_options::random_world()
     };
 
     println!("loading scene took: {:?}", now.elapsed());
