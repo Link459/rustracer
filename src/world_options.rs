@@ -926,7 +926,7 @@ macro_rules! option_pair {
     };
 }
 
-pub fn choose_scene() -> Scene {
+pub fn get_scenes() -> Vec<(&'static str, fn() -> crate::scene::Scene)> {
     let options = vec![
         option_pair!("random_world", random_world),
         option_pair!("random_world_moving", random_world_moving),
@@ -941,7 +941,11 @@ pub fn choose_scene() -> Scene {
         option_pair!("cornell_smoke", cornell_smoke),
         option_pair!("final_world", final_world),
     ];
+    return options;
+}
 
+pub fn choose_scene() -> Scene {
+    let options = get_scenes();
     for (i, opt) in options.iter().enumerate() {
         println!("{i}: {}", opt.0);
     }

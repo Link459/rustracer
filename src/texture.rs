@@ -11,7 +11,7 @@ use serde::{
     Deserialize, Deserializer, Serialize,
 };
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub enum TextureStorage {
     SolidColor(SolidColor),
     Chess(ChessTexture),
@@ -55,7 +55,7 @@ pub trait Texture {
     fn value(&self, u: Float, v: Float, p: &Vec3) -> Vec3;
 }
 
-#[derive(Clone, Debug, Copy, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Debug, Copy, Serialize, Deserialize)]
 pub struct SolidColor {
     pub color_value: Vec3,
 }
@@ -72,7 +72,7 @@ impl Texture for SolidColor {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
 pub struct ChessTexture {
     pub odd: Box<TextureStorage>,
     pub even: Box<TextureStorage>,
@@ -98,7 +98,7 @@ impl Texture for ChessTexture {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, PartialEq, Debug, Deserialize, Serialize)]
 pub struct NoiseTexture {
     #[serde(skip)]
     perlin: Arc<Perlin>,
@@ -120,6 +120,7 @@ impl Texture for NoiseTexture {
     }
 }
 
+#[derive(PartialEq)]
 pub struct ImageTexture {
     buffer: Arc<Vec<Float>>,
     nx: u32,

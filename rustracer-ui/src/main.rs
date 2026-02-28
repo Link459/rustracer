@@ -1,10 +1,11 @@
 use std::{path::PathBuf, str::FromStr};
 
-use egui::{
-    Align2, AtomExt, Id, LayerId, Popup, PopupAnchor, PopupCloseBehavior, Pos2, Rect, RectAlign,
-    ResizeDirection, RichText,
+use egui::{Align2, Id, LayerId, Popup, PopupAnchor, PopupCloseBehavior, RectAlign, RichText};
+use rustracer::{
+    render::Background,
+    scene::Scene,
+    settings::{PresentSettings, Settings},
 };
-use rustracer::settings::{PresentSettings, Settings};
 
 #[derive(Default)]
 struct SettingsApp {
@@ -12,10 +13,12 @@ struct SettingsApp {
     output: String,
     error: String,
     error_open: bool,
+    scene_path: String,
+    scene_idx: Option<usize>,
 }
 
 impl SettingsApp {
-    fn new(cc: &eframe::CreationContext<'_>) -> Self {
+    fn new(_cc: &eframe::CreationContext<'_>) -> Self {
         let mut s = Self::default();
         s.output = s.settings.output.to_str().unwrap().to_string();
         return s;
@@ -36,7 +39,7 @@ impl SettingsApp {
             ui.label("Whether to log messages to the console");
         }
 
-        let mut selected = &mut self.settings.present_settings;
+        let selected = &mut self.settings.present_settings;
         egui::ComboBox::from_label("Present Settings")
             .selected_text(format!("{:?}", selected))
             .show_ui(ui, |ui| {
@@ -75,6 +78,53 @@ impl SettingsApp {
                 &mut self.settings.render_settings.samples,
             ));
         });
+
+        let selected = &mut self.settings.render_settings.background;
+        egui::ComboBox::from_label("Skybox")
+            .selected_text(format!("{:?}", selected))
+            .show_ui(ui, |ui| {
+                ui.horizontal(|ui| {
+                    ui.selectable_value(selected, Background::Sky, "Sky");
+                    ui.label("A procedually generated sky");
+                });
+                ui.horizontal(|ui| {
+                    ui.selectable_value(selected, Background::Night, "Night");
+                    ui.label("A pitch black skybox");
+                });
+                ui.horizontal(|ui| {
+                    //ui.selectable_value(selected, , "Night");
+                    ui.label("A pitch black skybox");
+                });
+            });
+    }
+
+    fn scene(&mut self, ui: &mut egui::Ui) {
+        ui.text_edit_singleline(&mut self.scene_path);
+        let mut scenes = rustracer::world_options::get_scenes();
+        scenes.insert(0, ("None", || Scene::default()));
+
+        let mut current = "None";
+        if self.scene_idx.is_some() {
+            current = scenes[self.scene_idx.unwrap()].0;
+        }
+
+        let mut idx = 0;
+        egui::ComboBox::from_label("Premade Scene: ")
+            .selected_text(current)
+            .show_ui(ui, |ui| {
+                for (name, _) in scenes {
+                    println!("{},{}", idx, name);
+                    if ui.selectable_label(false, name).clicked() {
+                        current = name;
+                        if name == "None" {
+                            self.scene_idx = None;
+                        } else {
+                            self.scene_idx = Some(idx - 1);
+                        }
+                    }
+                    idx += 1;
+                }
+            });
     }
 
     fn runner(&mut self, ui: &mut egui::Ui) {
@@ -129,6 +179,9 @@ impl eframe::App for SettingsApp {
             ui.label(title);
             ui.heading("Settings");
             self.update_settings(ui);
+            ui.separator();
+            ui.heading("Scene");
+            self.scene(ui);
             ui.separator();
             ui.heading("Run");
             self.runner(ui);

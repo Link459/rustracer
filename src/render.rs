@@ -9,7 +9,7 @@ use crate::{
     Float,
 };
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize,PartialEq)]
 pub enum Background {
     Sky,
     Night,

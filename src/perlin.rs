@@ -4,7 +4,7 @@ use crate::{vec3::Vec3, Float};
 
 const MAX_PERLIN: usize = 256;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone,PartialEq, Copy, Debug)]
 pub struct Perlin {
     ran_vec: [Vec3; MAX_PERLIN],
     perm_x: [usize; MAX_PERLIN],
