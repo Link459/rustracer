@@ -1,6 +1,7 @@
-use std::{path::PathBuf, str::FromStr};
+use std::{ffi::OsStr, path::Path};
 
 use egui::{Align2, Id, LayerId, Popup, PopupAnchor, PopupCloseBehavior, RectAlign, RichText};
+use egui_file::FileDialog;
 use rustracer::{
     render::Background,
     scene::Scene,
@@ -10,25 +11,44 @@ use rustracer::{
 #[derive(Default)]
 struct SettingsApp {
     settings: Settings,
-    output: String,
+
+    output_path: String,
+    output_file_dialogue: Option<FileDialog>,
+
     error: String,
     error_open: bool,
+
     scene_path: String,
+    scene_file_dialogue: Option<FileDialog>,
     scene_idx: Option<usize>,
 }
 
 impl SettingsApp {
     fn new(_cc: &eframe::CreationContext<'_>) -> Self {
         let mut s = Self::default();
-        s.output = s.settings.output.to_str().unwrap().to_string();
+        s.output_path = s.settings.output.to_str().unwrap().to_string();
         return s;
     }
 
-    fn update_settings(&mut self, ui: &mut egui::Ui) {
+    fn update_settings(&mut self, ui: &mut egui::Ui, ctx: &egui::Context) {
         ui.horizontal(|ui| {
             ui.label("Path: ");
-            if ui.text_edit_singleline(&mut self.output).changed() {
-                self.settings.output = PathBuf::from_str(&self.output).unwrap();
+            if ui.text_edit_singleline(&mut self.output_path).clicked() {
+                let mut dialogue = egui_file::FileDialog::select_folder()
+                    .show_new_folder(true)
+                    .show_rename(false)
+                    .initial_path(&self.output_path);
+                dialogue.open();
+                self.output_file_dialogue = Some(dialogue);
+            }
+
+            if let Some(dialogue) = &mut self.output_file_dialogue {
+                if dialogue.show(ctx).selected() {
+                    if let Some(file) = dialogue.path() {
+                        self.output_path = file.to_str().unwrap().to_string();
+                        //self.opened_file = Some(file.to_path_buf());
+                    }
+                }
             }
         });
 
@@ -98,8 +118,27 @@ impl SettingsApp {
             });
     }
 
-    fn scene(&mut self, ui: &mut egui::Ui) {
-        ui.text_edit_singleline(&mut self.scene_path);
+    fn scene(&mut self, ui: &mut egui::Ui, ctx: &egui::Context) {
+        if ui.text_edit_singleline(&mut self.scene_path).clicked() {
+            let filter = Box::new({
+                let ext = Some(OsStr::new("ron"));
+                move |path: &Path| -> bool { path.extension() == ext }
+            });
+            let mut dialogue = egui_file::FileDialog::open_file()
+                .show_files_filter(filter)
+                .show_new_folder(false)
+                .show_rename(false);
+            dialogue.open();
+            self.scene_file_dialogue = Some(dialogue);
+        }
+
+        if let Some(dialogue) = &mut self.scene_file_dialogue {
+            if dialogue.show(ctx).selected() {
+                if let Some(file) = dialogue.path() {
+                    self.scene_path = file.to_str().unwrap().to_string();
+                }
+            }
+        }
         let mut scenes = rustracer::world_options::get_scenes();
         scenes.insert(0, ("None", || Scene::default()));
 
@@ -129,10 +168,16 @@ impl SettingsApp {
 
     fn runner(&mut self, ui: &mut egui::Ui) {
         if ui.button("Start").clicked() {
+            let serialized = toml::to_string(&self.settings).unwrap();
+            std::fs::write("settings.toml", serialized).unwrap();
+
             let handle = std::process::Command::new("cargo")
                 .arg("run")
                 .arg("-p")
                 .arg("rustracer")
+                .arg("--")
+                .arg("--settings")
+                .arg("settings.toml")
                 .spawn();
             if handle.is_err() {
                 self.set_error("Failed to spawn rustracer");
@@ -178,10 +223,10 @@ impl eframe::App for SettingsApp {
             let title = RichText::new("Rustracer").heading().size(32.0);
             ui.label(title);
             ui.heading("Settings");
-            self.update_settings(ui);
+            self.update_settings(ui, ctx);
             ui.separator();
             ui.heading("Scene");
-            self.scene(ui);
+            self.scene(ui, ctx);
             ui.separator();
             ui.heading("Run");
             self.runner(ui);

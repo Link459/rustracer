@@ -968,6 +968,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "dyn-clone"
+version = "1.0.20"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d0881ea181b1df73ff77ffaaf9c7544ecc11e82fba9b5f27b262a3c73a332555"
+
+[[package]]
 name = "ecolor"
 version = "0.33.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1070,6 +1076,16 @@ dependencies = [
  "web-time",
  "webbrowser",
  "winit",
+]
+
+[[package]]
+name = "egui_file"
+version = "0.25.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4dedae74fa1879644d41516aaf8b7e1f98617af9e6f9f52b8714710096f71980"
+dependencies = [
+ "dyn-clone",
+ "egui",
 ]
 
 [[package]]
@@ -2979,7 +2995,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys 0.12.1",
- "windows-sys 0.59.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -3004,7 +3020,9 @@ version = "0.1.0"
 dependencies = [
  "eframe",
  "egui",
+ "egui_file",
  "rustracer",
+ "toml 1.0.3+spec-1.1.0",
 ]
 
 [[package]]
@@ -3371,7 +3389,7 @@ dependencies = [
  "getrandom 0.4.1",
  "once_cell",
  "rustix 1.1.4",
- "windows-sys 0.59.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]

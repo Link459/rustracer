@@ -1,17 +1,20 @@
 use std::path::PathBuf;
 
+use serde::{Deserialize, Serialize};
+
 use crate::{
     render::{Background, RenderSettings},
     texture::{ImageTexture, TextureStorage},
 };
 
-#[derive(Default, Debug, PartialEq)]
+#[derive(Default, Debug, PartialEq, Serialize, Deserialize)]
 pub enum PresentSettings {
     #[default]
     OnceDone,
     Accumulate,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Settings {
     pub output: PathBuf,
     pub present_settings: PresentSettings,
@@ -35,6 +38,12 @@ impl Settings {
         for option_value in options.chunks(2) {
             let get_val = || option_value[1].parse::<u32>().unwrap();
             match option_value[0].as_str() {
+                "--settings" => {
+                    let path = &option_value[1];
+                    let data = std::fs::read_to_string(path).unwrap();
+                    let settings = toml::from_str::<Settings>(&data).unwrap();
+                    return settings;
+                }
                 "--samples" => {
                     settings.render_settings.samples = get_val();
                 }
