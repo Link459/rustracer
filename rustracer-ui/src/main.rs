@@ -1,16 +1,17 @@
 use std::{
     error::Error,
     ffi::OsStr,
-    path::Path,
+    path::{Path, PathBuf},
     process::{Child, Command},
+    str::FromStr,
 };
 
 use egui::{Align2, Id, LayerId, Popup, PopupAnchor, PopupCloseBehavior, RectAlign, RichText};
 use egui_file::FileDialog;
 use rustracer::{
-    render::Background,
+    render::Skybox,
     scene::Scene,
-    settings::{PresentSettings, Settings},
+    settings::{PresentSettings, SceneSettings, Settings},
 };
 
 #[derive(Default)]
@@ -23,9 +24,7 @@ struct SettingsApp {
     error: String,
     error_open: bool,
 
-    scene_path: String,
     scene_file_dialogue: Option<FileDialog>,
-    scene_idx: Option<usize>,
 
     child: Option<Child>,
 }
@@ -106,16 +105,16 @@ impl SettingsApp {
             ));
         });
 
-        let selected = &mut self.settings.render_settings.background;
+        let selected = &mut self.settings.render_settings.skybox;
         egui::ComboBox::from_label("Skybox")
             .selected_text(format!("{:?}", selected))
             .show_ui(ui, |ui| {
                 ui.horizontal(|ui| {
-                    ui.selectable_value(selected, Background::Sky, "Sky");
+                    ui.selectable_value(selected, Skybox::Sky, "Sky");
                     ui.label("A procedually generated sky");
                 });
                 ui.horizontal(|ui| {
-                    ui.selectable_value(selected, Background::Night, "Night");
+                    ui.selectable_value(selected, Skybox::Night, "Night");
                     ui.label("A pitch black skybox");
                 });
                 ui.horizontal(|ui| {
@@ -126,7 +125,11 @@ impl SettingsApp {
     }
 
     fn scene(&mut self, ui: &mut egui::Ui, ctx: &egui::Context) {
-        if ui.text_edit_singleline(&mut self.scene_path).clicked() {
+        let mut scene_path = match &self.settings.scene_settings {
+            SceneSettings::Index(_) => "".to_string(),
+            SceneSettings::Path(path_buf) => path_buf.to_str().unwrap().to_string(),
+        };
+        if ui.text_edit_singleline(&mut scene_path).clicked() {
             let filter = Box::new({
                 let ext = Some(OsStr::new("ron"));
                 move |path: &Path| -> bool { path.extension() == ext }
@@ -143,8 +146,15 @@ impl SettingsApp {
             if dialogue.show(ctx).selected() {
                 if let Some(file) = dialogue.path() {
                     let str = file.to_str();
-                    if str.is_none() {}
-                    self.scene_path = str.unwrap().to_string();
+                    match str {
+                        Some(path) => match PathBuf::from_str(path) {
+                            Ok(path_buf) => {
+                                self.settings.scene_settings = SceneSettings::Path(path_buf)
+                            }
+                            Err(e) => self.set_error(e),
+                        },
+                        _ => (),
+                    }
                 }
             }
         }
@@ -152,8 +162,9 @@ impl SettingsApp {
         scenes.insert(0, ("None", || Scene::default()));
 
         let mut current = "None";
-        if self.scene_idx.is_some() {
-            current = scenes[self.scene_idx.unwrap()].0;
+        match self.settings.scene_settings {
+            SceneSettings::Index(idx) => current = scenes[idx].0,
+            _ => (),
         }
 
         let mut idx = 0;
@@ -163,10 +174,8 @@ impl SettingsApp {
                 for (name, _) in scenes {
                     if ui.selectable_label(false, name).clicked() {
                         current = name;
-                        if name == "None" {
-                            self.scene_idx = None;
-                        } else {
-                            self.scene_idx = Some(idx - 1);
+                        if name != "None" {
+                            self.settings.scene_settings = SceneSettings::Index(idx - 1);
                         }
                     }
                     idx += 1;

@@ -51,7 +51,7 @@ where
             let Some((payload, material_id)) =
                 self.world.hit(&ray, Interval::new(0.001, Float::INFINITY))
             else {
-                l += beta * self.config.background.call(&ray);
+                l += beta * self.config.skybox.call(&ray);
                 break;
             };
 

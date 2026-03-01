@@ -1,5 +1,5 @@
-use anyhow::Result;
-use rustracer::camera::Camera;
+use anyhow::{self, Result};
+use rustracer::{camera::Camera, render::RenderSettings};
 
 use rand::{rngs::SmallRng, SeedableRng};
 use rustracer::present::PresentationApp;
@@ -91,24 +91,34 @@ fn main() -> Result<()> {
 
     println!("loading scene...");
     let now = Instant::now();
-    let scene = if args.len() == 1 {
+
+    let render_settings = RenderSettings::default();
+    let mut settings = Settings::parse(&args, render_settings);
+    let scene = match settings.scene_settings {
+        rustracer::settings::SceneSettings::Index(idx) => world_options::choose_scene_by_index(idx),
+        rustracer::settings::SceneSettings::Path(ref path_buf) => {
+            utils::deserialize_scene(path_buf.to_str().expect("Failed to convert Path to str"))?
+        }
+    };
+    /*let scene = if args.len() == 1 {
         utils::deserialize_scene(&args[0])?
     } else {
         //world_options::choose_scene()
         world_options::random_world()
-    };
+    };*/
 
     println!("loading scene took: {:?}", now.elapsed());
 
     let Scene {
         camera,
-        config: render_settings,
+        config: _render_settings,
         world,
         lights,
         materials,
+        skybox,
     } = scene;
 
-    let settings = Settings::parse(&args, render_settings);
+    settings.render_settings.skybox = skybox;
 
     cmd_seperator("Scene");
     println!(
@@ -129,7 +139,7 @@ fn main() -> Result<()> {
     let now = Instant::now();
     let bvh = BvhNode::from_world(world);
     //BUG: New bvh is horrificly slow
-    //let bvh = bvh::builder::BvhBuilder::from_world(world).build();
+    //let bvh = rustracer::bvh::builder::BvhBuilder::from_world(world).build();
 
     //println!("{}", world);
     println!("time to generate bvh: {:?}", now.elapsed());

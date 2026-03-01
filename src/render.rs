@@ -9,30 +9,31 @@ use crate::{
     Float,
 };
 
-#[derive(Debug, Clone, Serialize, Deserialize,PartialEq)]
-pub enum Background {
+#[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq)]
+pub enum Skybox {
+    #[default]
     Sky,
     Night,
     Hdri(TextureStorage),
 }
 
-impl Background {
+impl Skybox {
     #[inline(always)]
     pub fn call(&self, ray: &Ray) -> Vec3 {
         match self {
-            Background::Sky => skybox(ray),
-            Background::Night => night(ray),
-            Background::Hdri(ref img) => hdri(ray, img),
+            Skybox::Sky => skybox(ray),
+            Skybox::Night => night(ray),
+            Skybox::Hdri(ref img) => hdri(ray, img),
         }
     }
 }
 
-impl Display for Background {
+impl Display for Skybox {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            Background::Sky => write!(f, "background: Sky")?,
-            Background::Night => write!(f, "background: Night")?,
-            Background::Hdri(_) => write!(f, "background: HDRI")?,
+            Skybox::Sky => write!(f, "background: Sky")?,
+            Skybox::Night => write!(f, "background: Night")?,
+            Skybox::Hdri(_) => write!(f, "background: HDRI")?,
         }
         return Ok(());
     }
@@ -64,7 +65,7 @@ pub struct RenderSettings {
     pub height: u32,
     pub samples: u32,
     pub max_depth: u32,
-    pub background: Background, 
+    pub skybox: Skybox,
 }
 
 impl RenderSettings {
@@ -74,7 +75,7 @@ impl RenderSettings {
             height,
             samples,
             max_depth,
-            background: Background::Sky,
+            skybox: Skybox::Sky,
         }
     }
 
@@ -89,7 +90,7 @@ impl RenderSettings {
             height: (width as Float / aspect_ratio) as u32,
             samples,
             max_depth,
-            background: Background::Sky,
+            skybox: Skybox::Sky,
         }
     }
     pub fn with_background(
@@ -97,14 +98,14 @@ impl RenderSettings {
         height: u32,
         samples: u32,
         max_depth: u32,
-        bg: Background,
+        bg: Skybox,
     ) -> Self {
         Self {
             width,
             height,
             samples,
             max_depth,
-            background: bg,
+            skybox: bg,
         }
     }
 }
@@ -121,7 +122,7 @@ impl Display for RenderSettings {
         writeln!(f, " height: {}", self.height)?;
         writeln!(f, " samples: {}", self.samples)?;
         writeln!(f, " max depth: {}", self.max_depth)?;
-        writeln!(f, " background: {}", self.background)?;
+        writeln!(f, " background: {}", self.skybox)?;
         return Ok(());
     }
 }

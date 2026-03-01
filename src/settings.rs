@@ -1,9 +1,12 @@
-use std::path::PathBuf;
+use std::{
+    path::{ PathBuf},
+    str::FromStr,
+};
 
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    render::{Background, RenderSettings},
+    render::{RenderSettings, Skybox},
     texture::{ImageTexture, TextureStorage},
 };
 
@@ -15,11 +18,18 @@ pub enum PresentSettings {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub enum SceneSettings {
+    Index(usize),
+    Path(PathBuf),
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Settings {
     pub output: PathBuf,
     pub present_settings: PresentSettings,
     pub log_messages: bool,
     pub render_settings: RenderSettings,
+    pub scene_settings: SceneSettings,
 }
 
 impl Settings {
@@ -29,6 +39,7 @@ impl Settings {
             present_settings: PresentSettings::OnceDone,
             log_messages: true,
             render_settings,
+            scene_settings: SceneSettings::Index(0),
         };
     }
 
@@ -43,6 +54,15 @@ impl Settings {
                     let data = std::fs::read_to_string(path).unwrap();
                     let settings = toml::from_str::<Settings>(&data).unwrap();
                     return settings;
+                }
+                "--scene" => {
+                    if let Ok(idx) = option_value[1].parse::<usize>() {
+                        settings.scene_settings = SceneSettings::Index(idx)
+                    } else {
+                        let path = &option_value[1];
+                        settings.scene_settings =
+                            SceneSettings::Path(PathBuf::from_str(path).unwrap());
+                    }
                 }
                 "--samples" => {
                     settings.render_settings.samples = get_val();
@@ -64,14 +84,14 @@ impl Settings {
                 },
                 "--background" => match option_value[1].as_str() {
                     "Night" => {
-                        settings.render_settings.background = Background::Night;
+                        settings.render_settings.skybox = Skybox::Night;
                     }
                     "Sky" => {
-                        settings.render_settings.background = Background::Sky;
+                        settings.render_settings.skybox = Skybox::Sky;
                     }
                     x => {
-                        settings.render_settings.background =
-                            Background::Hdri(TextureStorage::Image(ImageTexture::new(x)));
+                        settings.render_settings.skybox =
+                            Skybox::Hdri(TextureStorage::Image(ImageTexture::new(x)));
                     }
                 },
                 _ => {}
@@ -88,6 +108,7 @@ impl Default for Settings {
             present_settings: PresentSettings::OnceDone,
             log_messages: false,
             render_settings: RenderSettings::default(),
+            scene_settings: SceneSettings::Index(0),
         };
     }
 }
@@ -117,13 +138,13 @@ pub fn parse_render_settings(options: &[String], mut orig: RenderSettings) -> Re
             },
             "--background" => match option_value[1].as_str() {
                 "Night" => {
-                    orig.background = Background::Night;
+                    orig.skybox = Skybox::Night;
                 }
                 "Sky" => {
-                    orig.background = Background::Sky;
+                    orig.skybox = Skybox::Sky;
                 }
                 x => {
-                    orig.background = Background::Hdri(TextureStorage::Image(ImageTexture::new(x)));
+                    orig.skybox = Skybox::Hdri(TextureStorage::Image(ImageTexture::new(x)));
                 }
             },
             _ => {}

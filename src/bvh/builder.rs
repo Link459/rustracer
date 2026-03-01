@@ -160,6 +160,23 @@ impl BvhBuilder {
             node.bbox = AABB::from((node.bbox, model.bounding_box()));
         }
 
+        /*let mut best_pos = 0.0;
+        let mut best_cost = 1e30;
+        let mut best_axis = 0;
+
+        for axis in 0..3 {
+            for i in 0..self.models.len() {
+                let model = &self.models[self.prim_indices[node.first_idx as usize + i]];
+                let candidate = model.bounding_box().center().axis(axis);
+                let cost = self.evaluate_sah(node_idx, axis, candidate);
+                if cost < best_cost {
+                    best_pos = candidate;
+                    best_axis = axis;
+                    best_cost = cost;
+                }
+            }
+        }
+        let axis = best_axis;*/
         let axis = node.bbox.longest_axis();
 
         let start = node.first_idx as usize;
@@ -201,5 +218,10 @@ impl BvhBuilder {
         // build child nodes
         self.build_recursive(left_child_idx, node_count);
         self.build_recursive(right_child_idx, node_count);
+    }
+
+    fn evaluate_sah(&self, node_idx: usize, axis: usize, pos: Float) -> Float {
+        let node = &self.nodes[node_idx];
+        0.0
     }
 }

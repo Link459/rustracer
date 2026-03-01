@@ -1,7 +1,10 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    camera::CameraConfig, light::LightStore, material::MaterialStore, render::RenderSettings,
+    camera::CameraConfig,
+    light::LightStore,
+    material::MaterialStore,
+    render::{RenderSettings, Skybox},
     world::World,
 };
 
@@ -12,6 +15,7 @@ pub struct Scene {
     pub world: World,
     pub lights: LightStore, //World,
     pub materials: MaterialStore,
+    pub skybox: Skybox,
 }
 
 impl From<(World, CameraConfig)> for Scene {

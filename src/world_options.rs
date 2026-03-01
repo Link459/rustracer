@@ -18,7 +18,7 @@ use crate::{
         Model,
     },
     moving_sphere::MovingSphere,
-    render::{Background, RenderSettings},
+    render::{RenderSettings, Skybox},
     scene::Scene,
     texture::{ChessTexture, ImageTexture, NoiseTexture, SolidColor, TextureStorage},
     utils::load_hdri,
@@ -431,7 +431,7 @@ pub fn simple_light() -> Scene {
     ));
 
     let mut config = RenderSettings::with_aspect_ratio(16.0 / 9.0, 400, 300, 50);
-    config.background = Background::Night;
+    config.skybox = Skybox::Night;
     let cam = CameraConfig {
         lookfrom: Vec3::new(26.0, 3.0, 6.0),
         lookat: Vec3::new(0.0, 2.0, 0.0),
@@ -449,6 +449,7 @@ pub fn simple_light() -> Scene {
         world,
         lights,
         materials,
+        ..Default::default()
     };
 }
 
@@ -483,13 +484,15 @@ pub fn simple_skybox() -> Scene {
     ));
 
     let hdri = load_hdri("assets/skybox.hdr").unwrap();
-    let skybox = Background::Hdri(TextureStorage::Image(ImageTexture::from(hdri)));
+    let skybox = Skybox::Hdri(TextureStorage::Image(ImageTexture::from(hdri)));
     let mut config = RenderSettings::with_aspect_ratio(16.0 / 9.0, 500, 100, 50);
-    config.background = skybox;
+    //config.skybox = skybox;
 
     return Scene {
         world,
         config,
+        materials,
+        skybox,
         ..Default::default()
     };
 }
@@ -663,7 +666,7 @@ pub fn cornell_box() -> Scene {
 
     let samples = 1000;
     let mut config = RenderSettings::with_aspect_ratio(1.0, 400, samples, 50);
-    config.background = Background::Night;
+    config.skybox = Skybox::Night;
     let camera = CameraConfig {
         lookfrom: Vec3::new(278.0, 278.0, -800.0),
         lookat: Vec3::new(278.0, 278.0, 0.0),
@@ -681,6 +684,7 @@ pub fn cornell_box() -> Scene {
         world,
         lights,
         materials,
+        ..Default::default()
     };
 }
 
@@ -766,7 +770,7 @@ pub fn cornell_smoke() -> Scene {
     world.add(ConstantMedium::new(box2, 0.01, Vec3::ONE, &mut materials));
 
     let mut config = RenderSettings::with_aspect_ratio(1.0, 200, 500, 50);
-    config.background = Background::Night;
+    config.skybox = Skybox::Night;
     let camera = CameraConfig {
         lookfrom: Vec3::new(278.0, 278.0, -800.0),
         lookat: Vec3::new(278.0, 278.0, 0.0),
@@ -784,6 +788,7 @@ pub fn cornell_smoke() -> Scene {
         world,
         lights,
         materials,
+        ..Default::default()
     };
 }
 
@@ -899,7 +904,7 @@ pub fn final_world() -> Scene {
     world.add(Translate::new(rotate, Vec3::new(-100.0, 270.0, 395.0)));
 
     let mut config = RenderSettings::with_aspect_ratio(1.0, 300, 350, 4);
-    config.background = Background::Night;
+    config.skybox = Skybox::Night;
     let camera = CameraConfig {
         lookfrom: Vec3::new(478.0, 278.0, -600.0),
         lookat: Vec3::new(278.0, 278.0, 0.0),
@@ -917,6 +922,7 @@ pub fn final_world() -> Scene {
         world,
         lights,
         materials,
+        ..Default::default()
     };
 }
 
@@ -960,5 +966,13 @@ pub fn choose_scene() -> Scene {
     println!("choose scene: {}", options[choice].0);
 
     let scene = options[choice].1();
+    return scene;
+}
+
+pub fn choose_scene_by_index(idx: usize) -> Scene {
+    let options = get_scenes();
+
+    println!("choose scene: {}", options[idx].0);
+    let scene = options[idx].1();
     return scene;
 }
