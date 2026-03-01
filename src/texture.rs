@@ -201,9 +201,13 @@ impl Texture for ImageTexture {
         }
 
         let index = 3 * i + ((3 * nx) * j);
-        let r = self.buffer[index] as Float / 255.0;
-        let g = self.buffer[index + 1] as Float / 255.0;
-        let b = self.buffer[index + 2] as Float / 255.0;
+        //let r = self.buffer[index] as Float / 255.0;
+        //let g = self.buffer[index + 1] as Float / 255.0;
+        //let b = self.buffer[index + 2] as Float / 255.0;
+
+        let r = self.buffer[index];
+        let g = self.buffer[index + 1];
+        let b = self.buffer[index + 2];
         Vec3::new(r, g, b)
     }
 }
