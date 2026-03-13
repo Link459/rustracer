@@ -1,5 +1,9 @@
 use anyhow::{self, Result};
-use rustracer::{camera::Camera, render::RenderSettings};
+use rustracer::{
+    camera::Camera,
+    integrator::{random_integrator::RandomWalkIntegrator, Integrator},
+    render::RenderSettings,
+};
 
 use rand::{rngs::SmallRng, SeedableRng};
 use rustracer::present::PresentationApp;
@@ -37,6 +41,8 @@ fn create_integrators<'world, W: Hittable + Clone, S: Sampler + Clone + Sync>(
     bvh: &'world W,
 ) -> (
     ImageIntegrator<SimplePathIntegrator<'world, W>, S>,
+    //ImageIntegrator<DirectLightingIntegrator<'world, W>, S>,
+    //ImageIntegrator<RandomWalkIntegrator<'world, W>, S>,
     GBufferIntegrators<'world, W, S>,
 ) {
     let integrator = SimplePathIntegrator::new(
@@ -46,6 +52,19 @@ fn create_integrators<'world, W: Hittable + Clone, S: Sampler + Clone + Sync>(
         materials.clone(),
         settings.render_settings.clone(),
     );
+    /*let integrator = integrator::direct_light_integrator::DirectLightingIntegrator::new(
+        camera.clone(),
+        bvh,
+        lights,
+        materials.clone(),
+        settings.render_settings.clone(),
+    );*/
+    /*let integrator = RandomWalkIntegrator::new(
+        camera.clone(),
+        bvh,
+        materials.clone(),
+        settings.render_settings.clone(),
+    );*/
     let render = ImageIntegrator::new(
         camera.clone(),
         integrator,

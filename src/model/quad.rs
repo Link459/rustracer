@@ -1,4 +1,4 @@
-use rand::{ RngExt};
+use rand::RngExt;
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -108,7 +108,6 @@ impl Hittable for Quad {
 
         let distance_sq = payload.t * payload.t * dir.length_squared();
         let cosine = (dir.dot(&payload.normal) / dir.length()).abs();
-        //let cosine = (dir.y).abs();
 
         return distance_sq / (cosine * self.area);
     }

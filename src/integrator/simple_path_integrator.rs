@@ -2,7 +2,8 @@ use rand::RngExt;
 
 use crate::{
     camera::Camera,
-    hittable::Hittable,
+    color::luminance,
+    hittable::{Hittable, HittableExt},
     integrator::Integrator,
     interval::Interval,
     light::{LightSampleContext, LightStore, UniformLightSampler},
@@ -71,7 +72,8 @@ where
                     let wo = sample.wo;
                     let f = material.f(wi, wo) * wo.dot(&ctx.n).abs();
 
-                    if self.unoccluded(payload.p, sample.p) {
+                    //if self.unoccluded(payload.p, sample.p) {
+                    if self.world.unoccluded(payload.p, sample.p) {
                         l += (beta * f * sample.l) / (sampled_light.p * sample.pdf);
                     }
                 }
@@ -109,28 +111,6 @@ where
         }
         return l;
     }
-
-    //TODO: fix this function, does not correctly determine if a light can be hit
-    fn unoccluded(&self, p0: Vec3, p1: Vec3) -> bool {
-        let epsilon = 0.0001;
-
-        //let dir = p0 - p1;
-        let dir = p1 - p0;
-        let dist = dir.length();
-        let dir = dir.normalize();
-
-        let ray = Ray::new(p0 + epsilon * dir, dir, 0.0);
-
-        //let interval = Interval::new(epsilon, 1.0 - epsilon);
-        let interval = Interval::new(0.001, dist - epsilon);
-
-        let hit = self.world.hit(&ray, interval);
-        return hit.is_none();
-    }
-}
-
-fn luminance(f: Vec3) -> Float {
-    f.dot(&Vec3::new(0.2125, 0.7154, 0.0721))
 }
 
 impl<'world, W> Integrator for SimplePathIntegrator<'world, W>

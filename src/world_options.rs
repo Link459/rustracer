@@ -485,8 +485,7 @@ pub fn simple_skybox() -> Scene {
 
     let hdri = load_hdri("assets/skybox.hdr").unwrap();
     let skybox = Skybox::Hdri(TextureStorage::Image(ImageTexture::from(hdri)));
-    let mut config = RenderSettings::with_aspect_ratio(16.0 / 9.0, 500, 100, 50);
-    //config.skybox = skybox;
+    let config = RenderSettings::with_aspect_ratio(16.0 / 9.0, 500, 100, 50);
 
     return Scene {
         world,

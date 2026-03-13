@@ -220,8 +220,8 @@ impl BvhBuilder {
         self.build_recursive(right_child_idx, node_count);
     }
 
-    fn evaluate_sah(&self, node_idx: usize, axis: usize, pos: Float) -> Float {
-        let node = &self.nodes[node_idx];
+    fn evaluate_sah(&self, node_idx: usize, _axis: usize, _pos: Float) -> Float {
+        let _node = &self.nodes[node_idx];
         0.0
     }
 }

@@ -79,3 +79,23 @@ pub trait Hittable: Send + Sync {
         return Vec3::new(1.0, 0.0, 0.0);
     }
 }
+
+pub trait HittableExt: Hittable {
+    fn unoccluded(&self, from: Vec3, to: Vec3) -> bool {
+        let epsilon = 0.0001;
+
+        let dir = to - from;
+        let dist = dir.length();
+        let dir = dir.normalize();
+
+        //let ray = Ray::new(from + dir, dir, 0.0);
+        let ray = Ray::new(from, dir, 0.0);
+
+        //let interval = Interval::new(epsilon, 1.0 - epsilon);
+        let interval = Interval::new(epsilon, dist);
+
+        let hit = self.hit(&ray, interval);
+        return hit.is_none();
+    }
+}
+impl<T> HittableExt for T where T: Hittable {}

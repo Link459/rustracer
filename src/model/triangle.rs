@@ -2,15 +2,16 @@ use crate::{
     aabb::AABB,
     hittable::Hittable,
     material::MaterialId,
-    model::{HitPayload, Interval },
+    model::{HitPayload, Interval},
     ray::Ray,
     vec3::Vec3,
 };
 
 pub struct Triangle {
-    a: Vec3,
-    b: Vec3,
-    c: Vec3,
+    pos1: Vec3,
+    pos2: Vec3,
+    pos3: Vec3,
+    material: MaterialId,
 }
 
 impl Triangle {}
@@ -18,40 +19,34 @@ impl Triangle {}
 impl Hittable for Triangle {
     #[inline]
     fn hit(&self, ray: &Ray, _ray_t: Interval) -> Option<(HitPayload, MaterialId)> {
-        let edge1 = self.b - self.a;
-        let edge2 = self.c - self.a;
+        let edge1 = self.pos2 - self.pos1;
+        let edge2 = self.pos3 - self.pos1;
 
-        let h = ray.dir.cross(&edge2);
-        let a = edge1.dot(&h);
+        let normal = edge1.cross(&edge2);
 
-        //ray is parallel to the triangle
-        if a > -0.00001 && a < 0.0001 {
-            return None;
+        let det = -ray.dir.dot(&normal);
+        let inv_det = 1.0 / det;
+
+        let ao = ray.orig - self.pos1;
+        let dao = ao.cross(&ray.dir);
+
+        let u = edge2.dot(&dao) * inv_det;
+        let v = -edge1.dot(&dao) * inv_det;
+        let t = ao.dot(&normal) * inv_det;
+
+        let hit = det >= 1e-6 && t >= 0.0 && u >= 0.0 && v >= 0.0 && (u + v) <= 1.0;
+        if hit {
+            let intersection = ray.orig + t * ray.dir;
+            let payload = HitPayload {
+                p: intersection,
+                normal,
+                t,
+                u,
+                v,
+                front_face: true,
+            };
+            return Some((payload, self.material));
         }
-
-        let f = 1.0 / a;
-
-        let s = ray.orig - self.a;
-
-        let u = f * s.dot(&h);
-
-        if u < 0.0 || u > 1.0 {
-            return None;
-        }
-
-        let q = s.cross(&edge1);
-        let v = f * ray.dir.dot(&q);
-
-        if v < 0.0 || u + v > 1.0 {
-            return None;
-        }
-
-        let t = f * edge2.dot(&q);
-
-        if t > 0.0001 {
-            // ray.t = min(ray.t,t);
-        }
-
         return None;
     }
 

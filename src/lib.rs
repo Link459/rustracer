@@ -26,6 +26,7 @@ pub mod consts {
     pub const E: Float = 2.71828182845904523536028747135266250;
 }
 
+pub mod color;
 pub mod aabb;
 pub mod bvh;
 pub mod camera;

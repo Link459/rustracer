@@ -10,7 +10,6 @@ use egui::{Align2, Id, LayerId, Popup, PopupAnchor, PopupCloseBehavior, RectAlig
 use egui_file::FileDialog;
 use rustracer::{
     render::Skybox,
-    scene::Scene,
     settings::{PresentSettings, SceneSettings, Settings},
 };
 

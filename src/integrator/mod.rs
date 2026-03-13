@@ -3,6 +3,7 @@ pub mod auxiliary_integrator;
 pub mod random_integrator;
 pub mod simple_path_integrator;
 pub mod present_integrator;
+pub mod direct_light_integrator;
 
 pub use auxiliary_integrator::{AlbedoIntegrator, NormalIntegrator};
 pub use simple_path_integrator::SimplePathIntegrator;
