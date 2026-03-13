@@ -158,8 +158,7 @@ impl SettingsApp {
                 }
             }
         }
-        let mut scenes = rustracer::world_options::get_scenes();
-        scenes.insert(0, ("None", || Scene::default()));
+        let scenes = rustracer::world_options::get_scenes();
 
         let mut current = "None";
         match self.settings.scene_settings {
@@ -173,10 +172,7 @@ impl SettingsApp {
             .show_ui(ui, |ui| {
                 for (name, _) in scenes {
                     if ui.selectable_label(false, name).clicked() {
-                        current = name;
-                        if name != "None" {
-                            self.settings.scene_settings = SceneSettings::Index(idx - 1);
-                        }
+                        self.settings.scene_settings = SceneSettings::Index(idx);
                     }
                     idx += 1;
                 }
