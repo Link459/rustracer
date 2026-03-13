@@ -1,4 +1,4 @@
-use rand::{ RngExt};
+use rand::RngExt;
 use serde::{Deserialize, Serialize};
 
 use crate::{hittable::HitPayload, material::ScatterPayload, ray::Ray, vec3::Vec3, Float};
@@ -56,5 +56,65 @@ impl Material for Dielectric {
             scattered,
             Vec3::new(1.0, 1.0, 1.0),
         ));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        hittable::HitPayload,
+        material::{Dielectric, Material},
+        vec3::Vec3,
+        Float,
+    };
+
+    #[test]
+    fn dielectric_helmholtz_reciprocity() {
+        let material = Dielectric::new(1.5);
+        let payload = HitPayload::new(Vec3::ZERO, Vec3::new(0.0, 1.0, 0.0), 0.0, 0.0, 0.0);
+
+        let wi = -(Vec3::ZERO - Vec3::new(10.0, 10.0, 10.0)).normalize();
+        let Some(sample1) = material.scatter(&wi, &payload) else {
+            panic!();
+        };
+        let wo = sample1.wo;
+
+        let f_1 = material.f(wi, wo);
+        let f_2 = material.f(wo, wi);
+        assert_eq!(f_1, f_2);
+    }
+
+    #[test]
+    fn dielectric_positivity() {
+        let material = Dielectric::new(1.5);
+
+        for i in 0..1000 {
+            let wo = Vec3::from(i as Float / 1000.0);
+            let wi = Vec3::from(1.0 - i as Float / 1000.0);
+
+            let f = material.f(wi, wo);
+            assert!(f.x >= 0.0);
+            assert!(f.y >= 0.0);
+            assert!(f.z >= 0.0);
+        }
+    }
+
+    #[test]
+    fn dielectric_conserving() {
+        let material = Dielectric::new(1.5);
+
+        let mut sum = Vec3::ZERO;
+        for i in 0..1000 {
+            let wo = Vec3::from(i as Float / 1000.0);
+            let wi = Vec3::from(1.0 - i as Float / 1000.0);
+
+            let f = material.f(wi, wo);
+
+            sum += f * wo.dot(&wi).abs();
+        }
+
+        assert!(sum.x >= 1.0);
+        assert!(sum.y >= 1.0);
+        assert!(sum.z >= 1.0);
     }
 }

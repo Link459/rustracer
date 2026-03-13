@@ -15,6 +15,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{hittable::HitPayload, pdf::PDF, ray::Ray, vec3::Vec3, Float};
 
+#[derive(Debug,PartialEq)]
 pub struct ScatterPayload {
     pub f: Vec3,
     pub wo: Vec3, // -> outgoing direction

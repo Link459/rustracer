@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
-use crate::material::ScatterPayload;
 use crate::vec3::Vec3;
+use crate::{consts, material::ScatterPayload};
 
 use crate::hittable::HitPayload;
 use crate::Float;
@@ -20,6 +20,12 @@ impl Metal {
     pub fn new(albedo: Vec3, fuzz: Float) -> Self {
         return Self { albedo, fuzz };
     }
+}
+
+fn ggx(NoH: Float, roughness: Float) -> f32 {
+    let a = NoH * roughness;
+    let k = roughness / (1.0 - NoH * NoH + a * a);
+    return k * k * consts::INV_PI;
 }
 
 impl Material for Metal {
@@ -50,14 +56,18 @@ mod tests {
     };
 
     #[test]
-    fn equivalence_of_reflectance() {
+    fn metal_helmholtz_reciprocity() {
         let metal = Metal::new(Vec3::ONE, 0.0);
         let payload = HitPayload::new(Vec3::ZERO, Vec3::new(0.0, 1.0, 0.0), 0.0, 0.0, 0.0);
 
         let wi = -(Vec3::ZERO - Vec3::new(10.0, 10.0, 10.0)).normalize();
-        if let Some(sample) = metal.scatter(&wi, &payload) {
-            let _wo = sample.wo;
-        }
-        panic!("No Sample");
+        let Some(sample1) = metal.scatter(&wi, &payload) else {
+            panic!();
+        };
+        let wo = sample1.wo;
+
+        let f_1 = metal.f(wi, wo);
+        let f_2 = metal.f(wo, wi);
+        assert_eq!(f_1, f_2);
     }
 }

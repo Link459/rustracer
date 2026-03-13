@@ -109,3 +109,63 @@ pub fn random_cosine_direction() -> Vec3 {
 
     return Vec3::new(x, y, z);
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        Float, hittable::HitPayload, material::{Lambertian, Material}, texture::SolidColor, vec3::Vec3
+    };
+
+    #[test]
+    fn lambertian_helmholtz_reciprocity() {
+        let color = SolidColor::new(Vec3::new(0.3, 0.5, 0.6));
+        let metal = Lambertian::new(color);
+        let payload = HitPayload::new(Vec3::ZERO, Vec3::new(0.0, 1.0, 0.0), 0.0, 0.0, 0.0);
+
+        let wi = -(Vec3::ZERO - Vec3::new(10.0, 10.0, 10.0)).normalize();
+        let Some(sample1) = metal.scatter(&wi, &payload) else {
+            panic!();
+        };
+        let wo = sample1.wo;
+
+        let f_1 = metal.f(wi, wo);
+        let f_2 = metal.f(wo, wi);
+        assert_eq!(f_1, f_2);
+    }
+
+    #[test]
+    fn lambertian_positivity() {
+        let color = SolidColor::new(Vec3::new(0.3, 0.5, 0.6));
+        let material = Lambertian::new(color);
+
+        for i in 0..1000 {
+            let wo = Vec3::from(i as Float / 1000.0);
+            let wi = Vec3::from(1.0 - i as Float / 1000.0);
+
+            let f = material.f(wi, wo);
+            assert!(f.x >= 0.0);
+            assert!(f.y >= 0.0);
+            assert!(f.z >= 0.0);
+        }
+    }
+
+    #[test]
+    fn lambertian_conserving() {
+        let color = SolidColor::new(Vec3::new(0.3, 0.5, 0.6));
+        let material = Lambertian::new(color);
+
+        let mut sum = Vec3::ZERO;
+        for i in 0..1000 {
+            let wo = Vec3::from(i as Float / 1000.0);
+            let wi = Vec3::from(1.0 - i as Float / 1000.0);
+
+            let f = material.f(wi, wo);
+
+            sum += f * wo.dot(&wi).abs();
+        }
+
+        assert!(sum.x >= 1.0);
+        assert!(sum.y >= 1.0);
+        assert!(sum.z >= 1.0);
+    }
+}

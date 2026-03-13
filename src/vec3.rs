@@ -1,8 +1,8 @@
 use core::panic;
+use rand::RngExt;
 use std::ops::{
     Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Range, Sub, SubAssign,
 };
-use rand::RngExt;
 
 use serde::{Deserialize, Serialize};
 
@@ -364,10 +364,18 @@ mod tests {
     }
 
     #[test]
-    fn add() {}
+    fn add() {
+        let a = Vec3::ZERO;
+        let b = Vec3::ONE;
+        assert_eq!(a + b, Vec3::ONE)
+    }
 
     #[test]
-    fn multiply() {}
+    fn multiply() {
+        let a = Vec3::ZERO;
+        let b = Vec3::ONE;
+        assert_eq!(a * b, Vec3::ZERO)
+    }
 
     #[test]
     fn lenght() {}
