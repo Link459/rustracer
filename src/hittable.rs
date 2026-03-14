@@ -92,7 +92,7 @@ pub trait HittableExt: Hittable {
         let ray = Ray::new(from, dir, 0.0);
 
         //let interval = Interval::new(epsilon, 1.0 - epsilon);
-        let interval = Interval::new(epsilon, dist);
+        let interval = Interval::new(epsilon, dist - epsilon);
 
         let hit = self.hit(&ray, interval);
         return hit.is_none();

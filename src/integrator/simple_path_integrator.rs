@@ -49,35 +49,13 @@ where
         let mut specular_bounce = true;
 
         while beta != Vec3::ZERO {
-            let Some((payload, material_id)) =
-                self.world.hit(&ray, Interval::new(0.001, Float::INFINITY))
-            else {
+            let ray_t = Interval::new(0.0001, Float::INFINITY);
+            let Some((payload, material_id)) = self.world.hit(&ray, ray_t) else {
                 l += beta * self.config.skybox.call(&ray);
                 break;
             };
 
             let material = self.materials.get(material_id);
-
-            //TODO: NEE
-            // - fix unoccluded checking not working properly
-
-            let wi = -ray.dir;
-            if let Some(sampled_light) = self.lights.sample() {
-                let ctx = LightSampleContext {
-                    p: payload.p,
-                    n: payload.normal,
-                };
-
-                if let Some(sample) = sampled_light.light.sample_li(&ctx) {
-                    let wo = sample.wo;
-                    let f = material.f(wi, wo) * wo.dot(&ctx.n).abs();
-
-                    //if self.unoccluded(payload.p, sample.p) {
-                    if self.world.unoccluded(payload.p, sample.p) {
-                        l += (beta * f * sample.l) / (sampled_light.p * sample.pdf);
-                    }
-                }
-            }
 
             if specular_bounce {
                 let emitted =
@@ -88,6 +66,29 @@ where
             depth += 1;
             if depth > self.config.max_depth {
                 break;
+            }
+
+            //TODO: NEE
+            // - fix unoccluded checking not working properly
+
+            let wi = -ray.dir.normalize();
+            if let Some(sampled_light) = self.lights.sample() {
+                let ctx = LightSampleContext {
+                    p: payload.p,
+                    n: payload.normal,
+                };
+
+                if let Some(sample) = sampled_light.light.sample_li(&ctx) {
+                    if sample.pdf > 0.0 {
+                        let wo = sample.wo.normalize();
+                        let f = material.f(wi, wo) * wo.dot(&ctx.n).abs();
+
+                        //if self.unoccluded(payload.p, sample.p) {
+                        if self.world.unoccluded(payload.p, sample.p) {
+                            l += beta * f * sample.l / (sampled_light.p * sample.pdf);
+                        }
+                    }
+                }
             }
 
             let Some(material_sample) = material.scatter(&wi, &payload) else {
@@ -101,13 +102,13 @@ where
             specular_bounce = material_sample.is_specular;
 
             // Russian-Roulette
-            if depth > 2 {
+            /*if depth > 2 {
                 let p = luminance(beta);
                 if rand::rng().random::<Float>() > p {
                     break;
                 }
                 beta /= p;
-            }
+            }*/
         }
         return l;
     }

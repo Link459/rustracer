@@ -558,6 +558,99 @@ fn box_of_quads(a: &Vec3, b: &Vec3, mat: MaterialId) -> Model {
     return Model::World(sides);
 }
 
+pub fn empty_cornell_box() -> Scene {
+    let mut world = World::default();
+    let mut materials = MaterialStore::new();
+    let mut lights = LightStore::new();
+    let red = materials.add(Lambertian::new(SolidColor::new(Vec3::new(
+        0.65, 0.05, 0.05,
+    ))));
+    let white = materials.add(Lambertian::new(SolidColor::new(Vec3::new(
+        0.73, 0.73, 0.73,
+    ))));
+    let green = materials.add(Lambertian::new(SolidColor::new(Vec3::new(
+        0.12, 0.45, 0.15,
+    ))));
+    let light = materials.add(DiffuseLight::new(SolidColor::new(Vec3::new(
+        15.0, 15.0, 15.0,
+    ))));
+
+    world.add(Quad::new(
+        Vec3::new(555.0, 0.0, 0.0),
+        Vec3::new(0.0, 555.0, 0.0),
+        Vec3::new(0.0, 0.0, 555.0),
+        red,
+    ));
+    world.add(Quad::new(
+        Vec3::new(0.0, 0.0, 0.0),
+        Vec3::new(0.0, 555.0, 0.0),
+        Vec3::new(0.0, 0.0, 555.0),
+        green,
+    ));
+
+    lights.add(AreaLight::new(
+        Quad::new(
+            Vec3::new(343.0, 554.0, 332.0),
+            Vec3::new(-130.0, 0.0, 0.0),
+            Vec3::new(0.0, 0.0, -105.0),
+            light,
+        ),
+        Vec3::new(15.0, 15.0, 15.0),
+    ));
+
+    //TODO: get rid of having duplicate lights in the world and light store
+    world.add(Quad::new(
+        Vec3::new(343.0, 554.0, 332.0),
+        Vec3::new(-130.0, 0.0, 0.0),
+        Vec3::new(0.0, 0.0, -105.0),
+        light,
+    ));
+
+    world.add(Quad::new(
+        Vec3::new(0.0, 0.0, 0.0),
+        Vec3::new(555.0, 0.0, 0.0),
+        Vec3::new(0.0, 0.0, 555.0),
+        white.clone(),
+    ));
+
+    world.add(Quad::new(
+        Vec3::new(555.0, 555.0, 555.0),
+        Vec3::new(-555.0, 0.0, 0.0),
+        Vec3::new(0.0, 0.0, -555.0),
+        white.clone(),
+    ));
+    world.add(Quad::new(
+        Vec3::new(0.0, 0.0, 555.0),
+        Vec3::new(555.0, 0.0, 0.0),
+        Vec3::new(0.0, 555.0, 0.0),
+        white.clone(),
+    ));
+
+    let samples = 1000;
+    let mut config = RenderSettings::with_aspect_ratio(1.0, 400, samples, 50);
+    config.skybox = Skybox::Night;
+    let camera = CameraConfig {
+        lookfrom: Vec3::new(278.0, 278.0, -800.0),
+        lookat: Vec3::new(278.0, 278.0, 0.0),
+        vup: Vec3::new(0.0, 1.0, 0.0),
+        vfov: 40.0,
+        aspect_ratio: 1.0,
+        aperture: 0.0,
+        focus_dist: 10.0,
+        time: Interval::new(0.0, 1.0),
+    };
+
+    return Scene {
+        camera,
+        config,
+        world,
+        lights,
+        materials,
+        skybox: Skybox::Night,
+        ..Default::default()
+    };
+}
+
 #[inline]
 pub fn cornell_box() -> Scene {
     let mut world = World::default();
@@ -627,25 +720,11 @@ pub fn cornell_box() -> Scene {
         white.clone(),
     ));
 
-    println!("[0] = normal\n[1] = aluminium");
-    let mut buf = String::new();
-    stdin().read_line(&mut buf).expect("failed to read line");
-    let choice = buf.trim().parse::<usize>().unwrap();
-
-    let box1 = match choice {
-        0 => box_of_quads(
-            &Vec3::new(0.0, 0.0, 0.0),
-            &Vec3::new(165.0, 330.0, 165.0),
-            white.clone(),
-        ),
-        1 => box_of_quads(
-            &Vec3::new(0.0, 0.0, 0.0),
-            &Vec3::new(165.0, 330.0, 165.0),
-            materials.add(Metal::new(Vec3::new(0.8, 0.85, 0.88), 0.0)),
-        ),
-
-        _ => panic!(),
-    };
+    let box1 = box_of_quads(
+        &Vec3::new(0.0, 0.0, 0.0),
+        &Vec3::new(165.0, 330.0, 165.0),
+        white.clone(),
+    );
 
     let box1 = RotateY::new(box1, 15.0);
     let box1 = Translate::new(box1, Vec3::new(265.0, 0.0, 295.0));
@@ -683,6 +762,122 @@ pub fn cornell_box() -> Scene {
         world,
         lights,
         materials,
+        skybox: Skybox::Night,
+        ..Default::default()
+    };
+}
+
+pub fn cornell_box_aluminium() -> Scene {
+    let mut world = World::default();
+    let mut materials = MaterialStore::new();
+    let mut lights = LightStore::new();
+    let red = materials.add(Lambertian::new(SolidColor::new(Vec3::new(
+        0.65, 0.05, 0.05,
+    ))));
+    let white = materials.add(Lambertian::new(SolidColor::new(Vec3::new(
+        0.73, 0.73, 0.73,
+    ))));
+    let green = materials.add(Lambertian::new(SolidColor::new(Vec3::new(
+        0.12, 0.45, 0.15,
+    ))));
+    let light = materials.add(DiffuseLight::new(SolidColor::new(Vec3::new(
+        15.0, 15.0, 15.0,
+    ))));
+
+    world.add(Quad::new(
+        Vec3::new(555.0, 0.0, 0.0),
+        Vec3::new(0.0, 555.0, 0.0),
+        Vec3::new(0.0, 0.0, 555.0),
+        red,
+    ));
+    world.add(Quad::new(
+        Vec3::new(0.0, 0.0, 0.0),
+        Vec3::new(0.0, 555.0, 0.0),
+        Vec3::new(0.0, 0.0, 555.0),
+        green,
+    ));
+
+    lights.add(AreaLight::new(
+        Quad::new(
+            Vec3::new(343.0, 554.0, 332.0),
+            Vec3::new(-130.0, 0.0, 0.0),
+            Vec3::new(0.0, 0.0, -105.0),
+            light,
+        ),
+        Vec3::new(15.0, 15.0, 15.0),
+    ));
+
+    //TODO: get rid of having duplicate lights in the world and light store
+    world.add(Quad::new(
+        Vec3::new(343.0, 554.0, 332.0),
+        Vec3::new(-130.0, 0.0, 0.0),
+        Vec3::new(0.0, 0.0, -105.0),
+        light,
+    ));
+
+    world.add(Quad::new(
+        Vec3::new(0.0, 0.0, 0.0),
+        Vec3::new(555.0, 0.0, 0.0),
+        Vec3::new(0.0, 0.0, 555.0),
+        white.clone(),
+    ));
+
+    world.add(Quad::new(
+        Vec3::new(555.0, 555.0, 555.0),
+        Vec3::new(-555.0, 0.0, 0.0),
+        Vec3::new(0.0, 0.0, -555.0),
+        white.clone(),
+    ));
+    world.add(Quad::new(
+        Vec3::new(0.0, 0.0, 555.0),
+        Vec3::new(555.0, 0.0, 0.0),
+        Vec3::new(0.0, 555.0, 0.0),
+        white.clone(),
+    ));
+
+    let box1 = box_of_quads(
+        &Vec3::new(0.0, 0.0, 0.0),
+        &Vec3::new(165.0, 330.0, 165.0),
+        materials.add(Metal::new(Vec3::new(0.8, 0.85, 0.88), 0.0)),
+    );
+
+    let box1 = RotateY::new(box1, 15.0);
+    let box1 = Translate::new(box1, Vec3::new(265.0, 0.0, 295.0));
+
+    world.add(box1);
+
+    let box2 = box_of_quads(
+        &Vec3::new(0.0, 0.0, 0.0),
+        &Vec3::new(165.0, 165.0, 165.0),
+        white,
+    );
+
+    let box2 = RotateY::new(box2, -18.0);
+    let box2 = Translate::new(box2, Vec3::new(130.0, 0.0, 65.0));
+
+    world.add(box2);
+
+    let samples = 1000;
+    let mut config = RenderSettings::with_aspect_ratio(1.0, 400, samples, 50);
+    config.skybox = Skybox::Night;
+    let camera = CameraConfig {
+        lookfrom: Vec3::new(278.0, 278.0, -800.0),
+        lookat: Vec3::new(278.0, 278.0, 0.0),
+        vup: Vec3::new(0.0, 1.0, 0.0),
+        vfov: 40.0,
+        aspect_ratio: 1.0,
+        aperture: 0.0,
+        focus_dist: 10.0,
+        time: Interval::new(0.0, 1.0),
+    };
+
+    return Scene {
+        camera,
+        config,
+        world,
+        lights,
+        materials,
+        skybox: Skybox::Night,
         ..Default::default()
     };
 }
@@ -942,7 +1137,9 @@ pub fn get_scenes() -> Vec<(&'static str, fn() -> crate::scene::Scene)> {
         option_pair!("quads", quads),
         option_pair!("simple_light", simple_light),
         option_pair!("simple_skybox", simple_skybox),
+        option_pair!("empty_cornell_box", empty_cornell_box),
         option_pair!("cornell_box", cornell_box),
+        option_pair!("cornell_box_aluminium", cornell_box_aluminium),
         option_pair!("cornell_smoke", cornell_smoke),
         option_pair!("final_world", final_world),
     ];

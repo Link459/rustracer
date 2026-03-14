@@ -15,7 +15,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{hittable::HitPayload, pdf::PDF, ray::Ray, vec3::Vec3, Float};
 
-#[derive(Debug,PartialEq)]
+#[derive(Debug, PartialEq)]
 pub struct ScatterPayload {
     pub f: Vec3,
     pub wo: Vec3, // -> outgoing direction
@@ -129,6 +129,6 @@ impl Material for DefaultMaterial {
 
 fn same_hemisphere(w: Vec3, wp: Vec3) -> bool {
     //return w.dot(&wp).is_sign_positive();
-    return w.dot(&wp) > 0.0;
+    return w.dot(&wp) >= 0.0;
     //return w.z * wp.z > 0.0;
 }

@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     hittable::HitPayload,
-    material::ScatterPayload,
+    material::{same_hemisphere, ScatterPayload},
     pdf::{CosinePDF, PDF},
     ray::Ray,
     texture::{SolidColor, Texture, TextureStorage},
@@ -35,11 +35,12 @@ impl From<Vec3> for Lambertian {
 }
 
 impl Material for Lambertian {
-    fn f(&self, _wi: Vec3, _wo: Vec3) -> Vec3 {
+    fn f(&self, wi: Vec3, wo: Vec3) -> Vec3 {
         //BUG: The same hemisphere check does not work
         /*if !same_hemisphere(wi, wo) {
             return Vec3::ZERO;
         }*/
+
         return self.albedo.value(0.0, 0.0, &Vec3::ZERO) / crate::consts::PI;
     }
 
@@ -113,7 +114,11 @@ pub fn random_cosine_direction() -> Vec3 {
 #[cfg(test)]
 mod tests {
     use crate::{
-        Float, hittable::HitPayload, material::{Lambertian, Material}, texture::SolidColor, vec3::Vec3
+        hittable::HitPayload,
+        material::{Lambertian, Material},
+        texture::SolidColor,
+        vec3::Vec3,
+        Float,
     };
 
     #[test]

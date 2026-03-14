@@ -12,8 +12,8 @@ use crate::{
 
 #[derive(Default, Debug, PartialEq, Serialize, Deserialize)]
 pub enum PresentSettings {
-    #[default]
     OnceDone,
+    #[default]
     Accumulate,
 }
 

@@ -31,6 +31,7 @@ struct SettingsApp {
 impl SettingsApp {
     fn new(_cc: &eframe::CreationContext<'_>) -> Self {
         let mut s = Self::default();
+        s.load_settings();
         s.output_path = s.settings.output.to_str().unwrap().to_string();
         return s;
     }
@@ -190,6 +191,15 @@ impl SettingsApp {
                 self.set_error(e);
                 return;
             }
+        }
+    }
+
+    fn load_settings(&mut self) {
+        let str = std::fs::read_to_string("settings.toml").unwrap();
+        let deserialized = toml::from_str::<Settings>(&str);
+        match deserialized {
+            Ok(s) => self.settings = s,
+            Err(e) => self.set_error(e),
         }
     }
 
