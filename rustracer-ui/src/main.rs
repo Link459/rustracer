@@ -1,4 +1,5 @@
 use std::{
+	io,
     error::Error,
     ffi::OsStr,
     path::{Path, PathBuf},
@@ -31,7 +32,11 @@ struct SettingsApp {
 impl SettingsApp {
     fn new(_cc: &eframe::CreationContext<'_>) -> Self {
         let mut s = Self::default();
-        s.load_settings();
+        let res = s.load_settings();
+		if res.is_err() {
+			s.save_settings();
+				
+		}
         s.output_path = s.settings.output.to_str().unwrap().to_string();
         return s;
     }
@@ -194,13 +199,14 @@ impl SettingsApp {
         }
     }
 
-    fn load_settings(&mut self) {
-        let str = std::fs::read_to_string("settings.toml").unwrap();
+    fn load_settings(&mut self) -> io::Result<()> {
+        let str = std::fs::read_to_string("settings.toml")?;
         let deserialized = toml::from_str::<Settings>(&str);
         match deserialized {
             Ok(s) => self.settings = s,
             Err(e) => self.set_error(e),
-        }
+        };
+		Ok(())
     }
 
     fn spawn(&mut self) {
