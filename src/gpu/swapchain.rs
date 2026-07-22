@@ -1,19 +1,18 @@
 use anyhow::Result;
-use ash::{extensions::khr, extensions::khr::Surface, vk};
+use ash::{khr, vk};
 use winit::window::Window;
 
 use super::{
     command_pool::CommandBuffer,
-    device::Device,
     image::{GpuImage, SwapchainImage},
     util::find_memorytype_index,
 };
 
 pub struct Swapchain {
     surface: vk::SurfaceKHR,
-    window: Window,
+    //window: Window,
     swapchain: vk::SwapchainKHR,
-    swapchain_loader: khr::Swapchain,
+    swapchain_loader: khr::swapchain::Device,
     images: Vec<SwapchainImage>,
     depth_image: GpuImage,
 }
@@ -21,18 +20,19 @@ pub struct Swapchain {
 impl Swapchain {
     pub fn new(
         instance: &ash::Instance,
-        device: &Device,
-        setup_command_buffer: &CommandBuffer,
-        surface_loader: &Surface,
+        device: &ash::Device,
+        physical_device: &vk::PhysicalDevice,
+        //setup_command_buffer: &CommandBuffer,
+        surface_loader: &khr::surface::Instance,
         surface: &vk::SurfaceKHR,
-        window: Window,
+        window: &Window,
     ) -> Result<Self> {
         let surface_format = unsafe {
-            surface_loader.get_physical_device_surface_formats(device.pdevice, *surface)?
+            surface_loader.get_physical_device_surface_formats(*physical_device, *surface)?
         }[0];
 
         let surface_capabilities = unsafe {
-            surface_loader.get_physical_device_surface_capabilities(device.pdevice, *surface)?
+            surface_loader.get_physical_device_surface_capabilities(*physical_device, *surface)?
         };
         let mut desired_image_count = surface_capabilities.min_image_count + 1;
         if surface_capabilities.max_image_count > 0
@@ -57,7 +57,7 @@ impl Swapchain {
             surface_capabilities.current_transform
         };
         let present_modes = unsafe {
-            surface_loader.get_physical_device_surface_present_modes(device.pdevice, *surface)?
+            surface_loader.get_physical_device_surface_present_modes(*physical_device, *surface)?
         };
         let present_mode = present_modes
             .iter()
@@ -65,9 +65,9 @@ impl Swapchain {
             .find(|&mode| mode == vk::PresentModeKHR::MAILBOX)
             .unwrap_or(vk::PresentModeKHR::FIFO);
 
-        let swapchain_loader = khr::Swapchain::new(&instance, &device);
+        let swapchain_loader = khr::swapchain::Device::new(instance, device);
 
-        let swapchain_create_info = vk::SwapchainCreateInfoKHR::builder()
+        let swapchain_create_info = vk::SwapchainCreateInfoKHR::default()
             .surface(*surface)
             .min_image_count(desired_image_count)
             .image_color_space(surface_format.color_space)
@@ -91,7 +91,7 @@ impl Swapchain {
         let present_image_views: Vec<vk::ImageView> = present_images
             .iter()
             .map(|&image| {
-                let create_view_info = vk::ImageViewCreateInfo::builder()
+                let create_view_info = vk::ImageViewCreateInfo::default()
                     .view_type(vk::ImageViewType::TYPE_2D)
                     .format(surface_format.format)
                     .components(vk::ComponentMapping {
@@ -108,17 +108,12 @@ impl Swapchain {
                         layer_count: 1,
                     })
                     .image(image);
-                unsafe {
-                    device
-                        .device
-                        .create_image_view(&create_view_info, None)
-                        .unwrap()
-                }
+                unsafe { device.create_image_view(&create_view_info, None).unwrap() }
             })
             .collect();
         let device_memory_properties =
-            unsafe { instance.get_physical_device_memory_properties(device.pdevice) };
-        let depth_image_create_info = vk::ImageCreateInfo::builder()
+            unsafe { instance.get_physical_device_memory_properties(*physical_device) };
+        let depth_image_create_info = vk::ImageCreateInfo::default()
             .image_type(vk::ImageType::TYPE_2D)
             .format(vk::Format::D16_UNORM)
             .extent(surface_resolution.into())
@@ -138,42 +133,38 @@ impl Swapchain {
         )
         .expect("Unable to find suitable memory index for depth image.");
 
-        let depth_image_allocate_info = vk::MemoryAllocateInfo::builder()
+        let depth_image_allocate_info = vk::MemoryAllocateInfo::default()
             .allocation_size(depth_image_memory_req.size)
             .memory_type_index(depth_image_memory_index);
 
         let depth_image_memory = unsafe {
             device
-                .device
                 .allocate_memory(&depth_image_allocate_info, None)
                 .unwrap()
         };
 
         unsafe {
             device
-                .device
                 .bind_image_memory(depth_image, depth_image_memory, 0)
                 .expect("Unable to bind depth image memory")
         };
 
         let fence_create_info =
-            vk::FenceCreateInfo::builder().flags(vk::FenceCreateFlags::SIGNALED);
+            vk::FenceCreateInfo::default().flags(vk::FenceCreateFlags::SIGNALED);
 
         let draw_commands_reuse_fence = unsafe {
             device
-                .device
                 .create_fence(&fence_create_info, None)
                 .expect("Create fence failed.")
         };
         let setup_commands_reuse_fence = unsafe {
             device
-                .device
                 .create_fence(&fence_create_info, None)
                 .expect("Create fence failed.")
         };
 
-        setup_command_buffer.record_and_submit(
-            &device,
+        /*setup_command_buffer.record_and_submit(
+            device,
             vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT,
             setup_commands_reuse_fence,
             device.graphics_queue,
@@ -210,15 +201,14 @@ impl Swapchain {
                 };
                 Ok(())
             },
-        )?;
+        )?;*/
 
-        let depth_image_view_info = vk::ImageViewCreateInfo::builder()
+        let depth_image_view_info = vk::ImageViewCreateInfo::default()
             .subresource_range(
-                vk::ImageSubresourceRange::builder()
+                vk::ImageSubresourceRange::default()
                     .aspect_mask(vk::ImageAspectFlags::DEPTH)
                     .level_count(1)
-                    .layer_count(1)
-                    .build(),
+                    .layer_count(1),
             )
             .image(depth_image)
             .format(depth_image_create_info.format)
@@ -226,7 +216,6 @@ impl Swapchain {
 
         let depth_image_view = unsafe {
             device
-                .device
                 .create_image_view(&depth_image_view_info, None)
                 .unwrap()
         };
@@ -248,7 +237,6 @@ impl Swapchain {
 
         Ok(Self {
             surface: *surface,
-            window,
             swapchain,
             swapchain_loader,
             images: present_images,
@@ -257,9 +245,8 @@ impl Swapchain {
     }
 
     pub fn present(&self, present_queue: vk::Queue, image: vk::Image) -> Result<()> {
-        let present_info = vk::PresentInfoKHR::builder()
-            .swapchains(&[self.swapchain])
-            .build();
+        let binding = [self.swapchain];
+        let present_info = vk::PresentInfoKHR::default().swapchains(&binding);
         unsafe {
             self.swapchain_loader
                 .queue_present(present_queue, &present_info)?

@@ -1,18 +1,15 @@
 use anyhow::Result;
-use ash::{
-    extensions::khr::{self, RayTracingPipeline},
-    vk,
-};
+use ash::{khr, vk};
 
 use super::config::Config;
 
 pub struct Pipeline {
-    pipeline: RayTracingPipeline,
+    pipeline: ash::vk::Pipeline,
 }
 
-impl Pipeline {
+/*impl Pipeline {
     pub fn new(
-        pipeline_loader: khr::RayTracingPipeline,
+        pipeline_loader: khr::ray_tracing_pipeline::Device,
         deferred_op: vk::DeferredOperationKHR,
         cache: Option<vk::PipelineCache>,
         config: Config,
@@ -21,7 +18,7 @@ impl Pipeline {
         return Ok(pipeline.remove(0));
     }
     pub fn new_multiple(
-        pipeline_loader: khr::RayTracingPipeline,
+        pipeline_loader: khr::ray_tracing_pipeline::Device,
         deferred_op: vk::DeferredOperationKHR,
         cache: Option<vk::PipelineCache>,
         configs: &[Config],
@@ -34,12 +31,11 @@ impl Pipeline {
                     .iter()
                     .map(|x| x.stage_info)
                     .collect::<Vec<_>>();
-                let pipline_create_info = vk::RayTracingPipelineCreateInfoKHR::builder()
+                let pipline_create_info = vk::RayTracingPipelineCreateInfoKHR::default()
                     .stages(&stages.as_slice())
                     .groups(config.groups)
                     .max_pipeline_ray_recursion_depth(config.recursion_depth)
-                    .layout(config.layout)
-                    .build();
+                    .layout(config.layout);
                 pipline_create_info
             })
             .collect::<Vec<_>>();
@@ -51,11 +47,11 @@ impl Pipeline {
                     *cache,
                     pipeline_create_infos.as_slice(),
                     None,
-                )?
+                )
             },
             None => todo!(),
         };
 
         todo!()
     }
-}
+}*/

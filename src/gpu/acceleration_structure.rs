@@ -1,9 +1,9 @@
 use super::command_pool::CommandBuffer;
 use super::instance::Instance;
 use super::model::GpuModel;
-use super::{buffer::UnsafeBuffer, command_pool::CommandPool, device::Device};
+use super::{buffer::UnsafeBuffer, command_pool::CommandPool};
 use anyhow::Result;
-use ash::extensions::khr;
+use ash::khr;
 use ash::vk::{self, Packed24_8};
 
 #[derive(Copy, Clone, Default)]
@@ -15,13 +15,12 @@ pub struct AccelStruct {
 impl AccelStruct {
     pub fn new(
         instance: &Instance,
-        accel_loader: &khr::AccelerationStructure,
+        accel_loader: &khr::acceleration_structure::Device,
         create_info: &vk::AccelerationStructureCreateInfoKHR,
     ) -> Result<Self> {
         let buffer = unsafe {
             UnsafeBuffer::new(
                 instance,
-                &instance.device,
                 create_info.size,
                 vk::BufferUsageFlags::ACCELERATION_STRUCTURE_STORAGE_KHR
                     | vk::BufferUsageFlags::SHADER_DEVICE_ADDRESS,
@@ -39,15 +38,15 @@ impl AccelStruct {
     }
 }
 
-pub struct BLASInput {
-    build_geometry: Vec<vk::AccelerationStructureGeometryKHR>,
+pub struct BLASInput<'a> {
+    build_geometry: Vec<vk::AccelerationStructureGeometryKHR<'a>>,
     build_range: Vec<vk::AccelerationStructureBuildRangeInfoKHR>,
     flags: vk::BuildAccelerationStructureFlagsKHR,
 }
 
 pub struct BuildAS<'a> {
-    pub build_info: vk::AccelerationStructureBuildGeometryInfoKHR,
-    pub build_sizes: vk::AccelerationStructureBuildSizesInfoKHR,
+    pub build_info: vk::AccelerationStructureBuildGeometryInfoKHR<'a>,
+    pub build_sizes: vk::AccelerationStructureBuildSizesInfoKHR<'a>,
     pub build_ranges: &'a [vk::AccelerationStructureBuildRangeInfoKHR],
     pub accel_struct: AccelStruct,
     cleanup_as: AccelStruct,
@@ -55,7 +54,7 @@ pub struct BuildAS<'a> {
 
 fn cmd_create_blas(
     instance: &Instance,
-    accel_loader: &khr::AccelerationStructure,
+    accel_loader: &khr::acceleration_structure::Device,
     cmd_buf: CommandBuffer,
     indices: &[u32],
     build_as: &mut [BuildAS],
@@ -75,10 +74,9 @@ fn cmd_create_blas(
         .iter()
         .map(|x| {
             let i = *x as usize;
-            let accel_create_info = vk::AccelerationStructureCreateInfoKHR::builder()
+            let accel_create_info = vk::AccelerationStructureCreateInfoKHR::default()
                 .ty(vk::AccelerationStructureTypeKHR::BOTTOM_LEVEL)
-                .size(build_as[i].build_sizes.acceleration_structure_size)
-                .build();
+                .size(build_as[i].build_sizes.acceleration_structure_size);
 
             build_as[i].accel_struct =
                 AccelStruct::new(instance, accel_loader, &accel_create_info).unwrap();
@@ -92,7 +90,7 @@ fn cmd_create_blas(
                     &[build_as[i].build_ranges],
                 )
             }
-            let mem_barrier = vk::MemoryBarrier::builder()
+            let mem_barrier = vk::MemoryBarrier::default()
                 .src_access_mask(vk::AccessFlags::ACCELERATION_STRUCTURE_WRITE_KHR)
                 .dst_access_mask(vk::AccessFlags::ACCELERATION_STRUCTURE_READ_KHR);
             unsafe {
@@ -101,7 +99,7 @@ fn cmd_create_blas(
                     vk::PipelineStageFlags::ACCELERATION_STRUCTURE_BUILD_KHR,
                     vk::PipelineStageFlags::ACCELERATION_STRUCTURE_BUILD_KHR,
                     vk::DependencyFlags::default(),
-                    &[*mem_barrier],
+                    &[mem_barrier],
                     &[],
                     &[],
                 )
@@ -127,8 +125,7 @@ fn cmd_create_blas(
 
 fn cmd_compact_blas(
     instance: &Instance,
-    device: &Device,
-    accel_loader: &khr::AccelerationStructure,
+    accel_loader: &khr::acceleration_structure::Device,
     cmd_buf: CommandBuffer,
     indices: Vec<u32>,
     build_as: &mut Vec<BuildAS>,
@@ -137,9 +134,8 @@ fn cmd_compact_blas(
     let mut query_count = 0;
     let mut compact_sizes = indices.clone();
     unsafe {
-        device.get_query_pool_results(
+        instance.device.get_query_pool_results(
             query_pool,
-            0,
             indices.len() as u32,
             compact_sizes.as_mut_slice(),
             vk::QueryResultFlags::WAIT,
@@ -150,12 +146,12 @@ fn cmd_compact_blas(
         build_as[i].cleanup_as = build_as[i].accel_struct;
         query_count += 1;
         build_as[i].build_sizes.acceleration_structure_size = compact_sizes[query_count].into();
-        let as_create_info = vk::AccelerationStructureCreateInfoKHR::builder()
+        let as_create_info = vk::AccelerationStructureCreateInfoKHR::default()
             .ty(vk::AccelerationStructureTypeKHR::BOTTOM_LEVEL)
             .size(build_as[i].build_sizes.acceleration_structure_size);
         build_as[i].accel_struct = AccelStruct::new(instance, accel_loader, &as_create_info)?;
 
-        let copy_info = vk::CopyAccelerationStructureInfoKHR::builder()
+        let copy_info = vk::CopyAccelerationStructureInfoKHR::default()
             .src(build_as[i].build_info.dst_acceleration_structure)
             .dst(build_as[i].accel_struct.accel_struct)
             .mode(vk::CopyAccelerationStructureModeKHR::COMPACT);
@@ -167,7 +163,7 @@ fn cmd_compact_blas(
 
 fn build_input_into<'a>(
     blas_inputs: &'a [BLASInput],
-    accel_loader: &khr::AccelerationStructure,
+    accel_loader: &khr::acceleration_structure::Device,
 ) -> (Vec<BuildAS<'a>>, u64, u64, u64) {
     let blas_size = blas_inputs.len();
     let mut max_scratch_size = 0;
@@ -177,12 +173,11 @@ fn build_input_into<'a>(
     let build_as = (0..blas_size)
         .into_iter()
         .map(|i| {
-            let build_info = vk::AccelerationStructureBuildGeometryInfoKHR::builder()
+            let build_info = vk::AccelerationStructureBuildGeometryInfoKHR::default()
                 .ty(vk::AccelerationStructureTypeKHR::BOTTOM_LEVEL)
                 .mode(vk::BuildAccelerationStructureModeKHR::BUILD)
                 .flags(blas_inputs[i].flags)
-                .geometries(&blas_inputs[i].build_geometry)
-                .build();
+                .geometries(&blas_inputs[i].build_geometry);
 
             let build_ranges = &blas_inputs[i].build_range;
 
@@ -191,11 +186,13 @@ fn build_input_into<'a>(
                 .map(|x| x.primitive_count)
                 .collect::<Vec<_>>();
 
-            let build_sizes = unsafe {
+            let mut build_sizes = vk::AccelerationStructureBuildSizesInfoKHR::default();
+            unsafe {
                 accel_loader.get_acceleration_structure_build_sizes(
                     vk::AccelerationStructureBuildTypeKHR::DEVICE,
                     &build_info,
                     max_prim_count.as_slice(),
+                    &mut build_sizes,
                 )
             };
 
@@ -225,24 +222,22 @@ fn build_input_into<'a>(
 }
 
 fn create_blas(
-    accel_loader: khr::AccelerationStructure,
+    accel_loader: khr::acceleration_structure::Device,
     buffer: UnsafeBuffer,
     size: u64,
     offset: u64,
 ) -> Result<vk::AccelerationStructureKHR> {
-    let create_info = vk::AccelerationStructureCreateInfoKHR::builder()
+    let create_info = vk::AccelerationStructureCreateInfoKHR::default()
         .ty(vk::AccelerationStructureTypeKHR::BOTTOM_LEVEL)
         .buffer(buffer.buffer)
         .size(size)
-        .offset(offset)
-        .build();
+        .offset(offset);
     Ok(unsafe { accel_loader.create_acceleration_structure(&create_info, None)? })
 }
 
 fn build_blas(
     instance: &Instance,
-    device: &Device,
-    accel_loader: &khr::AccelerationStructure,
+    accel_loader: &khr::acceleration_structure::Device,
     cmd_buf: CommandBuffer,
     blas_inputs: Vec<BLASInput>,
 ) -> Result<Vec<AccelStruct>> {
@@ -252,7 +247,6 @@ fn build_blas(
     let scratch_buffer = unsafe {
         UnsafeBuffer::new(
             instance,
-            device,
             max_scratch_size,
             vk::BufferUsageFlags::SHADER_DEVICE_ADDRESS | vk::BufferUsageFlags::STORAGE_BUFFER,
             vk::BufferCreateFlags::default(),
@@ -265,19 +259,22 @@ fn build_blas(
     };
 
     let scratch_buffer_address = unsafe {
-        device
+        instance
             .device
             .get_buffer_device_address(&scratch_buffer_info)
     };
 
     let mut temp_query_pool = vk::QueryPool::default();
     if compaction_size > 0 {
-        let query_pool_create_info = vk::QueryPoolCreateInfo::builder()
+        let query_pool_create_info = vk::QueryPoolCreateInfo::default()
             .query_count(blas_builds.len().try_into()?)
-            .query_type(vk::QueryType::ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR)
-            .build();
+            .query_type(vk::QueryType::ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR);
 
-        temp_query_pool = unsafe { device.create_query_pool(&query_pool_create_info, None)? };
+        temp_query_pool = unsafe {
+            instance
+                .device
+                .create_query_pool(&query_pool_create_info, None)?
+        };
     }
     let mut query_pool = None;
     if temp_query_pool != vk::QueryPool::default() {
@@ -293,10 +290,10 @@ fn build_blas(
 
         if batch_size >= batch_limit || i == blas_builds.len() - 1 {
             cmd_buf.record_and_submit(
-                device,
+                instance,
                 vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT,
                 vk::Fence::default(),
-                device.graphics_queue,
+                instance.graphics_queue,
                 &[],
                 &[],
                 &[],
@@ -315,17 +312,16 @@ fn build_blas(
             )?;
             if let Some(pool) = query_pool {
                 cmd_buf.record_and_submit(
-                    device,
+                    instance,
                     vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT,
                     vk::Fence::default(),
-                    device.graphics_queue,
+                    instance.graphics_queue,
                     &[],
                     &[],
                     &[],
                     |_, cmd| {
                         cmd_compact_blas(
                             instance,
-                            device,
                             accel_loader,
                             cmd,
                             indices.iter().map(|x| *x as u32).collect(),
@@ -339,9 +335,9 @@ fn build_blas(
         }
     }
     if let Some(pool) = query_pool {
-        unsafe { device.destroy_query_pool(pool, None) };
+        unsafe { instance.device.destroy_query_pool(pool, None) };
     }
-    unsafe { device.destroy_buffer(*scratch_buffer, None) };
+    unsafe { instance.device.destroy_buffer(*scratch_buffer, None) };
 
     let blas = blas_builds
         .iter()
@@ -353,40 +349,41 @@ fn build_blas(
 
 fn cmd_create_tlas(
     instance: &Instance,
-    device: &Device,
-    accel_loader: &khr::AccelerationStructure,
+    accel_loader: &khr::acceleration_structure::Device,
     cmd_buf: CommandBuffer,
     instance_count: u32,
     inst_buffer_addr: vk::DeviceAddress,
     flags: vk::BuildAccelerationStructureFlagsKHR,
 ) -> Result<(AccelStruct, UnsafeBuffer)> {
-    let instances_data = vk::AccelerationStructureGeometryInstancesDataKHR::builder().data(
+    let instances_data = vk::AccelerationStructureGeometryInstancesDataKHR::default().data(
         vk::DeviceOrHostAddressConstKHR {
             device_address: inst_buffer_addr,
         },
     );
 
-    let top_as_geometry = vk::AccelerationStructureGeometryKHR::builder()
+    let top_as_geometry = vk::AccelerationStructureGeometryKHR::default()
         .geometry_type(vk::GeometryTypeKHR::INSTANCES)
         .geometry(vk::AccelerationStructureGeometryDataKHR {
-            instances: *instances_data,
+            instances: instances_data,
         });
-    let geometries = [*top_as_geometry];
+    let geometries = [top_as_geometry];
     let mode = vk::BuildAccelerationStructureModeKHR::BUILD; //TODO: Implement updating aswell
-    let build_info = vk::AccelerationStructureBuildGeometryInfoKHR::builder()
+    let build_info = vk::AccelerationStructureBuildGeometryInfoKHR::default()
         .flags(flags)
         .geometries(&geometries)
         .ty(vk::AccelerationStructureTypeKHR::TOP_LEVEL)
         .mode(mode);
 
-    let size_info = unsafe {
+    let mut size_info = vk::AccelerationStructureBuildSizesInfoKHR::default();
+    unsafe {
         accel_loader.get_acceleration_structure_build_sizes(
             vk::AccelerationStructureBuildTypeKHR::DEVICE,
             &build_info,
             &[instance_count],
+            &mut size_info,
         )
     };
-    let as_create_info = vk::AccelerationStructureCreateInfoKHR::builder()
+    let as_create_info = vk::AccelerationStructureCreateInfoKHR::default()
         .ty(vk::AccelerationStructureTypeKHR::TOP_LEVEL)
         .size(size_info.acceleration_structure_size);
     let tlas = AccelStruct::new(instance, accel_loader, &as_create_info)?;
@@ -394,7 +391,6 @@ fn cmd_create_tlas(
     let scratch_buffer = unsafe {
         UnsafeBuffer::new(
             instance,
-            device,
             size_info.build_scratch_size,
             vk::BufferUsageFlags::STORAGE_BUFFER | vk::BufferUsageFlags::SHADER_DEVICE_ADDRESS,
             vk::BufferCreateFlags::default(),
@@ -405,7 +401,7 @@ fn cmd_create_tlas(
         buffer: *scratch_buffer,
         ..Default::default()
     };
-    let scratch_addr = unsafe { device.get_buffer_device_address(&scratch_info) };
+    let scratch_addr = unsafe { instance.device.get_buffer_device_address(&scratch_info) };
     let build_info = build_info
         .dst_acceleration_structure(tlas.accel_struct)
         .scratch_data(vk::DeviceOrHostAddressKHR {
@@ -419,7 +415,6 @@ fn cmd_create_tlas(
         transform_offset: 0,
     };
 
-    let build_info = build_info.build();
     unsafe {
         accel_loader.cmd_build_acceleration_structures(
             *cmd_buf,
@@ -433,8 +428,7 @@ fn cmd_create_tlas(
 
 fn build_tlas(
     instance: &Instance,
-    device: &Device,
-    accel_loader: &khr::AccelerationStructure,
+    accel_loader: &khr::acceleration_structure::Device,
     cmd_buf: CommandBuffer,
     instances: &[vk::AccelerationStructureInstanceKHR],
     flags: vk::BuildAccelerationStructureFlagsKHR,
@@ -443,7 +437,6 @@ fn build_tlas(
     let instance_buffer = unsafe {
         UnsafeBuffer::new(
             instance,
-            device,
             instances.len() as u64,
             vk::BufferUsageFlags::SHADER_DEVICE_ADDRESS
                 | vk::BufferUsageFlags::ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_KHR,
@@ -455,14 +448,14 @@ fn build_tlas(
         buffer: *instance_buffer,
         ..Default::default()
     };
-    let buffer_addr = unsafe { device.get_buffer_device_address(&buffer_info) };
+    let buffer_addr = unsafe { instance.device.get_buffer_device_address(&buffer_info) };
     let mem_barrier = vk::MemoryBarrier {
         src_access_mask: vk::AccessFlags::TRANSFER_WRITE,
         dst_access_mask: vk::AccessFlags::ACCELERATION_STRUCTURE_WRITE_KHR,
         ..Default::default()
     };
     unsafe {
-        device.cmd_pipeline_barrier(
+        instance.device.cmd_pipeline_barrier(
             *cmd_buf,
             vk::PipelineStageFlags::TRANSFER,
             vk::PipelineStageFlags::ACCELERATION_STRUCTURE_BUILD_KHR,
@@ -475,7 +468,6 @@ fn build_tlas(
 
     let (tlas, scratch_buffer) = cmd_create_tlas(
         instance,
-        device,
         accel_loader,
         cmd_buf,
         instances.len().try_into()?,
@@ -483,13 +475,13 @@ fn build_tlas(
         flags,
     )?;
 
-    unsafe { device.destroy_buffer(*instance_buffer, None) };
-    unsafe { device.destroy_buffer(*scratch_buffer, None) };
+    unsafe { instance.device.destroy_buffer(*instance_buffer, None) };
+    unsafe { instance.device.destroy_buffer(*scratch_buffer, None) };
     Ok(tlas)
 }
 
 fn get_blas_device_address(
-    accel_loader: &khr::AccelerationStructure,
+    accel_loader: &khr::acceleration_structure::Device,
     blas: &[AccelStruct],
     id: usize,
 ) -> vk::DeviceAddress {
@@ -509,15 +501,14 @@ pub struct TLAS {
 impl TLAS {
     pub fn new(
         instance: &Instance,
-        device: &Device,
-        accel_loader: &khr::AccelerationStructure,
+        accel_loader: &khr::acceleration_structure::Device,
         command_pool: &CommandPool,
         models: &[GpuModel],
     ) -> Result<Self> {
         let blas_inputs = models
             .iter()
             .map(|x| {
-                let (geometry, range) = x.to_geometry(device);
+                let (geometry, range) = x.to_geometry(&instance);
                 BLASInput {
                     build_geometry: [geometry].to_vec(),
                     build_range: [range].to_vec(),
@@ -528,7 +519,6 @@ impl TLAS {
 
         let blas = build_blas(
             instance,
-            device,
             accel_loader,
             command_pool.get_buffers()[0],
             blas_inputs,
@@ -550,7 +540,6 @@ impl TLAS {
 
         let tlas = build_tlas(
             instance,
-            device,
             accel_loader,
             command_pool.get_buffers()[0],
             instances.as_slice(),

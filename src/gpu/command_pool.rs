@@ -1,8 +1,9 @@
 use std::ops::Deref;
 
-use super::device::Device;
 use anyhow::Result;
 use ash::vk;
+
+use crate::gpu::instance::Instance;
 
 #[derive(Clone, Copy, Default)]
 pub struct CommandBuffer {
@@ -27,20 +28,24 @@ impl CommandBuffer {
 
     pub fn record<F>(
         &self,
-        device: &Device,
+        instance: &Instance,
         usage: vk::CommandBufferUsageFlags,
         command_buffer_reuse_fence: vk::Fence,
         f: F,
     ) -> Result<()>
     where
-        F: FnOnce(&Device, CommandBuffer) -> Result<()>,
+        F: FnOnce(&Instance, CommandBuffer) -> Result<()>,
     {
         unsafe {
-            device.wait_for_fences(&[command_buffer_reuse_fence], true, std::u64::MAX)?;
+            instance
+                .device
+                .wait_for_fences(&[command_buffer_reuse_fence], true, std::u64::MAX)?;
 
-            device.reset_fences(&[command_buffer_reuse_fence])?;
+            instance
+                .device
+                .reset_fences(&[command_buffer_reuse_fence])?;
 
-            device.reset_command_buffer(
+            instance.device.reset_command_buffer(
                 self.buffer,
                 vk::CommandBufferResetFlags::RELEASE_RESOURCES,
             )?;
@@ -50,36 +55,44 @@ impl CommandBuffer {
                 ..Default::default()
             };
 
-            device.begin_command_buffer(self.buffer, &command_buffer_begin_info)?;
-            f(device, self.clone())?;
-            device.end_command_buffer(self.buffer)?;
+            instance
+                .device
+                .begin_command_buffer(self.buffer, &command_buffer_begin_info)?;
+            f(instance, self.clone())?;
+            instance.device.end_command_buffer(self.buffer)?;
         }
         Ok(())
     }
 
     pub fn submit(
         &self,
-        device: &Device,
+        instance: &Instance,
         command_buffer_reuse_fence: vk::Fence,
         submit_queue: vk::Queue,
         wait_mask: &[vk::PipelineStageFlags],
         wait_semaphores: &[vk::Semaphore],
         signal_semaphores: &[vk::Semaphore],
     ) -> Result<()> {
-        let submit_info = vk::SubmitInfo::builder()
+        let cmd_bufs = [self.buffer];
+        let submit_info = vk::SubmitInfo::default()
             .wait_semaphores(wait_semaphores)
             .wait_dst_stage_mask(wait_mask)
-            .command_buffers(&[self.buffer])
-            .signal_semaphores(signal_semaphores)
-            .build();
+            .command_buffers(&cmd_bufs)
+            .signal_semaphores(signal_semaphores);
 
-        unsafe { device.queue_submit(submit_queue, &[submit_info], command_buffer_reuse_fence)? };
+        unsafe {
+            instance.device.queue_submit(
+                submit_queue,
+                &[submit_info],
+                command_buffer_reuse_fence,
+            )?
+        };
         Ok(())
     }
 
     pub fn record_and_submit<F>(
         &self,
-        device: &Device,
+        instance: &Instance,
         usage: vk::CommandBufferUsageFlags,
         command_buffer_reuse_fence: vk::Fence,
         submit_queue: vk::Queue,
@@ -90,11 +103,11 @@ impl CommandBuffer {
         f: F,
     ) -> Result<()>
     where
-        F: FnOnce(&Device, CommandBuffer) -> Result<()>,
+        F: FnOnce(&Instance, CommandBuffer) -> Result<()>,
     {
-        self.record(device, usage, command_buffer_reuse_fence, f)?;
+        self.record(instance, usage, command_buffer_reuse_fence, f)?;
         self.submit(
-            device,
+            instance,
             command_buffer_reuse_fence,
             submit_queue,
             wait_mask,
@@ -112,20 +125,20 @@ pub struct CommandPool {
 }
 
 impl CommandPool {
-    pub fn new(device: &Device, queue_index: u32) -> Result<Self> {
-        let pool_create_info = vk::CommandPoolCreateInfo::builder()
+    pub fn new(instance: &Instance, queue_index: u32) -> Result<Self> {
+        let pool_create_info = vk::CommandPoolCreateInfo::default()
             .flags(vk::CommandPoolCreateFlags::RESET_COMMAND_BUFFER)
             .queue_family_index(queue_index);
 
-        let pool = unsafe { device.create_command_pool(&pool_create_info, None) }?;
+        let pool = unsafe { instance.device.create_command_pool(&pool_create_info, None) }?;
 
-        let command_buffer_allocate_info = vk::CommandBufferAllocateInfo::builder()
+        let command_buffer_allocate_info = vk::CommandBufferAllocateInfo::default()
             .command_buffer_count(2)
             .command_pool(pool)
             .level(vk::CommandBufferLevel::PRIMARY);
 
         let command_buffers = unsafe {
-            device
+            instance.device
                 .allocate_command_buffers(&command_buffer_allocate_info)?
                 .iter()
                 .map(|x| CommandBuffer::new(*x))
@@ -144,13 +157,13 @@ impl CommandPool {
 
     pub fn record<F>(
         &self,
-        device: &Device,
+        device: &Instance,
         usage: vk::CommandBufferUsageFlags,
         command_buffer_reuse_fence: vk::Fence,
         tasks: Vec<F>,
     ) -> Result<()>
     where
-        F: FnOnce(&Device, CommandBuffer) -> Result<()> + Copy,
+        F: FnOnce(&Instance, CommandBuffer) -> Result<()> + Copy,
     {
         for (i, b) in self.command_buffers.iter().enumerate() {
             b.record(device, usage, command_buffer_reuse_fence, tasks[i])?;
@@ -160,7 +173,7 @@ impl CommandPool {
 
     pub fn submit(
         &self,
-        device: &Device,
+        device: &Instance,
         command_buffer_reuse_fence: vk::Fence,
         submit_queue: vk::Queue,
         wait_mask: &[vk::PipelineStageFlags],
@@ -182,7 +195,7 @@ impl CommandPool {
 
     pub fn record_and_submit<F>(
         &self,
-        device: &Device,
+        device: &Instance,
         usage: vk::CommandBufferUsageFlags,
         command_buffer_reuse_fence: vk::Fence,
         submit_queue: vk::Queue,
@@ -192,7 +205,7 @@ impl CommandPool {
         tasks: Vec<F>,
     ) -> Result<()>
     where
-        F: FnOnce(&Device, CommandBuffer) -> Result<()> + Copy,
+        F: FnOnce(&Instance, CommandBuffer) -> Result<()> + Copy,
     {
         for (i, b) in self.command_buffers.iter().enumerate() {
             b.record_and_submit(

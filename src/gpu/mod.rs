@@ -3,8 +3,6 @@ mod decriptor_set;
 mod buffer;
 mod command_pool;
 mod config;
-mod device;
-mod error;
 mod image;
 mod instance;
 mod model;

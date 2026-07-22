@@ -54,3 +54,4 @@ pub mod utils;
 pub mod vec3;
 pub mod world;
 pub mod world_options;
+pub mod gpu;

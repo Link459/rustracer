@@ -6,7 +6,7 @@ use ash::vk;
 
 use crate::{gpu::util, vec3::Vec3};
 
-use super::{buffer::Buffer, device::Device, error::GpuError, instance};
+use super::{buffer::Buffer, instance::Instance};
 
 #[derive(Clone, Copy)]
 pub struct Vertex {
@@ -23,7 +23,7 @@ pub struct GpuModel {
 }
 
 impl GpuModel {
-    pub fn new(path: &str, instance: &ash::Instance, device: &Device) -> Result<Self> {
+    pub fn new(path: &str, instance: &Instance) -> Result<Self> {
         let (models, _) = tobj::load_obj(path, &tobj::GPU_LOAD_OPTIONS)?;
         let mut vertices = Vec::new();
         let mut indices = Vec::new();
@@ -46,20 +46,18 @@ impl GpuModel {
 
         let vertex_buffer = Buffer::new(
             instance,
-            device,
             0,
             vk::BufferUsageFlags::VERTEX_BUFFER,
             vk::BufferCreateFlags::default(),
         )?;
-        vertex_buffer.map(&device, vertices.as_slice())?;
+        vertex_buffer.map(&instance, vertices.as_slice())?;
         let index_buffer = Buffer::new(
             instance,
-            device,
             0,
             vk::BufferUsageFlags::INDEX_BUFFER,
             vk::BufferCreateFlags::default(),
         )?;
-        index_buffer.map(&device, indices.as_slice())?;
+        index_buffer.map(&instance, indices.as_slice())?;
 
         Ok(Self {
             vertices,
@@ -72,13 +70,13 @@ impl GpuModel {
 
     pub fn to_geometry(
         &self,
-        device: &Device,
+        device: &Instance,
     ) -> (
         vk::AccelerationStructureGeometryKHR,
         vk::AccelerationStructureBuildRangeInfoKHR,
     ) {
-        let vertex_address = util::get_buffer_device_address(device, &self.vertex_buffer);
-        let index_address = util::get_buffer_device_address(device, &self.index_buffer);
+        let vertex_address = self.vertex_buffer.get_address(device);
+        let index_address = self.index_buffer.get_address(device);
 
         let vertex_data = vk::DeviceOrHostAddressConstKHR {
             device_address: vertex_address,
