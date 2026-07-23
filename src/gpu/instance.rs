@@ -16,6 +16,7 @@ pub struct Instance {
     pub graphics_queue: vk::Queue,
     pub queue_index: u32,
     swapchain: Swapchain,
+    surface_loader: khr::surface::Instance,
     //command_pool: CommandPool,
 }
 
@@ -24,6 +25,15 @@ impl Deref for Instance {
     fn deref(&self) -> &Self::Target {
         &self.instance
     }
+}
+
+unsafe extern "system" fn debug_callback(
+    severity: vk::DebugUtilsMessageSeverityFlagsEXT,
+    message_type: vk::DebugUtilsMessageTypeFlagsEXT,
+    data: *const vk::DebugUtilsMessengerCallbackDataEXT<'_>,
+    user_data: *mut std::ffi::c_void,
+) -> u32 {
+    return 0;
 }
 
 impl Instance {
@@ -63,6 +73,7 @@ impl Instance {
                 .create_instance(&create_info, None)
                 .expect("Instance creation error")
         };
+
         let surface = unsafe {
             ash_window::create_surface(
                 &entry,
@@ -89,7 +100,7 @@ impl Instance {
                     | vk::DebugUtilsMessageTypeFlagsEXT::VALIDATION
                     | vk::DebugUtilsMessageTypeFlagsEXT::PERFORMANCE,
             )
-            .pfn_user_callback(None);
+            .pfn_user_callback(Some(debug_callback));
 
         let debug_utils_loader = debug_utils::Instance::new(&entry, &instance);
         unsafe { debug_utils_loader.create_debug_utils_messenger(&debug_info, None)? };
@@ -112,6 +123,7 @@ impl Instance {
             graphics_queue,
             queue_index: queue_family_index,
             swapchain,
+            surface_loader,
             //command_pool,
         });
     }
@@ -156,15 +168,13 @@ impl Instance {
         let queue_family_index = queue_family_index as u32;
         let device_extension_names_raw = [
             khr::swapchain::NAME.as_ptr(),
-            khr::ray_tracing_pipeline::NAME.as_ptr(),
+            /*khr::ray_tracing_pipeline::NAME.as_ptr(),
             khr::acceleration_structure::NAME.as_ptr(),
-            khr::deferred_host_operations::NAME.as_ptr(),
-            khr::buffer_device_address::NAME.as_ptr(),
+            khr::deferred_host_operations::NAME.as_ptr(),*/
         ];
-        let features = vk::PhysicalDeviceFeatures {
-            shader_clip_distance: 1,
-            ..Default::default()
-        };
+        let mut features_12 =
+            vk::PhysicalDeviceVulkan12Features::default().buffer_device_address(true);
+        let mut features = vk::PhysicalDeviceFeatures2::default().push_next(&mut features_12);
         let priorities = [1.0];
 
         let queue_info = vk::DeviceQueueCreateInfo::default()
@@ -174,12 +184,27 @@ impl Instance {
         let device_create_info = vk::DeviceCreateInfo::default()
             .queue_create_infos(std::slice::from_ref(&queue_info))
             .enabled_extension_names(&device_extension_names_raw)
-            .enabled_features(&features);
+            .push_next(&mut features);
+        //.enabled_features(&features);
 
         let device: ash::Device =
             unsafe { instance.create_device(pdevice, &device_create_info, None)? };
         let graphics_queue = unsafe { device.get_device_queue(queue_family_index, 0) };
 
         Ok((device, pdevice, graphics_queue, queue_family_index))
+    }
+}
+
+impl Drop for Instance {
+    fn drop(&mut self) {
+        unsafe {
+            self.surface_loader
+                .destroy_surface(self.swapchain.surface, None);
+            self.swapchain
+                .swapchain_loader
+                .destroy_swapchain(self.swapchain.swapchain, None);
+            self.device.destroy_device(None);
+            self.instance.destroy_instance(None);
+        }
     }
 }

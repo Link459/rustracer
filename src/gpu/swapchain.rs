@@ -9,12 +9,11 @@ use super::{
 };
 
 pub struct Swapchain {
-    surface: vk::SurfaceKHR,
+    pub(crate) surface: vk::SurfaceKHR,
     //window: Window,
-    swapchain: vk::SwapchainKHR,
-    swapchain_loader: khr::swapchain::Device,
-    images: Vec<SwapchainImage>,
-    depth_image: GpuImage,
+    pub(crate) swapchain: vk::SwapchainKHR,
+    pub(crate) swapchain_loader: khr::swapchain::Device,
+    pub(crate) images: Vec<SwapchainImage>,
 }
 
 impl Swapchain {
@@ -240,7 +239,7 @@ impl Swapchain {
             swapchain,
             swapchain_loader,
             images: present_images,
-            depth_image,
+            //depth_image,
         })
     }
 
