@@ -10,7 +10,7 @@ use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
 use winit::window::{Window, WindowId};
 
 use crate::vec3::Vec3;
-use crate::{utils, Float};
+use crate::{gpu, utils, Float};
 
 #[derive(Debug)]
 pub struct PresentationEvent {
@@ -97,6 +97,9 @@ impl ApplicationHandler<PresentationEvent> for PresentationApp {
                 )
                 .unwrap(),
         );
+
+        // TODO: setup gpu stuff for window, maybe have a seperate gpu & cpu implementation?
+        let instance = gpu::instance::Instance::new(window.as_ref());
         /*let builder = egui::ViewportBuilder::default()
             .with_inner_size(egui::Vec2::new(self.width as f32, self.height as f32))
             .with_title("rustracer")
