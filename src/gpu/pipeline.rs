@@ -1,7 +1,3 @@
-use anyhow::Result;
-use ash::{khr, vk};
-
-use super::config::Config;
 
 pub struct Pipeline {
     pipeline: ash::vk::Pipeline,

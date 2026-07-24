@@ -8,7 +8,8 @@ struct Raytracer {
 
 impl Raytracer {
     pub fn new(instance: &instance::Instance) -> anyhow::Result<Self> {
-        let shader = shader::Shader::new(instance, "", vk::ShaderStageFlags::COMPUTE)?;
+        let shader =
+            shader::Shader::new(instance, "raytrace.spirv", vk::ShaderStageFlags::COMPUTE)?;
         let create_info = [vk::ComputePipelineCreateInfo::default()
             .stage(shader.stage_info)
             .layout(instance.pipeline_layout)];

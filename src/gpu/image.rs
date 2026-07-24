@@ -8,7 +8,4 @@ pub struct GpuImage {
     pub sampler: Option<vk::Sampler>,
 }
 
-pub struct SwapchainImage {
-    pub image: vk::Image,
-    pub view: vk::ImageView,
-}
+

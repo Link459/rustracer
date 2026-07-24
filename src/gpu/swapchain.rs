@@ -5,10 +5,14 @@ use winit::{
     window::Window,
 };
 
-use super::{
-    image::{GpuImage, SwapchainImage},
-    util::find_memorytype_index,
-};
+use crate::gpu::FRAMES_IN_FLIGHT;
+
+use super::{image::GpuImage, util::find_memorytype_index};
+
+pub struct SwapchainImage {
+    pub image: vk::Image,
+    pub view: vk::ImageView,
+}
 
 pub struct Swapchain {
     pub(crate) surface: vk::SurfaceKHR,
@@ -17,6 +21,10 @@ pub struct Swapchain {
     pub(crate) swapchain: vk::SwapchainKHR,
     pub(crate) swapchain_loader: khr::swapchain::Device,
     pub(crate) images: Vec<SwapchainImage>,
+
+    pub(crate) fences: [vk::Fence; FRAMES_IN_FLIGHT],
+    pub(crate) image_acquired_semaphores: [vk::Semaphore; FRAMES_IN_FLIGHT],
+    pub(crate) render_complete_semaphores: Vec<vk::Semaphore>,
 }
 
 impl Swapchain {
@@ -25,7 +33,7 @@ impl Swapchain {
         let surface = unsafe {
             ash_window::create_surface(
                 &instance.entry,
-                &instance,
+                &instance.instance,
                 window.display_handle()?.as_raw(),
                 window.window_handle()?.as_raw(),
                 None,
@@ -123,8 +131,11 @@ impl Swapchain {
                 }
             })
             .collect();
-        let device_memory_properties =
-            unsafe { instance.get_physical_device_memory_properties(instance.physical_device) };
+        let device_memory_properties = unsafe {
+            instance
+                .instance
+                .get_physical_device_memory_properties(instance.physical_device)
+        };
         let depth_image_create_info = vk::ImageCreateInfo::default()
             .image_type(vk::ImageType::TYPE_2D)
             .format(vk::Format::D16_UNORM)
@@ -255,7 +266,26 @@ impl Swapchain {
                 image: *x,
                 view: present_image_views[i],
             })
-            .collect();
+            .collect::<Vec<_>>();
+
+        let mut fences = [vk::Fence::null(); FRAMES_IN_FLIGHT];
+        for i in 0..FRAMES_IN_FLIGHT {
+            let fence_info = vk::FenceCreateInfo::default().flags(vk::FenceCreateFlags::SIGNALED);
+            fences[i] = unsafe { instance.device.create_fence(&fence_info, None)? };
+        }
+
+        let sem_info = vk::SemaphoreCreateInfo::default();
+        let mut image_acquired_semaphores = [vk::Semaphore::null(); FRAMES_IN_FLIGHT];
+        for i in 0..FRAMES_IN_FLIGHT {
+            image_acquired_semaphores[i] =
+                unsafe { instance.device.create_semaphore(&sem_info, None)? };
+        }
+        let mut render_complete_semaphores = Vec::<vk::Semaphore>::new();
+        render_complete_semaphores.reserve(present_images.len());
+        for _ in 0..present_images.len() {
+            let sem = unsafe { instance.device.create_semaphore(&sem_info, None)? };
+            render_complete_semaphores.push(sem);
+        }
 
         Ok(Self {
             surface,
@@ -263,11 +293,14 @@ impl Swapchain {
             swapchain,
             swapchain_loader,
             images: present_images,
+            fences,
+            image_acquired_semaphores,
+            render_complete_semaphores,
             //depth_image,
         })
     }
 
-    pub fn acquire(&self, semaphore: vk::Semaphore) -> ash::prelude::VkResult<(u32,bool)> {
+    pub fn acquire(&self, semaphore: vk::Semaphore) -> ash::prelude::VkResult<(u32, bool)> {
         unsafe {
             return self.swapchain_loader.acquire_next_image(
                 self.swapchain,
@@ -278,9 +311,19 @@ impl Swapchain {
         }
     }
 
-    pub fn present(&self, present_queue: vk::Queue, image_idx: u32) -> Result<()> {
-        let binding = [self.swapchain];
-        let present_info = vk::PresentInfoKHR::default().swapchains(&binding);
+    pub fn present(
+        &self,
+        present_queue: vk::Queue,
+        image_idx: u32,
+        wait: vk::Semaphore,
+    ) -> Result<()> {
+        let swapchains = [self.swapchain];
+        let images = [image_idx];
+        let wait_semaphores = [wait];
+        let present_info = vk::PresentInfoKHR::default()
+            .swapchains(&swapchains)
+            .wait_semaphores(&wait_semaphores)
+            .image_indices(&images);
         unsafe {
             self.swapchain_loader
                 .queue_present(present_queue, &present_info)?
@@ -290,12 +333,22 @@ impl Swapchain {
 
     pub fn destroy(&self, instance: &super::instance::Instance) {
         unsafe {
+            for fence in self.fences {
+                instance.destroy_fence(fence, None);
+            }
+            for sem in self.image_acquired_semaphores {
+                instance.destroy_semaphore(sem, None);
+            }
+            for sem in &self.render_complete_semaphores {
+                instance.destroy_semaphore(*sem, None);
+            }
+
             for img in &self.images {
                 instance.device.destroy_image_view(img.view, None);
             }
-            self.surface_loader.destroy_surface(self.surface, None);
             self.swapchain_loader
                 .destroy_swapchain(self.swapchain, None);
+            self.surface_loader.destroy_surface(self.surface, None);
         }
     }
 }

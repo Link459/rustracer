@@ -14,9 +14,9 @@ pub struct Instance {
 }
 
 impl Deref for Instance {
-    type Target = ash::Instance;
+    type Target = ash::Device;
     fn deref(&self) -> &Self::Target {
-        &self.instance
+        &self.device
     }
 }
 
@@ -89,7 +89,7 @@ impl Instance {
             .size(128)
             .offset(0)
             .stage_flags(vk::ShaderStageFlags::ALL);
-        let push_ranges= [push_constant_range];
+        let push_ranges = [push_constant_range];
         let layout_create_info =
             vk::PipelineLayoutCreateInfo::default().push_constant_ranges(&push_ranges);
         let pipeline_layout = unsafe { device.create_pipeline_layout(&layout_create_info, None)? };

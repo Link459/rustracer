@@ -4,12 +4,14 @@ pub mod command_pool;
 pub mod config;
 pub mod decriptor_set;
 pub mod gpu_app;
-pub mod raytracer;
 pub mod image;
 pub mod instance;
 pub mod model;
 pub mod pipeline;
 pub mod queue;
+pub mod raytracer;
 pub mod shader;
 pub mod swapchain;
 pub mod util;
+
+pub const FRAMES_IN_FLIGHT: usize = 2;

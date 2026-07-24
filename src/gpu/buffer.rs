@@ -70,8 +70,11 @@ impl UnsafeBuffer {
         let buffer = unsafe { instance.device.create_buffer(&buffer_create_info, None)? };
 
         let memory_req = unsafe { instance.device.get_buffer_memory_requirements(buffer) };
-        let memory_props =
-            unsafe { instance.get_physical_device_memory_properties(instance.physical_device) };
+        let memory_props = unsafe {
+            instance
+                .instance
+                .get_physical_device_memory_properties(instance.physical_device)
+        };
 
         if let Some(memory_type_index) = find_memorytype_index(
             &memory_req,

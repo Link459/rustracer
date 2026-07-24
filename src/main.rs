@@ -180,10 +180,11 @@ fn main() -> Result<()> {
 
     let ev = winit::event_loop::EventLoop::new()?;
     ev.set_control_flow(winit::event_loop::ControlFlow::Poll);
-    let mut app = gpu::gpu_app::GpuRaytracer::new(
+    let mut app = gpu::gpu_app::GpuApp::new(
         settings.render_settings.width,
         settings.render_settings.height,
-        &ev);
+        &ev,
+    )?;
     ev.run_app(&mut app)?;
     return Ok(());
 
