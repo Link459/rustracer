@@ -4,7 +4,7 @@ use winit::{
     application::ApplicationHandler,
     dpi::LogicalPosition,
     event::WindowEvent,
-    event_loop::{ActiveEventLoop, ControlFlow, EventLoop},
+    event_loop::{ActiveEventLoop, EventLoop},
     raw_window_handle::HasDisplayHandle,
     window::Window,
 };
@@ -167,9 +167,12 @@ impl ApplicationHandler for GpuApp {
         match event {
             WindowEvent::Destroyed => {}
             WindowEvent::CloseRequested => {
+                unsafe { self.instance.device_wait_idle();}
                 if let Some(swapchain) = &self.swapchain {
-                    unsafe {self.instance.wait_for_fences(&swapchain.fences, true, 100000);}
                     swapchain.destroy(&self.instance);
+                }
+                unsafe {
+                    self.instance.destroy_command_pool(self.cmd_pool, None);
                 }
                 self.instance.destroy();
                 event_loop.exit();
@@ -182,13 +185,4 @@ impl ApplicationHandler for GpuApp {
             _ => (),
         }
     }
-
-    fn about_to_wait(&mut self, _event_loop: &ActiveEventLoop) {}
-}
-
-pub fn create_present_loop() -> anyhow::Result<EventLoop<()>> {
-    let event_loop = EventLoop::new()?;
-
-    event_loop.set_control_flow(ControlFlow::Poll);
-    return Ok(event_loop);
 }

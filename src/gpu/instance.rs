@@ -11,6 +11,9 @@ pub struct Instance {
     pub graphics_queue: vk::Queue,
     pub queue_index: u32,
     pub pipeline_layout: vk::PipelineLayout,
+
+    #[cfg(debug_assertions)]
+    debug_messenger: Option<vk::DebugUtilsMessengerEXT>,
 }
 
 impl Deref for Instance {
@@ -69,21 +72,25 @@ impl Instance {
 
         let (device, pdevice, graphics_queue, queue_family_index) = Self::init_device(&instance)?;
 
-        let debug_info = vk::DebugUtilsMessengerCreateInfoEXT::default()
-            .message_severity(
-                vk::DebugUtilsMessageSeverityFlagsEXT::ERROR
-                    | vk::DebugUtilsMessageSeverityFlagsEXT::WARNING
-                    | vk::DebugUtilsMessageSeverityFlagsEXT::INFO,
-            )
-            .message_type(
-                vk::DebugUtilsMessageTypeFlagsEXT::GENERAL
-                    | vk::DebugUtilsMessageTypeFlagsEXT::VALIDATION
-                    | vk::DebugUtilsMessageTypeFlagsEXT::PERFORMANCE,
-            )
-            .pfn_user_callback(Some(debug_callback));
+        let debug_messenger = if cfg!(debug_assertions) {
+            let debug_info = vk::DebugUtilsMessengerCreateInfoEXT::default()
+                .message_severity(
+                    vk::DebugUtilsMessageSeverityFlagsEXT::ERROR
+                        | vk::DebugUtilsMessageSeverityFlagsEXT::WARNING
+                        | vk::DebugUtilsMessageSeverityFlagsEXT::INFO,
+                )
+                .message_type(
+                    vk::DebugUtilsMessageTypeFlagsEXT::GENERAL
+                        | vk::DebugUtilsMessageTypeFlagsEXT::VALIDATION
+                        | vk::DebugUtilsMessageTypeFlagsEXT::PERFORMANCE,
+                )
+                .pfn_user_callback(Some(debug_callback));
 
-        let debug_utils_loader = debug_utils::Instance::new(&entry, &instance);
-        unsafe { debug_utils_loader.create_debug_utils_messenger(&debug_info, None)? };
+            let debug_utils_loader = debug_utils::Instance::new(&entry, &instance);
+            Some(unsafe { debug_utils_loader.create_debug_utils_messenger(&debug_info, None)? })
+        } else {
+            None
+        };
 
         let push_constant_range = vk::PushConstantRange::default()
             .size(128)
@@ -101,6 +108,9 @@ impl Instance {
             graphics_queue,
             queue_index: queue_family_index,
             pipeline_layout,
+
+            #[cfg(debug_assertions)]
+            debug_messenger,
         });
     }
 
@@ -169,6 +179,13 @@ impl Instance {
 
     pub fn destroy(&mut self) {
         unsafe {
+            if cfg!(debug_assertions) {
+                if let Some(messenger) = self.debug_messenger {
+                    let debug_utils_loader =
+                        debug_utils::Instance::new(&self.entry, &self.instance);
+                    debug_utils_loader.destroy_debug_utils_messenger(messenger, None);
+                }
+            }
             self.device
                 .destroy_pipeline_layout(self.pipeline_layout, None);
             self.device.destroy_device(None);
