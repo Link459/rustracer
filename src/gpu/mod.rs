@@ -3,6 +3,8 @@ pub mod buffer;
 pub mod command_pool;
 pub mod config;
 pub mod decriptor_set;
+pub mod gpu_app;
+pub mod raytracer;
 pub mod image;
 pub mod instance;
 pub mod model;

@@ -1,6 +1,7 @@
 use anyhow::{self, Result};
 use rustracer::{
     camera::Camera,
+    gpu,
     integrator::{random_integrator::RandomWalkIntegrator, Integrator},
     render::RenderSettings,
 };
@@ -176,6 +177,15 @@ fn main() -> Result<()> {
     println!("rays to be traced: {rays_to_trace}");
     println!("estimated time: {}s", ray_time.as_secs());
     cmd_seperator("Rendering");
+
+    let ev = winit::event_loop::EventLoop::new()?;
+    ev.set_control_flow(winit::event_loop::ControlFlow::Poll);
+    let mut app = gpu::gpu_app::GpuRaytracer::new(
+        settings.render_settings.width,
+        settings.render_settings.height,
+        &ev);
+    ev.run_app(&mut app)?;
+    return Ok(());
 
     let mut app = PresentationApp::new(
         settings.render_settings.width,

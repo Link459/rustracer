@@ -2,22 +2,15 @@ use std::{ffi::CStr, ops::Deref};
 
 use anyhow::Result;
 use ash::{ext::debug_utils, khr, vk, Entry};
-use winit::{
-    event_loop::{ActiveEventLoop, EventLoop},
-    raw_window_handle::{HasRawDisplayHandle, HasRawWindowHandle, HasWindowHandle},
-};
-
-use super::{command_pool::CommandPool, swapchain::Swapchain};
 
 pub struct Instance {
+    pub entry: ash::Entry,
     pub instance: ash::Instance,
     pub device: ash::Device,
-    pub pdevice: vk::PhysicalDevice,
+    pub physical_device: vk::PhysicalDevice,
     pub graphics_queue: vk::Queue,
     pub queue_index: u32,
-    swapchain: Swapchain,
-    surface_loader: khr::surface::Instance,
-    //command_pool: CommandPool,
+    pub pipeline_layout: vk::PipelineLayout,
 }
 
 impl Deref for Instance {
@@ -28,16 +21,16 @@ impl Deref for Instance {
 }
 
 unsafe extern "system" fn debug_callback(
-    severity: vk::DebugUtilsMessageSeverityFlagsEXT,
-    message_type: vk::DebugUtilsMessageTypeFlagsEXT,
-    data: *const vk::DebugUtilsMessengerCallbackDataEXT<'_>,
-    user_data: *mut std::ffi::c_void,
+    _severity: vk::DebugUtilsMessageSeverityFlagsEXT,
+    _message_type: vk::DebugUtilsMessageTypeFlagsEXT,
+    _data: *const vk::DebugUtilsMessengerCallbackDataEXT<'_>,
+    _user_data: *mut std::ffi::c_void,
 ) -> u32 {
     return 0;
 }
 
 impl Instance {
-    pub fn new(window: &winit::window::Window) -> Result<Self> {
+    pub fn new(display_handle: winit::raw_window_handle::RawDisplayHandle) -> Result<Self> {
         let layer_names = unsafe {
             [CStr::from_bytes_with_nul_unchecked(
                 b"VK_LAYER_KHRONOS_validation\0",
@@ -50,7 +43,7 @@ impl Instance {
             .collect();
 
         let mut extension_names =
-            ash_window::enumerate_required_extensions(window.raw_display_handle()?)?.to_vec();
+            ash_window::enumerate_required_extensions(display_handle)?.to_vec();
         extension_names.push(ash::ext::debug_utils::NAME.as_ptr());
 
         let appinfo = vk::ApplicationInfo::default()
@@ -74,20 +67,7 @@ impl Instance {
                 .expect("Instance creation error")
         };
 
-        let surface = unsafe {
-            ash_window::create_surface(
-                &entry,
-                &instance,
-                window.raw_display_handle()?,
-                window.raw_window_handle()?,
-                None,
-            )
-        }?;
-
-        let surface_loader = khr::surface::Instance::new(&entry, &instance);
-        let (device, pdevice, graphics_queue, queue_family_index) =
-            Self::init_device(&instance, &entry, surface, &surface_loader)
-                .expect("Failed to create Device");
+        let (device, pdevice, graphics_queue, queue_family_index) = Self::init_device(&instance)?;
 
         let debug_info = vk::DebugUtilsMessengerCreateInfoEXT::default()
             .message_severity(
@@ -105,34 +85,27 @@ impl Instance {
         let debug_utils_loader = debug_utils::Instance::new(&entry, &instance);
         unsafe { debug_utils_loader.create_debug_utils_messenger(&debug_info, None)? };
 
-        let swapchain = Swapchain::new(
-            &instance,
-            &device,
-            &pdevice,
-            //&command_pool.get_buffers()[0],
-            &surface_loader,
-            &surface,
-            window,
-        )?;
-
-        //let command_pool = CommandPool::new(&true_instance, queue_family_index)?;
+        let push_constant_range = vk::PushConstantRange::default()
+            .size(128)
+            .offset(0)
+            .stage_flags(vk::ShaderStageFlags::ALL);
+        let push_ranges= [push_constant_range];
+        let layout_create_info =
+            vk::PipelineLayoutCreateInfo::default().push_constant_ranges(&push_ranges);
+        let pipeline_layout = unsafe { device.create_pipeline_layout(&layout_create_info, None)? };
         return Ok(Self {
+            entry,
             instance,
             device,
-            pdevice,
+            physical_device: pdevice,
             graphics_queue,
             queue_index: queue_family_index,
-            swapchain,
-            surface_loader,
-            //command_pool,
+            pipeline_layout,
         });
     }
 
-    pub fn init_device(
+    fn init_device(
         instance: &ash::Instance,
-        entry: &ash::Entry,
-        surface: vk::SurfaceKHR,
-        surface_loader: &khr::surface::Instance,
     ) -> Result<(ash::Device, vk::PhysicalDevice, vk::Queue, u32)> {
         let pdevices = unsafe {
             instance
@@ -148,14 +121,14 @@ impl Instance {
                     .enumerate()
                     .find_map(|(index, info)| {
                         let supports_graphic_and_surface =
-                            info.queue_flags.contains(vk::QueueFlags::GRAPHICS)
-                                && surface_loader
-                                    .get_physical_device_surface_support(
-                                        *pdevice,
-                                        index as u32,
-                                        surface,
-                                    )
-                                    .unwrap();
+                            info.queue_flags.contains(vk::QueueFlags::GRAPHICS);
+                        /*&& surface_loader
+                        .get_physical_device_surface_support(
+                            *pdevice,
+                            index as u32,
+                            surface,
+                        )
+                        .unwrap();*/
                         if supports_graphic_and_surface {
                             Some((*pdevice, index))
                         } else {
@@ -193,16 +166,11 @@ impl Instance {
 
         Ok((device, pdevice, graphics_queue, queue_family_index))
     }
-}
 
-impl Drop for Instance {
-    fn drop(&mut self) {
+    pub fn destroy(&mut self) {
         unsafe {
-            self.surface_loader
-                .destroy_surface(self.swapchain.surface, None);
-            self.swapchain
-                .swapchain_loader
-                .destroy_swapchain(self.swapchain.swapchain, None);
+            self.device
+                .destroy_pipeline_layout(self.pipeline_layout, None);
             self.device.destroy_device(None);
             self.instance.destroy_instance(None);
         }

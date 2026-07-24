@@ -4,7 +4,7 @@ use std::mem::size_of;
 
 use ash::vk;
 
-use crate::{gpu::util, vec3::Vec3};
+use crate::vec3::Vec3;
 
 use super::{buffer::Buffer, instance::Instance};
 
@@ -72,7 +72,7 @@ impl GpuModel {
         &self,
         device: &Instance,
     ) -> (
-        vk::AccelerationStructureGeometryKHR,
+        vk::AccelerationStructureGeometryKHR<'_>,
         vk::AccelerationStructureBuildRangeInfoKHR,
     ) {
         let vertex_address = self.vertex_buffer.get_address(device);

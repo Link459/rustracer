@@ -4,7 +4,7 @@ use super::shader::Shader;
 
 pub struct Config<'a> {
     pub recursion_depth: u32,
-    pub shaders: &'a [Shader],
+    pub shaders: &'a [Shader<'a>],
     pub groups: &'a [vk::RayTracingShaderGroupCreateInfoKHR<'a>],
     pub layout: vk::PipelineLayout,
 }
