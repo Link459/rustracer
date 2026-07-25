@@ -5,14 +5,14 @@ use ash::{
 
 use crate::gpu::instance;
 
-struct DescriptorSet {
+pub struct DescriptorSet {
     layout: vk::DescriptorSetLayout,
     pool: vk::DescriptorPool,
     set: vk::DescriptorSet,
     storage_image_count: usize,
 }
 
-struct DescriptorHandle(u32);
+pub struct DescriptorHandle(u32);
 impl DescriptorHandle {
     pub const INVALID: u32 = u32::MAX;
 }

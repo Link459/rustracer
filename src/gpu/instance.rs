@@ -44,7 +44,7 @@ impl Instance {
             .application_version(0)
             .engine_name(&CStr::from_bytes_with_nul(b"rustracer\0")?)
             .engine_version(0)
-            .api_version(vk::make_api_version(0, 1, 0, 0));
+            .api_version(vk::API_VERSION_1_3);
 
         let create_flags = vk::InstanceCreateFlags::default();
 
@@ -144,8 +144,12 @@ impl Instance {
             khr::acceleration_structure::NAME.as_ptr(),
             khr::deferred_host_operations::NAME.as_ptr(),*/
         ];
-        let mut features_12 =
-            vk::PhysicalDeviceVulkan12Features::default().buffer_device_address(true);
+        let mut features_12 = vk::PhysicalDeviceVulkan12Features::default()
+            .buffer_device_address(true)
+            .descriptor_indexing(true)
+            .descriptor_binding_storage_image_update_after_bind(true)
+            .descriptor_binding_update_unused_while_pending(true)
+            .descriptor_binding_partially_bound(true);
         let mut features = vk::PhysicalDeviceFeatures2::default().push_next(&mut features_12);
         let priorities = [1.0];
 

@@ -1,5 +1,9 @@
-use crate::gpu::{instance::Instance, swapchain::Swapchain, FRAMES_IN_FLIGHT};
-use ash::vk::{self, CommandBufferLevel};
+use super::descriptor_set::DescriptorSet;
+use crate::gpu::{descriptor_set, instance::Instance, swapchain::Swapchain, FRAMES_IN_FLIGHT};
+use ash::{
+    prelude::VkResult,
+    vk::{self, CommandBufferLevel},
+};
 use winit::{
     application::ApplicationHandler,
     dpi::LogicalPosition,
@@ -18,6 +22,7 @@ pub struct GpuApp {
     frame_index: usize,
     cmd_pool: vk::CommandPool,
     cmd_bufs: [vk::CommandBuffer; FRAMES_IN_FLIGHT],
+    descriptor_set: DescriptorSet,
 }
 
 impl GpuApp {
@@ -34,6 +39,7 @@ impl GpuApp {
         let cmd_buf = unsafe { instance.device.allocate_command_buffers(&cmd_buf_info)? }
             .try_into()
             .unwrap();
+        let descriptor_set = DescriptorSet::new(&instance)?;
 
         return Ok(GpuApp {
             window: None,
@@ -44,6 +50,7 @@ impl GpuApp {
             frame_index: 0,
             cmd_bufs: cmd_buf,
             cmd_pool,
+            descriptor_set,
         });
     }
 
@@ -167,10 +174,13 @@ impl ApplicationHandler for GpuApp {
         match event {
             WindowEvent::Destroyed => {}
             WindowEvent::CloseRequested => {
-                unsafe { self.instance.device_wait_idle();}
+                unsafe {
+                    self.instance.device_wait_idle();
+                }
                 if let Some(swapchain) = &self.swapchain {
                     swapchain.destroy(&self.instance);
                 }
+                self.descriptor_set.destroy(&self.instance);
                 unsafe {
                     self.instance.destroy_command_pool(self.cmd_pool, None);
                 }
