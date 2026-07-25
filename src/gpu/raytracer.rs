@@ -1,8 +1,9 @@
 use ash::vk;
 
-use crate::gpu::{instance, shader};
+use crate::gpu::{image::GpuImage, instance, shader};
 
 struct Raytracer {
+    main_target: GpuImage,
     pipeline: vk::Pipeline,
 }
 

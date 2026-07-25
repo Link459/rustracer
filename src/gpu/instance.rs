@@ -34,17 +34,7 @@ unsafe extern "system" fn debug_callback(
 
 impl Instance {
     pub fn new(display_handle: winit::raw_window_handle::RawDisplayHandle) -> Result<Self> {
-        let layer_names = unsafe {
-            [CStr::from_bytes_with_nul_unchecked(
-                b"VK_LAYER_KHRONOS_validation\0",
-            )]
-        };
         let entry = unsafe { Entry::load()? };
-        let layers_names_raw: Vec<*const std::os::raw::c_char> = layer_names
-            .iter()
-            .map(|raw_name| raw_name.as_ptr())
-            .collect();
-
         let mut extension_names =
             ash_window::enumerate_required_extensions(display_handle)?.to_vec();
         extension_names.push(ash::ext::debug_utils::NAME.as_ptr());
@@ -60,7 +50,6 @@ impl Instance {
 
         let create_info = vk::InstanceCreateInfo::default()
             .application_info(&appinfo)
-            .enabled_layer_names(&layers_names_raw)
             .enabled_extension_names(&extension_names)
             .flags(create_flags);
 
