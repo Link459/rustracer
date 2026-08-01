@@ -6,16 +6,20 @@ use ash::{
 use crate::gpu::instance;
 
 pub struct DescriptorSet {
-    layout: vk::DescriptorSetLayout,
+    pub layout: vk::DescriptorSetLayout,
     pool: vk::DescriptorPool,
-    set: vk::DescriptorSet,
+    pub set: vk::DescriptorSet,
     storage_image_count: usize,
 }
 
+#[repr(C)]
 pub struct DescriptorHandle(u32);
+
 impl DescriptorHandle {
     pub const INVALID: u32 = u32::MAX;
 }
+
+const STORAGE_IMAGE_BINDING: u32 = 2;
 
 impl DescriptorSet {
     pub fn new(instance: &instance::Instance) -> VkResult<Self> {
@@ -25,7 +29,7 @@ impl DescriptorSet {
 
         let storage_image_count = 10000;
         let storage_binding = vk::DescriptorSetLayoutBinding::default()
-            .binding(0)
+            .binding(STORAGE_IMAGE_BINDING)
             .descriptor_type(vk::DescriptorType::STORAGE_IMAGE)
             .descriptor_count(storage_image_count)
             .stage_flags(vk::ShaderStageFlags::ALL);
@@ -80,7 +84,7 @@ impl DescriptorSet {
             .image_layout(vk::ImageLayout::GENERAL)];
         let write = [vk::WriteDescriptorSet::default()
             .dst_set(self.set)
-            .dst_binding(0)
+            .dst_binding(STORAGE_IMAGE_BINDING)
             .dst_array_element(new_id as u32)
             .descriptor_count(1)
             .descriptor_type(vk::DescriptorType::STORAGE_IMAGE)
@@ -95,8 +99,8 @@ impl DescriptorSet {
 
     pub fn destroy(&mut self, instance: &instance::Instance) {
         unsafe {
-        instance.destroy_descriptor_pool(self.pool, None);
-        instance.destroy_descriptor_set_layout(self.layout, None);
+            instance.destroy_descriptor_pool(self.pool, None);
+            instance.destroy_descriptor_set_layout(self.layout, None);
         }
     }
 }

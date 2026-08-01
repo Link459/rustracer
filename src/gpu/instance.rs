@@ -81,15 +81,6 @@ impl Instance {
             None
         };
 
-        let push_constant_range = vk::PushConstantRange::default()
-            .size(128)
-            .offset(0)
-            .stage_flags(vk::ShaderStageFlags::ALL);
-        let push_ranges = [push_constant_range];
-        let layout_create_info =
-            vk::PipelineLayoutCreateInfo::default().push_constant_ranges(&push_ranges);
-        let pipeline_layout = unsafe { device.create_pipeline_layout(&layout_create_info, None)? };
-
         return Ok(Self {
             entry,
             instance,
@@ -97,7 +88,7 @@ impl Instance {
             physical_device: pdevice,
             graphics_queue,
             queue_family_index,
-            pipeline_layout,
+            pipeline_layout: vk::PipelineLayout::null(),
 
             #[cfg(debug_assertions)]
             debug_messenger,
@@ -151,7 +142,8 @@ impl Instance {
             .descriptor_indexing(true)
             .descriptor_binding_storage_image_update_after_bind(true)
             .descriptor_binding_update_unused_while_pending(true)
-            .descriptor_binding_partially_bound(true).runtime_descriptor_array(true);
+            .descriptor_binding_partially_bound(true)
+            .runtime_descriptor_array(true);
         let mut features = vk::PhysicalDeviceFeatures2::default()
             .push_next(&mut features_13)
             .push_next(&mut features_12);
@@ -187,6 +179,22 @@ impl Instance {
                 .destroy_pipeline_layout(self.pipeline_layout, None);
             self.device.destroy_device(None);
             self.instance.destroy_instance(None);
+        }
+    }
+
+    pub fn push_constant<T: Sized>(&self, cmd_buf: vk::CommandBuffer, data: &T) {
+        unsafe {
+            let slice = std::slice::from_raw_parts(
+                data as *const T as *const u8,
+                std::mem::size_of::<T>(),
+            );
+            self.cmd_push_constants(
+                cmd_buf,
+                self.pipeline_layout,
+                vk::ShaderStageFlags::ALL,
+                0,
+                slice,
+            );
         }
     }
 }

@@ -31,7 +31,7 @@ pub struct GpuApp {
 
 impl GpuApp {
     pub fn new(width: u32, height: u32, event_loop: &EventLoop<()>) -> anyhow::Result<Self> {
-        let instance = Instance::new(event_loop.display_handle().unwrap().as_raw())?;
+        let mut instance = Instance::new(event_loop.display_handle().unwrap().as_raw())?;
         let cmd_pool_info = vk::CommandPoolCreateInfo::default()
             .flags(vk::CommandPoolCreateFlags::RESET_COMMAND_BUFFER)
             .queue_family_index(instance.queue_family_index);
@@ -44,6 +44,20 @@ impl GpuApp {
             .try_into()
             .unwrap();
         let descriptor_set = DescriptorSet::new(&instance)?;
+        let push_constant_range = vk::PushConstantRange::default()
+            .size(128)
+            .offset(0)
+            .stage_flags(vk::ShaderStageFlags::ALL);
+        let push_ranges = [push_constant_range];
+        let set_layouts = [descriptor_set.layout];
+        let layout_create_info = vk::PipelineLayoutCreateInfo::default()
+            .push_constant_ranges(&push_ranges)
+            .set_layouts(&set_layouts);
+        instance.pipeline_layout = unsafe {
+            instance
+                .device
+                .create_pipeline_layout(&layout_create_info, None)?
+        };
         let raytracer = Raytracer::new(&instance)?;
 
         return Ok(GpuApp {
@@ -119,6 +133,22 @@ impl GpuApp {
             );
         }
 
+        let handle = self.descriptor_set.bind(
+            &self.instance,
+            swapchain.images[acquired_image as usize].view,
+        );
+        unsafe {
+            self.instance.cmd_bind_descriptor_sets(
+                cmd_buf,
+                vk::PipelineBindPoint::COMPUTE,
+                self.instance.pipeline_layout,
+                0,
+                &[self.descriptor_set.set],
+                &[],
+            );
+        }
+        self.raytracer.run(&self.instance, cmd_buf, handle);
+
         let barrier = [vk::ImageMemoryBarrier2::default()
             .image(swapchain_image)
             .old_layout(vk::ImageLayout::GENERAL)
@@ -166,6 +196,22 @@ impl GpuApp {
 
         return Ok(());
     }
+
+    fn destroy(&mut self) {
+        unsafe {
+            self.instance.device_wait_idle().unwrap();
+        }
+        if let Some(swapchain) = &self.swapchain {
+            swapchain.destroy(&self.instance);
+        }
+
+        self.raytracer.destroy(&self.instance);
+        self.descriptor_set.destroy(&self.instance);
+        unsafe {
+            self.instance.destroy_command_pool(self.cmd_pool, None);
+        }
+        self.instance.destroy();
+    }
 }
 
 impl ApplicationHandler for GpuApp {
@@ -200,20 +246,8 @@ impl ApplicationHandler for GpuApp {
         match event {
             WindowEvent::Destroyed => {}
             WindowEvent::CloseRequested => {
-                unsafe {
-                    self.instance.device_wait_idle();
-                }
-                if let Some(swapchain) = &self.swapchain {
-                    swapchain.destroy(&self.instance);
-                }
-                self.descriptor_set.destroy(&self.instance);
-                unsafe {
-                    self.instance.destroy_command_pool(self.cmd_pool, None);
-                }
-                self.instance.destroy();
+                self.destroy();
                 event_loop.exit();
-
-                //std::process::exit(0);
             }
             WindowEvent::RedrawRequested => {
                 self.main_loop().unwrap();

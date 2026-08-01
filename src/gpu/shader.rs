@@ -3,7 +3,7 @@ use anyhow::Result;
 use ash::vk;
 use std::{
     ffi::CStr,
-    fs::{self, File, OpenOptions},
+    fs::{ File },
     io::Read,
 };
 
@@ -19,7 +19,8 @@ impl<'a> Shader<'a> {
         file.read_to_end(&mut buf)?;
         let ptr = buf.as_ptr() as *const u32;
         let module_info = unsafe {
-            vk::ShaderModuleCreateInfo::default().code(std::slice::from_raw_parts(ptr, buf.len() / 4))
+            vk::ShaderModuleCreateInfo::default()
+                .code(std::slice::from_raw_parts(ptr, buf.len() / 4))
         };
 
         let module = unsafe { device.device.create_shader_module(&module_info, None)? };
@@ -28,5 +29,9 @@ impl<'a> Shader<'a> {
             .module(module)
             .stage(stage);
         return Ok(Self { module, stage_info });
+    }
+
+    pub fn destroy(&self, instance: &Instance) {
+        unsafe { instance.destroy_shader_module(self.module, None) };
     }
 }
