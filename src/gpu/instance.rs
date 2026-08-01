@@ -9,7 +9,7 @@ pub struct Instance {
     pub device: ash::Device,
     pub physical_device: vk::PhysicalDevice,
     pub graphics_queue: vk::Queue,
-    pub queue_index: u32,
+    pub queue_family_index: u32,
     pub pipeline_layout: vk::PipelineLayout,
 
     #[cfg(debug_assertions)]
@@ -89,13 +89,14 @@ impl Instance {
         let layout_create_info =
             vk::PipelineLayoutCreateInfo::default().push_constant_ranges(&push_ranges);
         let pipeline_layout = unsafe { device.create_pipeline_layout(&layout_create_info, None)? };
+
         return Ok(Self {
             entry,
             instance,
             device,
             physical_device: pdevice,
             graphics_queue,
-            queue_index: queue_family_index,
+            queue_family_index,
             pipeline_layout,
 
             #[cfg(debug_assertions)]
@@ -144,13 +145,16 @@ impl Instance {
             khr::acceleration_structure::NAME.as_ptr(),
             khr::deferred_host_operations::NAME.as_ptr(),*/
         ];
+        let mut features_13 = vk::PhysicalDeviceVulkan13Features::default().synchronization2(true);
         let mut features_12 = vk::PhysicalDeviceVulkan12Features::default()
             .buffer_device_address(true)
             .descriptor_indexing(true)
             .descriptor_binding_storage_image_update_after_bind(true)
             .descriptor_binding_update_unused_while_pending(true)
-            .descriptor_binding_partially_bound(true);
-        let mut features = vk::PhysicalDeviceFeatures2::default().push_next(&mut features_12);
+            .descriptor_binding_partially_bound(true).runtime_descriptor_array(true);
+        let mut features = vk::PhysicalDeviceFeatures2::default()
+            .push_next(&mut features_13)
+            .push_next(&mut features_12);
         let priorities = [1.0];
 
         let queue_info = vk::DeviceQueueCreateInfo::default()

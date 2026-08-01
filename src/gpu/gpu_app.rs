@@ -1,5 +1,8 @@
 use super::descriptor_set::DescriptorSet;
-use crate::gpu::{descriptor_set, instance::Instance, swapchain::Swapchain, FRAMES_IN_FLIGHT};
+use crate::gpu::{
+    descriptor_set, instance::Instance, raytracer::Raytracer, swapchain::Swapchain,
+    FRAMES_IN_FLIGHT,
+};
 use ash::{
     prelude::VkResult,
     vk::{self, CommandBufferLevel},
@@ -23,6 +26,7 @@ pub struct GpuApp {
     cmd_pool: vk::CommandPool,
     cmd_bufs: [vk::CommandBuffer; FRAMES_IN_FLIGHT],
     descriptor_set: DescriptorSet,
+    raytracer: Raytracer,
 }
 
 impl GpuApp {
@@ -30,7 +34,7 @@ impl GpuApp {
         let instance = Instance::new(event_loop.display_handle().unwrap().as_raw())?;
         let cmd_pool_info = vk::CommandPoolCreateInfo::default()
             .flags(vk::CommandPoolCreateFlags::RESET_COMMAND_BUFFER)
-            .queue_family_index(instance.queue_index);
+            .queue_family_index(instance.queue_family_index);
         let cmd_pool = unsafe { instance.device.create_command_pool(&cmd_pool_info, None)? };
         let cmd_buf_info = vk::CommandBufferAllocateInfo::default()
             .level(CommandBufferLevel::PRIMARY)
@@ -40,6 +44,7 @@ impl GpuApp {
             .try_into()
             .unwrap();
         let descriptor_set = DescriptorSet::new(&instance)?;
+        let raytracer = Raytracer::new(&instance)?;
 
         return Ok(GpuApp {
             window: None,
@@ -51,6 +56,7 @@ impl GpuApp {
             cmd_bufs: cmd_buf,
             cmd_pool,
             descriptor_set,
+            raytracer,
         });
     }
 
@@ -81,32 +87,52 @@ impl GpuApp {
             self.instance.begin_command_buffer(cmd_buf, begin_info)?;
         }
 
-        /*let barrier = [vk::ImageMemoryBarrier2::default()
-            .image(swapchain.images[acquired_image as usize].image)
+        let swapchain_image = swapchain.images[acquired_image as usize].image;
+        let swapchain_subresource_range = vk::ImageSubresourceRange::default()
+            .aspect_mask(vk::ImageAspectFlags::COLOR)
+            .level_count(1)
+            .layer_count(1)
+            .base_mip_level(0)
+            .base_array_layer(0);
+        let barrier = [vk::ImageMemoryBarrier2::default()
+            .image(swapchain_image)
             .old_layout(vk::ImageLayout::UNDEFINED)
             .new_layout(vk::ImageLayout::GENERAL)
             .dst_stage_mask(vk::PipelineStageFlags2::COMPUTE_SHADER)
-            .dst_access_mask(vk::AccessFlags2::SHADER_STORAGE_WRITE)];
+            .dst_access_mask(vk::AccessFlags2::SHADER_STORAGE_WRITE)
+            .subresource_range(swapchain_subresource_range)];
         let dep_info = vk::DependencyInfo::default().image_memory_barriers(&barrier);
         unsafe {
             self.instance.cmd_pipeline_barrier2(cmd_buf, &dep_info);
-        }*/
+        }
+
+        let mut clear_value = vk::ClearColorValue::default();
+        clear_value.float32 = [0.0, 0.0, 1.0, 0.0];
+        let image_range = [swapchain_subresource_range];
+        unsafe {
+            self.instance.cmd_clear_color_image(
+                cmd_buf,
+                swapchain_image,
+                vk::ImageLayout::GENERAL,
+                &clear_value,
+                &image_range,
+            );
+        }
 
         let barrier = [vk::ImageMemoryBarrier2::default()
-            .image(swapchain.images[acquired_image as usize].image)
-            .old_layout(vk::ImageLayout::UNDEFINED)
-            //.old_layout(vk::ImageLayout::GENERAL)
+            .image(swapchain_image)
+            .old_layout(vk::ImageLayout::GENERAL)
             .new_layout(vk::ImageLayout::PRESENT_SRC_KHR)
             //.src_stage_mask(vk::PipelineStageFlags2::COMPUTE_SHADER)
             .src_stage_mask(vk::PipelineStageFlags2::COMPUTE_SHADER)
             .src_access_mask(vk::AccessFlags2::SHADER_STORAGE_WRITE)
             .dst_stage_mask(vk::PipelineStageFlags2::COLOR_ATTACHMENT_OUTPUT)
-            .dst_access_mask(vk::AccessFlags2::empty())];
+            .dst_access_mask(vk::AccessFlags2::empty())
+            .subresource_range(swapchain_subresource_range)];
         let dep_info = vk::DependencyInfo::default().image_memory_barriers(&barrier);
         unsafe {
-            //self.instance.cmd_pipeline_barrier2(cmd_buf, &dep_info);
+            self.instance.cmd_pipeline_barrier2(cmd_buf, &dep_info);
         }
-
         unsafe {
             self.instance.end_command_buffer(cmd_buf)?;
         }
