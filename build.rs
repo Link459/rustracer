@@ -1,6 +1,4 @@
 use std::{
-    ffi::OsStr,
-    os::unix::process::ExitStatusExt,
     path::{Path, PathBuf},
     process::Command,
     str::FromStr,

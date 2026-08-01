@@ -10,7 +10,7 @@ use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
 use winit::window::{Window, WindowId};
 
 use crate::vec3::Vec3;
-use crate::{gpu, utils, Float};
+use crate::{ utils, Float};
 
 #[derive(Debug)]
 pub struct PresentationEvent {

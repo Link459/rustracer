@@ -39,15 +39,15 @@ where
         }
     }
 
-    fn li(&self, mut _ray: Ray, mut _depth: u32) -> Vec3 {
-        let incomingLight = Vec3::ZERO;
-        let rayColour = Vec3::ONE;
+    fn li(&self, ray: Ray, mut _depth: u32) -> Vec3 {
+        let incoming_light = Vec3::ZERO;
+        let _ray_colour = Vec3::ONE;
 
         let max_bounce_count = 50;
-        let mut orig = _ray.orig;
-        let mut dir = _ray.dir;
-        for i in 0..max_bounce_count - 1 {
-            let ray = Ray::new(_ray.orig, _ray.dir, _ray.time);
+        let mut orig = ray.orig;
+        let mut dir = ray.dir;
+        for _i in 0..max_bounce_count - 1 {
+            let ray = Ray::new(orig, ray.dir, ray.time);
             let ray_t = Interval::new(0.001, Float::INFINITY);
             let Some((payload, material)) = self.world.hit(&ray, ray_t) else {
                 //incomingLight += GetEnvironmentLight(rayDir) * rayColour;
@@ -62,7 +62,7 @@ where
             };
             dir = scatter.wo;
 
-            let direct_light = Vec3::ZERO;
+            let _direct_light = Vec3::ZERO;
 
             if let Some(sampled_light) = self.lights.sample() {
                 let ctx = LightSampleContext {
@@ -71,7 +71,7 @@ where
                 };
 
                 if let Some(sample) = sampled_light.light.sample_li(&ctx) {
-                    let wo = sample.wo;
+                    let _wo = sample.wo;
                     //let f = material.f(wi, wo) * wo.dot(&ctx.n).abs();
 
                     if self.world.unoccluded(payload.p, sample.p) {
@@ -134,7 +134,7 @@ where
             }*/
         }
 
-        return incomingLight;
+        return incoming_light;
     }
 }
 

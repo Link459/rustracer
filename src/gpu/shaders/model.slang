@@ -1,2 +1,4 @@
+struct Triangle {};
+
 struct Model {
 };

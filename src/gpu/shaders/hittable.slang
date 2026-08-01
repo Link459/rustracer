@@ -7,7 +7,7 @@ struct Ray {
 }
 
 struct HitPayload {
-	Material material;
+	BSDF material;
 	float3 normal;
 }
 

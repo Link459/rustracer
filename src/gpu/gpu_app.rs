@@ -1,12 +1,8 @@
 use super::descriptor_set::DescriptorSet;
 use crate::gpu::{
-    descriptor_set, instance::Instance, raytracer::Raytracer, swapchain::Swapchain,
-    FRAMES_IN_FLIGHT,
+    instance::Instance, raytracer::Raytracer, swapchain::Swapchain, FRAMES_IN_FLIGHT,
 };
-use ash::{
-    prelude::VkResult,
-    vk::{self, CommandBufferLevel},
-};
+use ash::vk::{self, CommandBufferLevel};
 use winit::{
     application::ApplicationHandler,
     dpi::LogicalPosition,

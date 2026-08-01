@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     hittable::HitPayload,
-    material::{same_hemisphere, ScatterPayload},
+    material::ScatterPayload,
     pdf::{CosinePDF, PDF},
     ray::Ray,
     texture::{SolidColor, Texture, TextureStorage},
@@ -35,7 +35,7 @@ impl From<Vec3> for Lambertian {
 }
 
 impl Material for Lambertian {
-    fn f(&self, wi: Vec3, wo: Vec3) -> Vec3 {
+    fn f(&self, _wi: Vec3, _wo: Vec3) -> Vec3 {
         //BUG: The same hemisphere check does not work
         /*if !same_hemisphere(wi, wo) {
             return Vec3::ZERO;

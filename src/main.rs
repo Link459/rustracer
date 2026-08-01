@@ -1,10 +1,5 @@
 use anyhow::{self, Result};
-use rustracer::{
-    camera::Camera,
-    gpu,
-    integrator::{random_integrator::RandomWalkIntegrator, Integrator},
-    render::RenderSettings,
-};
+use rustracer::{camera::Camera, gpu, render::RenderSettings};
 
 use rand::{rngs::SmallRng, SeedableRng};
 use rustracer::present::PresentationApp;

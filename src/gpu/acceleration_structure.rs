@@ -70,7 +70,7 @@ fn cmd_create_blas(
     }
     let mut query_count = 0;
 
-    let accel_structs = indices
+    let _accel_structs = indices
         .iter()
         .map(|x| {
             let i = *x as usize;
@@ -241,7 +241,7 @@ fn build_blas(
     cmd_buf: CommandBuffer,
     blas_inputs: Vec<BLASInput>,
 ) -> Result<Vec<AccelStruct>> {
-    let (mut blas_builds, max_scratch_size, as_total_size, compaction_size) =
+    let (mut blas_builds, max_scratch_size, _as_total_size, compaction_size) =
         build_input_into(&blas_inputs, accel_loader);
 
     let scratch_buffer = unsafe {

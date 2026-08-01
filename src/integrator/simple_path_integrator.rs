@@ -1,17 +1,5 @@
-use rand::RngExt;
-
 use crate::{
-    camera::Camera,
-    color::luminance,
-    hittable::{Hittable, HittableExt},
-    integrator::Integrator,
-    interval::Interval,
-    light::{LightSampleContext, LightStore, UniformLightSampler},
-    material::MaterialStore,
-    ray::Ray,
-    render::RenderSettings,
-    vec3::Vec3,
-    Float,
+    Float, camera::Camera, hittable::{Hittable, HittableExt}, integrator::Integrator, interval::Interval, light::{LightSampleContext, LightStore, UniformLightSampler}, material::MaterialStore, ray::Ray, render::RenderSettings, vec3::Vec3
 };
 
 pub struct SimplePathIntegrator<'world, W> {

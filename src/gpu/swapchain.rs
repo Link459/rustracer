@@ -7,7 +7,6 @@ use winit::{
 
 use crate::gpu::FRAMES_IN_FLIGHT;
 
-use super::{image::GpuImage, util::find_memorytype_index};
 
 pub struct SwapchainImage {
     pub image: vk::Image,
@@ -88,7 +87,11 @@ impl Swapchain {
             .image_color_space(surface_format.color_space)
             .image_format(surface_format.format)
             .image_extent(surface_resolution)
-            .image_usage(vk::ImageUsageFlags::COLOR_ATTACHMENT | vk::ImageUsageFlags::TRANSFER_DST | vk::ImageUsageFlags::STORAGE)
+            .image_usage(
+                vk::ImageUsageFlags::COLOR_ATTACHMENT
+                    | vk::ImageUsageFlags::TRANSFER_DST
+                    | vk::ImageUsageFlags::STORAGE,
+            )
             .image_sharing_mode(vk::SharingMode::EXCLUSIVE)
             .pre_transform(pre_transform)
             .composite_alpha(vk::CompositeAlphaFlagsKHR::OPAQUE)
