@@ -54,7 +54,8 @@ impl GpuApp {
                 .device
                 .create_pipeline_layout(&layout_create_info, None)?
         };
-        let raytracer = Raytracer::new(&instance)?;
+        let size = vk::Extent2D::default().width(width).height(height);
+        let raytracer = Raytracer::new(&instance, size)?;
 
         return Ok(GpuApp {
             window: None,
@@ -77,11 +78,8 @@ impl GpuApp {
 
         let fences = [swapchain.fences[self.frame_index]];
         unsafe {
-            self.instance
-                .device
-                .wait_for_fences(&fences, true, 100000)
-                .unwrap();
-            self.instance.device.reset_fences(&fences)?;
+            self.instance.wait_for_fences(&fences, true, u64::MAX)?;
+            self.instance.reset_fences(&fences)?;
         }
 
         let (acquired_image, _suboptimal) =
@@ -116,7 +114,7 @@ impl GpuApp {
             self.instance.cmd_pipeline_barrier2(cmd_buf, &dep_info);
         }
 
-        let mut clear_value = vk::ClearColorValue::default();
+        /*let mut clear_value = vk::ClearColorValue::default();
         clear_value.float32 = [0.0, 0.0, 1.0, 0.0];
         let image_range = [swapchain_subresource_range];
         unsafe {
@@ -127,7 +125,7 @@ impl GpuApp {
                 &clear_value,
                 &image_range,
             );
-        }
+        }*/
 
         let handle = self.descriptor_set.bind(
             &self.instance,
@@ -149,11 +147,8 @@ impl GpuApp {
             .image(swapchain_image)
             .old_layout(vk::ImageLayout::GENERAL)
             .new_layout(vk::ImageLayout::PRESENT_SRC_KHR)
-            //.src_stage_mask(vk::PipelineStageFlags2::COMPUTE_SHADER)
             .src_stage_mask(vk::PipelineStageFlags2::COMPUTE_SHADER)
             .src_access_mask(vk::AccessFlags2::SHADER_STORAGE_WRITE)
-            .dst_stage_mask(vk::PipelineStageFlags2::COLOR_ATTACHMENT_OUTPUT)
-            .dst_access_mask(vk::AccessFlags2::empty())
             .subresource_range(swapchain_subresource_range)];
         let dep_info = vk::DependencyInfo::default().image_memory_barriers(&barrier);
         unsafe {
@@ -182,13 +177,11 @@ impl GpuApp {
 
         self.frame_index = (self.frame_index + 1) % FRAMES_IN_FLIGHT;
 
-        swapchain
-            .present(
-                self.instance.graphics_queue,
-                acquired_image,
-                swapchain.render_complete_semaphores[acquired_image as usize],
-            )
-            .unwrap();
+        swapchain.present(
+            self.instance.graphics_queue,
+            acquired_image,
+            swapchain.render_complete_semaphores[acquired_image as usize],
+        )?;
 
         return Ok(());
     }
@@ -199,6 +192,7 @@ impl GpuApp {
         }
         if let Some(swapchain) = &self.swapchain {
             swapchain.destroy(&self.instance);
+            self.swapchain = None;
         }
 
         self.raytracer.destroy(&self.instance);
@@ -247,6 +241,7 @@ impl ApplicationHandler for GpuApp {
             }
             WindowEvent::RedrawRequested => {
                 self.main_loop().unwrap();
+                self.window.as_ref().unwrap().request_redraw();
             }
             _ => (),
         }

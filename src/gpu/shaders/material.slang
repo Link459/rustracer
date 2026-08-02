@@ -12,7 +12,7 @@ interface BSDF {
 	Optional<BSDFSample> sample_f(float3 wi);
 };
 
-const float PI = 3.141;
+static const float PI = 3.141;
 
 struct DiffuseBSDF : BSDF {
 	Spectrum r;	
@@ -20,5 +20,9 @@ struct DiffuseBSDF : BSDF {
     Spectrum f(float3 wo,float3 wi) {
 		//return r / __BuiltinFloatingPointType.getPi(); 
 		return r * 1.0 / PI; 
+	}
+
+	Optional<BSDFSample> sample_f(float3 wi) {
+		return none;
 	}
 };

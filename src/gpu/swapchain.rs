@@ -1,12 +1,11 @@
 use anyhow::Result;
-use ash::{khr, vk};
+use ash::{khr, prelude::VkResult, vk};
 use winit::{
     raw_window_handle::{HasDisplayHandle, HasWindowHandle},
     window::Window,
 };
 
 use crate::gpu::FRAMES_IN_FLIGHT;
-
 
 pub struct SwapchainImage {
     pub image: vk::Image,
@@ -180,7 +179,7 @@ impl Swapchain {
         unsafe {
             return self.swapchain_loader.acquire_next_image(
                 self.swapchain,
-                10000,
+                u64::MAX,
                 semaphore,
                 vk::Fence::null(),
             );
@@ -192,7 +191,7 @@ impl Swapchain {
         present_queue: vk::Queue,
         image_idx: u32,
         wait: vk::Semaphore,
-    ) -> Result<()> {
+    ) -> VkResult<()> {
         let swapchains = [self.swapchain];
         let images = [image_idx];
         let wait_semaphores = [wait];

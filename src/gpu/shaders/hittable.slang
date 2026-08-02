@@ -1,14 +1,11 @@
 import material;
-
-struct Ray {
-	float3 origin;
-	float3 direction;
-	float t;
-}
+import camera;
 
 struct HitPayload {
-	BSDF material;
+	//BSDF material;
 	float3 normal;
+	float3 pos;
+	float t;
 }
 
 interface Hittable {

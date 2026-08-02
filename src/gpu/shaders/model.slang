@@ -1,4 +1,0 @@
-struct Triangle {};
-
-struct Model {
-};
