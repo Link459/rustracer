@@ -10,14 +10,14 @@ pub struct GpuImage {
 
 impl GpuImage {
     pub fn new(
-        instance: instance::Instance,
+        instance: &instance::Instance,
         width: u32,
         height: u32,
         format: vk::Format,
         usage: vk::ImageUsageFlags,
         memory_prop_flags: vk::MemoryPropertyFlags,
     ) -> VkResult<GpuImage> {
-        let extent = vk::Extent3D::default().width(width).height(height);
+        let extent = vk::Extent3D::default().width(width).height(height).depth(1);
         let image_info = vk::ImageCreateInfo::default()
             .extent(extent)
             .usage(usage)
@@ -69,7 +69,7 @@ impl GpuImage {
         });
     }
 
-    pub fn free(&self, instance: &instance::Instance) {
+    pub fn destroy(&self, instance: &instance::Instance) {
         unsafe {
             instance.destroy_image_view(self.view, None);
             instance.destroy_image(self.image, None);

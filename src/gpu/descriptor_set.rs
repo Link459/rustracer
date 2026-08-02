@@ -13,10 +13,11 @@ pub struct DescriptorSet {
 }
 
 #[repr(C)]
+#[derive(Clone, Copy)]
 pub struct DescriptorHandle(u32);
 
 impl DescriptorHandle {
-    pub const INVALID: u32 = u32::MAX;
+    pub const INVALID: DescriptorHandle = DescriptorHandle(u32::MAX);
 }
 
 const STORAGE_IMAGE_BINDING: u32 = 2;

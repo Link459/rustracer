@@ -184,10 +184,8 @@ impl Instance {
 
     pub fn push_constant<T: Sized>(&self, cmd_buf: vk::CommandBuffer, data: &T) {
         unsafe {
-            let slice = std::slice::from_raw_parts(
-                data as *const T as *const u8,
-                std::mem::size_of::<T>(),
-            );
+            let slice =
+                std::slice::from_raw_parts(data as *const T as *const u8, std::mem::size_of::<T>());
             self.cmd_push_constants(
                 cmd_buf,
                 self.pipeline_layout,
@@ -196,5 +194,13 @@ impl Instance {
                 slice,
             );
         }
+    }
+
+    pub fn image_barrier(&self, cmd_buf: vk::CommandBuffer, barrier: vk::ImageMemoryBarrier2) {
+        let barriers = [barrier.subresource_range(vk::ImageSubresourceRange::default().aspect_mask(vk::ImageAspectFlags::COLOR).level_count(1).layer_count(1).base_array_layer(0).base_mip_level(0))];
+        let dep_info = vk::DependencyInfo::default().image_memory_barriers(&barriers);
+        unsafe {
+            self.cmd_pipeline_barrier2(cmd_buf, &dep_info);
+        };
     }
 }

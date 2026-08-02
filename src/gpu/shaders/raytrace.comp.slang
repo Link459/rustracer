@@ -27,10 +27,9 @@ void main(uint3 thread_id : SV_DispatchThreadID,uniform PCData data) {
 	float4 color = float4(uv,0.0f,1.0f);
 
 	if(payload.hasValue) {
-		color = float4(1.0,0.0f,0.0f,1.0f);
+		color = float4(0.0,payload.value.t ,0.0f,1.0f);
 	} else {
-		//color = float4(0.0,payload.value.t,0.0f,1.0f);
-		color = float4(0.0,1.0f,0.0f,1.0f);
+		color = float4(1.0,0.0f,0.0f,1.0f);
 	}
 	data.final.Store(thread_id.xy, color);
 }

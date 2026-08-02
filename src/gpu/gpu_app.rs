@@ -23,6 +23,7 @@ pub struct GpuApp {
     cmd_bufs: [vk::CommandBuffer; FRAMES_IN_FLIGHT],
     descriptor_set: DescriptorSet,
     raytracer: Raytracer,
+    size: vk::Extent2D,
 }
 
 impl GpuApp {
@@ -39,7 +40,7 @@ impl GpuApp {
         let cmd_buf = unsafe { instance.device.allocate_command_buffers(&cmd_buf_info)? }
             .try_into()
             .unwrap();
-        let descriptor_set = DescriptorSet::new(&instance)?;
+        let mut descriptor_set = DescriptorSet::new(&instance)?;
         let push_constant_range = vk::PushConstantRange::default()
             .size(128)
             .offset(0)
@@ -55,7 +56,7 @@ impl GpuApp {
                 .create_pipeline_layout(&layout_create_info, None)?
         };
         let size = vk::Extent2D::default().width(width).height(height);
-        let raytracer = Raytracer::new(&instance, size)?;
+        let raytracer = Raytracer::new(&instance, &mut descriptor_set, size)?;
 
         return Ok(GpuApp {
             window: None,
@@ -68,6 +69,7 @@ impl GpuApp {
             cmd_pool,
             descriptor_set,
             raytracer,
+            size,
         });
     }
 
@@ -127,10 +129,6 @@ impl GpuApp {
             );
         }*/
 
-        let handle = self.descriptor_set.bind(
-            &self.instance,
-            swapchain.images[acquired_image as usize].view,
-        );
         unsafe {
             self.instance.cmd_bind_descriptor_sets(
                 cmd_buf,
@@ -141,7 +139,9 @@ impl GpuApp {
                 &[],
             );
         }
-        self.raytracer.run(&self.instance, cmd_buf, handle);
+        self.raytracer.run(&self.instance, cmd_buf);
+        self.raytracer
+            .copy_to_image(&self.instance, cmd_buf, swapchain_image,self.size);
 
         let barrier = [vk::ImageMemoryBarrier2::default()
             .image(swapchain_image)
@@ -224,6 +224,9 @@ impl ApplicationHandler for GpuApp {
 
         self.swapchain =
             Some(Swapchain::new(&self.instance, &window).expect("Failed to create Swapchain"));
+
+        let size = window.inner_size();
+        self.size = self.size.width(size.width).height(size.height);
         self.window = Some(window);
     }
 
