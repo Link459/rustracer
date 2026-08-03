@@ -13,6 +13,7 @@ fn compile_slang(dir: &Path, path: &PathBuf) {
         .arg(path)
         .arg("-target")
         .arg("spirv")
+        .arg("-fvk-use-scalar-layout")
         .arg("-o")
         .arg(output)
         .arg("-entry")

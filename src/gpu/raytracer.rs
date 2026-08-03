@@ -1,5 +1,5 @@
 use ash::vk;
-use nalgebra_glm::{Mat4x4, Vec2, Vec3};
+use nalgebra_glm::{Mat4x4, UVec2, Vec2, Vec3};
 
 use crate::{
     gpu::{
@@ -79,23 +79,27 @@ impl Raytracer {
                 .dst_stage_mask(vk::PipelineStageFlags2::COMPUTE_SHADER)
                 .dst_access_mask(vk::AccessFlags2::SHADER_STORAGE_WRITE),
         );
-        let center = nalgebra_glm::vec3(0.0, 1.0, 0.0);
+        let center = nalgebra_glm::vec3(0.0, 0.0, 1.0);
         let up = nalgebra_glm::vec3(0.0, 1.0, 0.0);
-        let view = nalgebra_glm::look_at_rh(&nalgebra_glm::zero(), &center, &up);
-        let perspective = nalgebra_glm::infinite_perspective_rh_zo(
+        let view = nalgebra_glm::look_at_lh(&nalgebra_glm::zero(), &center, &up);
+        let perspective = nalgebra_glm::perspective_lh_zo(
             self.size.width as Float / self.size.height as Float,
             45.0f32.to_radians(),
             0.1,
+            1000.0,
         );
         let final_mat = perspective * view;
         let transpose = nalgebra_glm::transpose(&final_mat);
         let camera = Camera {
-            mx: nalgebra_glm::row(&transpose, 0).xyz(),
-            my: nalgebra_glm::row(&transpose, 1).xyz(),
-            mw: nalgebra_glm::row(&transpose, 3).xyz(),
+            mx: nalgebra_glm::column(&transpose, 0).xyz(),
+            my: nalgebra_glm::column(&transpose, 1).xyz(),
+            mw: nalgebra_glm::column(&transpose, 3).xyz(),
             clip_to_world: nalgebra_glm::inverse(&final_mat),
         };
+
         let size = Vec2::new(self.size.width as Float, self.size.height as Float);
+        let workgroup_count_x = 1 + ((size.x as u32 - 1) / 16);
+        let workgroup_count_y = 1 + ((size.x as u32 - 1) / 16);
         unsafe {
             instance.cmd_bind_pipeline(cmd_buf, vk::PipelineBindPoint::COMPUTE, self.pipeline);
             let pc = DrawPushConstants {
@@ -104,7 +108,8 @@ impl Raytracer {
                 camera,
             };
             instance.push_constant(cmd_buf, &pc);
-            instance.cmd_dispatch(cmd_buf, self.size.width, self.size.height, 1);
+            //instance.cmd_dispatch(cmd_buf, self.size.width, self.size.height, 1);
+            instance.cmd_dispatch(cmd_buf, workgroup_count_x, workgroup_count_y, 1);
         };
     }
 

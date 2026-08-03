@@ -16,7 +16,7 @@ struct Triangle : Hittable {
 		}
 
 		float det = -dot(ray.direction, normal);
-		if (det >= 1e-8) {
+		if (det <= 1e-8) {
 			return none;
 		}
 
