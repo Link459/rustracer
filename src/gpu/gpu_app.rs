@@ -19,7 +19,6 @@ pub struct GpuApp {
     instance: Instance,
     swapchain: Option<Swapchain>,
     frame_index: usize,
-    cmd_pool: vk::CommandPool,
     cmd_bufs: [vk::CommandBuffer; FRAMES_IN_FLIGHT],
     descriptor_set: DescriptorSet,
     raytracer: Raytracer,
@@ -29,13 +28,10 @@ pub struct GpuApp {
 impl GpuApp {
     pub fn new(width: u32, height: u32, event_loop: &EventLoop<()>) -> anyhow::Result<Self> {
         let mut instance = Instance::new(event_loop.display_handle().unwrap().as_raw())?;
-        let cmd_pool_info = vk::CommandPoolCreateInfo::default()
-            .flags(vk::CommandPoolCreateFlags::RESET_COMMAND_BUFFER)
-            .queue_family_index(instance.queue_family_index);
-        let cmd_pool = unsafe { instance.device.create_command_pool(&cmd_pool_info, None)? };
+
         let cmd_buf_info = vk::CommandBufferAllocateInfo::default()
             .level(CommandBufferLevel::PRIMARY)
-            .command_pool(cmd_pool)
+            .command_pool(instance.cmd_pool)
             .command_buffer_count(FRAMES_IN_FLIGHT as u32);
         let cmd_buf = unsafe { instance.device.allocate_command_buffers(&cmd_buf_info)? }
             .try_into()
@@ -66,7 +62,6 @@ impl GpuApp {
             swapchain: None,
             frame_index: 0,
             cmd_bufs: cmd_buf,
-            cmd_pool,
             descriptor_set,
             raytracer,
             size,
@@ -108,8 +103,8 @@ impl GpuApp {
             .image(swapchain_image)
             .old_layout(vk::ImageLayout::UNDEFINED)
             .new_layout(vk::ImageLayout::GENERAL)
-            .dst_stage_mask(vk::PipelineStageFlags2::COMPUTE_SHADER)
-            .dst_access_mask(vk::AccessFlags2::SHADER_STORAGE_WRITE)
+            .dst_stage_mask(vk::PipelineStageFlags2::BLIT)
+            .dst_access_mask(vk::AccessFlags2::TRANSFER_WRITE)
             .subresource_range(swapchain_subresource_range)];
         let dep_info = vk::DependencyInfo::default().image_memory_barriers(&barrier);
         unsafe {
@@ -148,8 +143,8 @@ impl GpuApp {
             .image(swapchain_image)
             .old_layout(vk::ImageLayout::GENERAL)
             .new_layout(vk::ImageLayout::PRESENT_SRC_KHR)
-            .src_stage_mask(vk::PipelineStageFlags2::COMPUTE_SHADER)
-            .src_access_mask(vk::AccessFlags2::SHADER_STORAGE_WRITE)
+            .src_stage_mask(vk::PipelineStageFlags2::BLIT)
+            .src_access_mask(vk::AccessFlags2::TRANSFER_WRITE)
             .subresource_range(swapchain_subresource_range)];
         let dep_info = vk::DependencyInfo::default().image_memory_barriers(&barrier);
         unsafe {
@@ -199,7 +194,8 @@ impl GpuApp {
         self.raytracer.destroy(&self.instance);
         self.descriptor_set.destroy(&self.instance);
         unsafe {
-            self.instance.destroy_command_pool(self.cmd_pool, None);
+            self.instance
+                .destroy_command_pool(self.instance.cmd_pool, None);
         }
         self.instance.destroy();
     }

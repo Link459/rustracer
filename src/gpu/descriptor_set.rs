@@ -13,7 +13,7 @@ pub struct DescriptorSet {
 }
 
 #[repr(C)]
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct DescriptorHandle(u64);
 
 impl DescriptorHandle {
@@ -95,7 +95,7 @@ impl DescriptorSet {
             instance.update_descriptor_sets(&write, &[]);
         }
 
-        return DescriptorHandle(0);
+        return DescriptorHandle(new_id as u64);
     }
 
     pub fn destroy(&mut self, instance: &instance::Instance) {

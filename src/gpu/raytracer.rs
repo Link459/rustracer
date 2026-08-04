@@ -1,5 +1,5 @@
-use ash::vk;
-use nalgebra_glm::{Mat4x4, Vec2, Vec3};
+use ash::vk::{self};
+use nalgebra_glm::{Mat4x4, UVec2, Vec2, Vec3};
 
 use crate::{
     gpu::{
@@ -16,7 +16,7 @@ pub struct Raytracer {
     main_target: GpuImage,
     accumulate_target: GpuImage,
     size: vk::Extent2D,
-    halton_count: u32,
+    halton_index: u32,
     frame: u32,
 }
 
@@ -38,9 +38,10 @@ struct DrawPushConstants {
 
 #[repr(C)]
 struct AccumulatePushConstants {
-    frame: u32,
     src: DescriptorHandle,
     accum: DescriptorHandle,
+    size: UVec2,
+    frame: u32,
 }
 
 fn halton(mut index: u32, base: u32) -> f32 {
@@ -76,9 +77,14 @@ impl Raytracer {
             size.width,
             size.height,
             vk::Format::R16G16B16A16_SFLOAT,
-            vk::ImageUsageFlags::STORAGE | vk::ImageUsageFlags::TRANSFER_SRC,
+            vk::ImageUsageFlags::STORAGE
+                | vk::ImageUsageFlags::TRANSFER_SRC
+                | vk::ImageUsageFlags::TRANSFER_DST,
             vk::MemoryPropertyFlags::DEVICE_LOCAL,
         )?;
+        /*let cmd_buf = instance.begin_single_time_cmd_buf()?;
+
+        instance.end_single_time_cmd_buf(cmd_buf)?;*/
         accumulate_image.handle = descriptor.bind(instance, accumulate_image.view);
         return Ok(Self {
             raytrace_pipeline,
@@ -86,19 +92,19 @@ impl Raytracer {
             size,
             main_target: image,
             accumulate_target: accumulate_image,
-            halton_count: 0,
+            halton_index: 0,
             frame: 0,
         });
     }
 
     fn jitter(&mut self) -> Vec2 {
         let mut jitter = Vec2::default();
-        jitter.x = halton(self.halton_count, 2);
-        jitter.y = halton(self.halton_count, 3);
-        self.halton_count += 1;
-        self.halton_count = self.halton_count % 8;
-        jitter.x = ((jitter.x - 0.5) / self.size.width as f32) * 2.0;
-        jitter.y = ((jitter.y - 0.5) / self.size.height as f32) * 2.0;
+        jitter.x = halton(self.halton_index, 2);
+        jitter.y = halton(self.halton_index, 3);
+        self.halton_index += 1;
+        self.halton_index = self.halton_index % 8;
+        jitter.x = 2.0 * (jitter.x - 0.5) / self.size.width as f32;
+        jitter.y = 2.0 * (jitter.y - 0.5) / self.size.height as f32;
         return jitter;
     }
 
@@ -154,14 +160,51 @@ impl Raytracer {
     }
 
     pub fn accumulate_pass(&self, instance: &instance::Instance, cmd_buf: vk::CommandBuffer) {
+        static mut FIRST_TIME: bool = true;
+
+        let mut old_layout = vk::ImageLayout::GENERAL;
+        unsafe {
+            if FIRST_TIME {
+                old_layout = vk::ImageLayout::UNDEFINED;
+                FIRST_TIME = false;
+            }
+        }
+        instance.image_barrier(
+            cmd_buf,
+            vk::ImageMemoryBarrier2::default()
+                .image(self.accumulate_target.image)
+                .old_layout(old_layout)
+                .new_layout(vk::ImageLayout::GENERAL)
+                .dst_stage_mask(vk::PipelineStageFlags2::COMPUTE_SHADER)
+                .dst_access_mask(
+                    vk::AccessFlags2::SHADER_STORAGE_WRITE | vk::AccessFlags2::SHADER_STORAGE_READ,
+                )
+                .dst_stage_mask(vk::PipelineStageFlags2::COMPUTE_SHADER)
+                .dst_access_mask(
+                    vk::AccessFlags2::SHADER_STORAGE_WRITE | vk::AccessFlags2::SHADER_STORAGE_READ,
+                ),
+        );
+        instance.image_barrier(
+            cmd_buf,
+            vk::ImageMemoryBarrier2::default()
+                .image(self.main_target.image)
+                .old_layout(vk::ImageLayout::GENERAL)
+                .new_layout(vk::ImageLayout::GENERAL)
+                .src_stage_mask(vk::PipelineStageFlags2::COMPUTE_SHADER)
+                .src_access_mask(vk::AccessFlags2::SHADER_STORAGE_WRITE)
+                .dst_stage_mask(vk::PipelineStageFlags2::COMPUTE_SHADER)
+                .dst_access_mask(vk::AccessFlags2::SHADER_STORAGE_READ),
+        );
         //instance.image_barrier(cmd_buf, vk::ImageMemoryBarrier2::default().image(self.main_target.image).);
         let workgroup_count_x = 1 + ((self.size.width - 1) / 16);
         let workgroup_count_y = 1 + ((self.size.height - 1) / 16);
 
+        let size = UVec2::new(self.size.width, self.size.height);
         let pc = AccumulatePushConstants {
             frame: self.frame,
             src: self.main_target.handle,
             accum: self.accumulate_target.handle,
+            size,
         };
         unsafe {
             instance.cmd_bind_pipeline(
@@ -182,6 +225,19 @@ impl Raytracer {
         image: vk::Image,
         dst_size: vk::Extent2D,
     ) {
+        let img = self.accumulate_target.image;
+        //self.main_target.image;
+        instance.image_barrier(
+            cmd_buf,
+            vk::ImageMemoryBarrier2::default()
+                .image(img)
+                .old_layout(vk::ImageLayout::GENERAL)
+                .new_layout(vk::ImageLayout::GENERAL)
+                .src_stage_mask(vk::PipelineStageFlags2::COMPUTE_SHADER)
+                .src_access_mask(vk::AccessFlags2::SHADER_STORAGE_WRITE)
+                .dst_stage_mask(vk::PipelineStageFlags2::BLIT)
+                .dst_access_mask(vk::AccessFlags2::TRANSFER_READ),
+        );
         let src_offsets = [
             vk::Offset3D::default(),
             vk::Offset3D::default()
@@ -210,8 +266,7 @@ impl Raytracer {
         unsafe {
             instance.cmd_blit_image(
                 cmd_buf,
-                self.main_target.image,
-                //self.accumulate_target.image,
+                img,
                 vk::ImageLayout::GENERAL,
                 image,
                 vk::ImageLayout::GENERAL,

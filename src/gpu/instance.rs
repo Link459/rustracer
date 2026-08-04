@@ -1,7 +1,13 @@
 use std::{ffi::CStr, ops::Deref};
 
 use anyhow::Result;
-use ash::{ext::debug_utils, khr, vk, Entry};
+use ash::{
+    ext::debug_utils,
+    khr,
+    prelude::VkResult,
+    vk::{self, Handle},
+    Entry,
+};
 
 use crate::gpu::shader;
 
@@ -13,6 +19,7 @@ pub struct Instance {
     pub graphics_queue: vk::Queue,
     pub queue_family_index: u32,
     pub pipeline_layout: vk::PipelineLayout,
+    pub cmd_pool: vk::CommandPool,
 
     #[cfg(debug_assertions)]
     debug_messenger: Option<vk::DebugUtilsMessengerEXT>,
@@ -83,6 +90,11 @@ impl Instance {
             None
         };
 
+        let cmd_pool_info = vk::CommandPoolCreateInfo::default()
+            .flags(vk::CommandPoolCreateFlags::RESET_COMMAND_BUFFER)
+            .queue_family_index(queue_family_index);
+        let cmd_pool = unsafe { device.create_command_pool(&cmd_pool_info, None)? };
+
         return Ok(Self {
             entry,
             instance,
@@ -91,6 +103,7 @@ impl Instance {
             graphics_queue,
             queue_family_index,
             pipeline_layout: vk::PipelineLayout::null(),
+            cmd_pool,
 
             #[cfg(debug_assertions)]
             debug_messenger,
@@ -145,7 +158,8 @@ impl Instance {
             .descriptor_binding_storage_image_update_after_bind(true)
             .descriptor_binding_update_unused_while_pending(true)
             .descriptor_binding_partially_bound(true)
-            .runtime_descriptor_array(true).scalar_block_layout(true);
+            .runtime_descriptor_array(true)
+            .scalar_block_layout(true);
         let mut features = vk::PhysicalDeviceFeatures2::default()
             .push_next(&mut features_13)
             .push_next(&mut features_12);
@@ -228,5 +242,39 @@ impl Instance {
         };
         shader.destroy(self);
         return pipeline;
+    }
+
+    pub fn begin_single_time_cmd_buf(&self) -> VkResult<vk::CommandBuffer> {
+        let cmd_buf_info = vk::CommandBufferAllocateInfo::default()
+            .level(vk::CommandBufferLevel::PRIMARY)
+            .command_pool(self.cmd_pool)
+            .command_buffer_count(1);
+        let cmd_buf = unsafe { self.device.allocate_command_buffers(&cmd_buf_info)? }[0];
+        let begin_info = &vk::CommandBufferBeginInfo::default()
+            .flags(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT);
+        unsafe {
+            self.device
+                .reset_command_buffer(cmd_buf, vk::CommandBufferResetFlags::empty())?;
+            self.device.begin_command_buffer(cmd_buf, begin_info)?
+        };
+        return VkResult::Ok(cmd_buf);
+    }
+
+    pub fn end_single_time_cmd_buf(&self, cmd_buf: vk::CommandBuffer) -> VkResult<()> {
+        unsafe {
+            self.device.end_command_buffer(cmd_buf)?;
+        };
+        let cmd_bufs = [cmd_buf];
+        let wait_stages = [vk::PipelineStageFlags::COMPUTE_SHADER];
+        let submit = [vk::SubmitInfo::default()
+            .command_buffers(&cmd_bufs)
+            .wait_dst_stage_mask(&wait_stages)];
+        unsafe {
+            self.device
+                .queue_submit(self.graphics_queue, &submit, vk::Fence::null())?;
+            self.device.device_wait_idle()?;
+            self.device.free_command_buffers(self.cmd_pool, &cmd_bufs);
+        }
+        return VkResult::Ok(());
     }
 }
