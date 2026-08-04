@@ -3,6 +3,8 @@ use std::{ffi::CStr, ops::Deref};
 use anyhow::Result;
 use ash::{ext::debug_utils, khr, vk, Entry};
 
+use crate::gpu::shader;
+
 pub struct Instance {
     pub entry: ash::Entry,
     pub instance: ash::Instance,
@@ -143,7 +145,7 @@ impl Instance {
             .descriptor_binding_storage_image_update_after_bind(true)
             .descriptor_binding_update_unused_while_pending(true)
             .descriptor_binding_partially_bound(true)
-            .runtime_descriptor_array(true);
+            .runtime_descriptor_array(true).scalar_block_layout(true);
         let mut features = vk::PhysicalDeviceFeatures2::default()
             .push_next(&mut features_13)
             .push_next(&mut features_12);
@@ -197,10 +199,34 @@ impl Instance {
     }
 
     pub fn image_barrier(&self, cmd_buf: vk::CommandBuffer, barrier: vk::ImageMemoryBarrier2) {
-        let barriers = [barrier.subresource_range(vk::ImageSubresourceRange::default().aspect_mask(vk::ImageAspectFlags::COLOR).level_count(1).layer_count(1).base_array_layer(0).base_mip_level(0))];
+        let barriers = [barrier.subresource_range(
+            vk::ImageSubresourceRange::default()
+                .aspect_mask(vk::ImageAspectFlags::COLOR)
+                .level_count(1)
+                .layer_count(1)
+                .base_array_layer(0)
+                .base_mip_level(0),
+        )];
         let dep_info = vk::DependencyInfo::default().image_memory_barriers(&barriers);
         unsafe {
             self.cmd_pipeline_barrier2(cmd_buf, &dep_info);
         };
+    }
+
+    pub fn create_compute_pipeline(&self, shader: &str) -> vk::Pipeline {
+        let mut shader_path = String::from(env!("SHADER_OUT"));
+        shader_path.push_str(shader);
+        let shader =
+            shader::Shader::new(&self, &shader_path, vk::ShaderStageFlags::COMPUTE).unwrap();
+        let create_info = [vk::ComputePipelineCreateInfo::default()
+            .stage(shader.stage_info)
+            .layout(self.pipeline_layout)];
+
+        let pipeline = unsafe {
+            self.create_compute_pipelines(vk::PipelineCache::null(), &create_info, None)
+                .unwrap()[0]
+        };
+        shader.destroy(self);
+        return pipeline;
     }
 }

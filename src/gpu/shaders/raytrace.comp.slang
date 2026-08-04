@@ -1,11 +1,13 @@
 import camera;
 import mesh;
 import hittable;
+import material;
 
 struct PCData {
 	RWTexture2D.Handle final;
 	float2 size;
 	Camera camera;
+	float2 jitter;
 };
 
 bool hit_sphere(float3 center, float radius, Ray ray) {
@@ -17,6 +19,14 @@ bool hit_sphere(float3 center, float radius, Ray ray) {
 	return discriminant >= 0;
 }
 
+func tonemap<T:IFloat>(T x) -> T {
+	T a = (T)2.51f;
+	T b = (T)0.03f;
+	T c = (T)2.43f;
+	T d = (T)0.59f;
+	T e = (T)0.14f;
+	return saturate((x*(a*x+b))/(x*(c*x+d)+e));
+}
 
 [shader("compute")]
 [numthreads(16,16,1)]
@@ -25,7 +35,7 @@ void main(uint3 thread_id : SV_DispatchThreadID,uniform PCData data) {
 		return;
 	}
 
-	float2 uv = (float2(thread_id.xy) + 0.5) / data.size;
+	float2 uv = (float2(thread_id.xy) + 0.5) / data.size + data.jitter;
 	Ray ray = data.camera.get_ray(uv);
 	float2 viewport_uv = uv * 2.0 - 1.0;
 	//Ray ray = Ray(float3(viewport_uv,0.0),float3(0.0,0.0,1.0),0.0);
@@ -36,14 +46,16 @@ void main(uint3 thread_id : SV_DispatchThreadID,uniform PCData data) {
 	trongle.pos[1] = float3(-0.5,0.5,z);
 	trongle.pos[2] = float3(0.5,0.5,z);
 	Optional<HitPayload> payload = trongle.hit(ray);
+	BSDF bsdf = DiffuseBSDF({0.0f,1.0f,0.0f,1.0f});
 
 	float4 color = float4(uv,0.0f,1.0f);
 
 	if(payload.hasValue) {
-		color = float4(0.0,payload.value.t ,0.0f,1.0f);
+		color = bsdf.f(ray.direction,ray.direction);
 	} else {
 		color = float4(1.0,0.0f,0.0f,1.0f);
 	}
+	color = tonemap(color);
 
 	data.final.Store(thread_id.xy, color);
 }

@@ -140,8 +140,9 @@ impl GpuApp {
             );
         }
         self.raytracer.run(&self.instance, cmd_buf);
+        self.raytracer.accumulate_pass(&self.instance, cmd_buf);
         self.raytracer
-            .copy_to_image(&self.instance, cmd_buf, swapchain_image,self.size);
+            .copy_to_image(&self.instance, cmd_buf, swapchain_image, self.size);
 
         let barrier = [vk::ImageMemoryBarrier2::default()
             .image(swapchain_image)

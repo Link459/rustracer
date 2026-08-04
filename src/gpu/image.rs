@@ -1,11 +1,12 @@
 use ash::{prelude::VkResult, vk};
 
-use crate::gpu::{instance, util::find_memorytype_index};
+use crate::gpu::{descriptor_set::DescriptorHandle, instance, util::find_memorytype_index};
 
 pub struct GpuImage {
     pub image: vk::Image,
     pub view: vk::ImageView,
     pub memory: vk::DeviceMemory,
+    pub handle: DescriptorHandle,
 }
 
 impl GpuImage {
@@ -66,6 +67,7 @@ impl GpuImage {
             image,
             memory,
             view,
+            handle: DescriptorHandle::INVALID,
         });
     }
 
