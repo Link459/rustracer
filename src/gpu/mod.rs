@@ -6,7 +6,7 @@ pub mod descriptor_set;
 pub mod gpu_app;
 pub mod image;
 pub mod instance;
-pub mod model;
+pub mod mesh;
 pub mod pipeline;
 pub mod queue;
 pub mod raytracer;

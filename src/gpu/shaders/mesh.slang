@@ -42,7 +42,15 @@ struct Triangle : Hittable {
 };
 
 struct Mesh : Hittable {
+	Triangle* triangles;
+	uint* indices;
+	uint index_count;
+
     Optional<HitPayload> hit(Ray ray) {
+		for(uint i = 0; i < index_count; i++) {
+			 triangles[indices[i]].hit(ray);
+			 //triangles[i].hit(ray);
+		}
 		return none;
 	}
 };

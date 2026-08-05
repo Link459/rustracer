@@ -20,7 +20,7 @@ struct BVHNode {
 struct BVH : Hittable {
 	BVHNode* nodes;
 	uint32_t* indices;
-	Mesh* models;
+	Triangle* triangles;
 
     Optional<HitPayload> hit(Ray ray) {
 		uint stack[32];
@@ -41,7 +41,7 @@ struct BVH : Hittable {
 				Optional<HitPayload> current = none;
 				for (uint i = 0; i < node.primitive_count; i++) {
 					let prim_index = indices[node.first_idx + i];
-					let x = models[prim_index].hit(ray);
+					let x = triangles[prim_index].hit(ray);
 					if (x.hasValue) {
 						if(current.hasValue) {
 							if(x.value.t < current.value.t) {
@@ -82,5 +82,4 @@ struct BVH : Hittable {
         }
 		return none;
     }
-
 }

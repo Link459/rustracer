@@ -1,6 +1,6 @@
 use super::command_pool::CommandBuffer;
 use super::instance::Instance;
-use super::model::GpuModel;
+use super::mesh::Mesh as GpuMesh;
 use super::{buffer::UnsafeBuffer, command_pool::CommandPool};
 use anyhow::Result;
 use ash::khr;
@@ -503,7 +503,7 @@ impl TLAS {
         instance: &Instance,
         accel_loader: &khr::acceleration_structure::Device,
         command_pool: &CommandPool,
-        models: &[GpuModel],
+        models: &[GpuMesh],
     ) -> Result<Self> {
         let blas_inputs = models
             .iter()

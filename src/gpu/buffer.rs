@@ -1,7 +1,5 @@
+use ash::{prelude::VkResult, util::Align, vk};
 use std::{marker::PhantomData, mem::align_of, ops::Deref};
-
-use anyhow::Result;
-use ash::{util::Align, vk};
 
 use crate::gpu::instance::Instance;
 
@@ -10,6 +8,7 @@ use super::util::find_memorytype_index;
 /// Generic to prevent missuse by mapping different types to it
 pub struct Buffer<T: Copy> {
     buffer: UnsafeBuffer,
+    address: vk::DeviceAddress,
     panthom: PhantomData<T>,
 }
 
@@ -19,15 +18,22 @@ impl<T: Copy> Buffer<T> {
         size: u64,
         usage: vk::BufferUsageFlags,
         flags: vk::BufferCreateFlags,
-    ) -> Result<Self> {
+    ) -> VkResult<Self> {
+        let buffer = unsafe { UnsafeBuffer::new(instance, size, usage, flags) }?;
+        let address = if usage.contains(vk::BufferUsageFlags::SHADER_DEVICE_ADDRESS) {
+            unsafe { buffer.get_address(instance) }
+        } else {
+            vk::DeviceAddress::default()
+        };
         Ok(Self {
-            buffer: unsafe { UnsafeBuffer::new(instance, size, usage, flags) }?,
+            buffer,
+            address,
             panthom: PhantomData::default(),
         })
     }
 
-    pub fn map(&self, device: &Instance, data: &[T]) -> Result<()> {
-        unsafe { self.buffer.map(device, data) }
+    pub fn map(&self, instance: &Instance, data: &[T]) -> VkResult<()> {
+        unsafe { self.buffer.map(instance, data) }
     }
 
     pub fn size(&self) -> u64 {
@@ -42,10 +48,8 @@ impl<T: Copy> Buffer<T> {
         self.buffer.memory
     }
 
-    pub fn get_address(&self, instance: &Instance) -> vk::DeviceAddress {
-        unsafe {
-            return self.buffer.get_address(instance);
-        }
+    pub fn get_address(&self) -> vk::DeviceAddress {
+        return self.address;
     }
 }
 
@@ -62,7 +66,7 @@ impl UnsafeBuffer {
         size: u64,
         usage: vk::BufferUsageFlags,
         flags: vk::BufferCreateFlags,
-    ) -> Result<Self> {
+    ) -> VkResult<Self> {
         let buffer_create_info = vk::BufferCreateInfo::default()
             .size(size)
             .usage(usage)
@@ -96,7 +100,7 @@ impl UnsafeBuffer {
         todo!();
     }
 
-    pub unsafe fn map<T: Copy>(&self, instance: &Instance, data: &[T]) -> Result<()> {
+    pub unsafe fn map<T: Copy>(&self, instance: &Instance, data: &[T]) -> VkResult<()> {
         let buffer_ptr = unsafe {
             instance
                 .device

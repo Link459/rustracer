@@ -3,24 +3,17 @@ use nalgebra_glm::{Mat4x4, UVec2, Vec2, Vec3};
 
 use crate::{
     gpu::{
+        buffer::Buffer,
         descriptor_set::{DescriptorHandle, DescriptorSet},
         image::GpuImage,
         instance,
+        mesh::{GpuMesh, Mesh},
     },
     Float,
 };
 
-pub struct Raytracer {
-    raytrace_pipeline: vk::Pipeline,
-    accumulate_pipeline: vk::Pipeline,
-    main_target: GpuImage,
-    accumulate_target: GpuImage,
-    size: vk::Extent2D,
-    halton_index: u32,
-    frame: u32,
-}
-
 #[repr(C)]
+#[derive(Debug, Clone, Copy)]
 struct Camera {
     mx: Vec3,
     my: Vec3,
@@ -28,12 +21,25 @@ struct Camera {
     clip_to_world: Mat4x4,
 }
 
+pub struct Raytracer {
+    raytrace_pipeline: vk::Pipeline,
+    accumulate_pipeline: vk::Pipeline,
+    main_target: GpuImage,
+    accumulate_target: GpuImage,
+    camera_buffer: Buffer<Camera>,
+    size: vk::Extent2D,
+    halton_index: u32,
+    frame: u32,
+    mesh: Mesh,
+}
+
 #[repr(C)]
 struct DrawPushConstants {
     image: DescriptorHandle,
     size: Vec2,
-    camera: Camera,
     jitter: Vec2,
+    camera: vk::DeviceAddress, //Camera,
+    mesh: GpuMesh,
 }
 
 #[repr(C)]
@@ -86,14 +92,23 @@ impl Raytracer {
 
         instance.end_single_time_cmd_buf(cmd_buf)?;*/
         accumulate_image.handle = descriptor.bind(instance, accumulate_image.view);
+        let camera_buffer = Buffer::new(
+            instance,
+            std::mem::size_of::<Camera>() as u64,
+            vk::BufferUsageFlags::SHADER_DEVICE_ADDRESS,
+            vk::BufferCreateFlags::empty(),
+        )?;
+        let mesh = Mesh::new("bunny.obj", instance)?;
         return Ok(Self {
             raytrace_pipeline,
             accumulate_pipeline,
             size,
+            camera_buffer,
             main_target: image,
             accumulate_target: accumulate_image,
             halton_index: 0,
             frame: 0,
+            mesh,
         });
     }
 
@@ -135,6 +150,8 @@ impl Raytracer {
             mw: nalgebra_glm::column(&transpose, 3).xyz(),
             clip_to_world: nalgebra_glm::inverse(&final_mat),
         };
+        self.camera_buffer.map(instance, &[camera]);
+        let camera_address = self.camera_buffer.get_address();
 
         let jitter = self.jitter();
         //println!("{}", jitter);
@@ -150,8 +167,9 @@ impl Raytracer {
             let pc = DrawPushConstants {
                 image: self.main_target.handle,
                 size: size,
-                camera,
                 jitter,
+                camera: camera_address, //camera,
+                mesh: self.mesh.to_gpu_mesh(),
             };
             instance.push_constant(cmd_buf, &pc);
             //instance.cmd_dispatch(cmd_buf, self.size.width, self.size.height, 1);

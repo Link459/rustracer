@@ -9,7 +9,7 @@ fn compile_slang(dir: &Path, path: &PathBuf) {
     let mut output = String::from(name.to_str().unwrap());
     output.push_str(".spirv");
     output.insert_str(0, dir.to_str().unwrap());
-    let _ = Command::new("slangc")
+    let status = Command::new("slangc")
         .arg(path)
         .arg("-target")
         .arg("spirv")
@@ -20,6 +20,9 @@ fn compile_slang(dir: &Path, path: &PathBuf) {
         .arg("main")
         .status()
         .unwrap();
+    if !status.success() {
+        panic!("{}",status);
+    }
 }
 
 fn main() {
