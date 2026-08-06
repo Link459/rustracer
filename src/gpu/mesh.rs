@@ -47,9 +47,32 @@ impl Mesh {
                 };
 
                 vertices.push(vertex);
-                //indices.push(indices.len() as u32);
-                indices.push(*index);
+                indices.push(indices.len() as u32);
             }
+
+            /*for i in 0..model.mesh.indices.len() / 3 {
+                let index = model.mesh.indices[i];
+                let pos_offset = (9 * index) as usize;
+                let load_vec3 = |base| {
+                    Vec3::new(
+                        model.mesh.positions[base],
+                        model.mesh.positions[base + 1],
+                        model.mesh.positions[base + 2],
+                    )
+                };
+                let vertex = Triangle {
+                    pos: [
+                        load_vec3(pos_offset),
+                        load_vec3(pos_offset + 3),
+                        load_vec3(pos_offset + 6),
+                    ],
+                    //color: Vec3::new(1.0, 1.0, 1.0),
+                };
+
+                vertices.push(vertex);
+                indices.push(indices.len() as u32);
+                //indices.push(*index);
+            }*/
         }
 
         let vertex_buffer = Buffer::new(
@@ -59,12 +82,14 @@ impl Mesh {
             vk::BufferCreateFlags::default(),
         )?;
         vertex_buffer.map(&instance, vertices.as_slice())?;
+        instance.name("VertexBuffer", vertex_buffer.get_buffer())?;
         let index_buffer = Buffer::new(
             instance,
             indices.len() as u64 * std::mem::size_of::<u32>() as u64,
             vk::BufferUsageFlags::INDEX_BUFFER | vk::BufferUsageFlags::SHADER_DEVICE_ADDRESS,
             vk::BufferCreateFlags::default(),
         )?;
+        instance.name("IndexBuffer", index_buffer.get_buffer())?;
         index_buffer.map(&instance, indices.as_slice())?;
         Ok(Self {
             vertices,

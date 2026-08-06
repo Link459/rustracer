@@ -1,11 +1,14 @@
-use std::{ffi::CStr, ops::Deref};
+use std::{
+    ffi::{c_char, CStr},
+    ops::Deref,
+};
 
 use anyhow::Result;
 use ash::{
     ext::debug_utils,
     khr,
     prelude::VkResult,
-    vk::{self, Handle},
+    vk::{self},
     Entry,
 };
 
@@ -275,6 +278,22 @@ impl Instance {
             self.device.device_wait_idle()?;
             self.device.free_command_buffers(self.cmd_pool, &cmd_bufs);
         }
+        self.device.handle();
         return VkResult::Ok(());
+    }
+
+    #[cfg(debug_assertions)]
+    pub fn name<T: vk::Handle>(&self, name: &str, data: T) -> VkResult<()> {
+        use std::ffi::CString;
+
+        let fns = ash::ext::debug_utils::Device::new(&self.instance, &self.device);
+        let name = CString::new(name).unwrap();
+        unsafe {
+            let info = vk::DebugUtilsObjectNameInfoEXT::default()
+                .object_name(name.as_c_str())
+                .object_handle(data);
+            fns.set_debug_utils_object_name(&info)?;
+        }
+        return Ok(());
     }
 }

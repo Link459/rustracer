@@ -98,7 +98,7 @@ impl Raytracer {
             vk::BufferUsageFlags::SHADER_DEVICE_ADDRESS,
             vk::BufferCreateFlags::empty(),
         )?;
-        let mesh = Mesh::new("bunny.obj", instance)?;
+        let mesh = Mesh::new("assets/cube.obj", instance)?;
         return Ok(Self {
             raytrace_pipeline,
             accumulate_pipeline,
