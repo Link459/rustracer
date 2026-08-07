@@ -1,5 +1,14 @@
 use crate::{
-    Float, camera::Camera, hittable::{Hittable, HittableExt}, integrator::Integrator, interval::Interval, light::{LightSampleContext, LightStore, UniformLightSampler}, material::MaterialStore, ray::Ray, render::RenderSettings, vec3::Vec3
+    camera::Camera,
+    hittable::{Hittable, HittableExt},
+    integrator::Integrator,
+    interval::Interval,
+    light::{LightSampleContext, LightStore, UniformLightSampler},
+    material::MaterialStore,
+    ray::Ray,
+    render::RenderSettings,
+    vec3::{Vec3, VectorExtensions},
+    Float,
 };
 
 pub struct SimplePathIntegrator<'world, W> {
@@ -31,15 +40,16 @@ where
     }
 
     fn li(&self, mut ray: Ray, mut depth: u32) -> Vec3 {
-        let mut beta = Vec3::ONE;
-        let mut l = Vec3::ZERO;
+        let mut beta = Vec3::one();
+        let mut l = Vec3::zero();
 
         let mut specular_bounce = true;
 
-        while beta != Vec3::ZERO {
+        while beta != Vec3::zero() {
             let ray_t = Interval::new(0.0001, Float::INFINITY);
             let Some((payload, material_id)) = self.world.hit(&ray, ray_t) else {
-                l += beta * self.config.skybox.call(&ray);
+                l += nalgebra_glm::matrix_comp_mult(&beta, &self.config.skybox.call(&ray));
+                //l += beta * self.config.skybox.call(&ray);
                 break;
             };
 
@@ -48,7 +58,8 @@ where
             if specular_bounce {
                 let emitted =
                     material.emitted(&ray.dir, &payload, payload.u, payload.v, &payload.p);
-                l += beta * emitted;
+                //l += beta * emitted;
+                l += nalgebra_glm::matrix_comp_mult(&beta, &emitted);
             }
 
             depth += 1;
@@ -73,7 +84,9 @@ where
 
                         //if self.unoccluded(payload.p, sample.p) {
                         if self.world.unoccluded(payload.p, sample.p) {
-                            l += beta * f * sample.l / (sampled_light.p * sample.pdf);
+                            l += beta
+                                .component_mul(&f)
+                                .component_mul(&(sample.l / (sampled_light.p * sample.pdf)));
                         }
                     }
                 }
@@ -86,7 +99,10 @@ where
             let wo = material_sample.wo;
             ray = Ray::new(payload.p, wo, ray.time);
 
-            beta *= (material_sample.f * wo.dot(&payload.normal).abs()) / material_sample.pdf;
+            //beta *= (material_sample.f * wo.dot(&payload.normal).abs()) / material_sample.pdf;
+            beta = beta.component_mul(
+                &((material_sample.f * wo.dot(&payload.normal).abs()) / material_sample.pdf),
+            );
             specular_bounce = material_sample.is_specular;
 
             // Russian-Roulette

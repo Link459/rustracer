@@ -1,7 +1,7 @@
 use super::Node;
 use crate::aabb::AABB;
 use crate::hittable::Hittable;
-use crate::vec3::Vec3;
+use crate::vec3::{Vec3, VectorExtensions};
 use crate::Float;
 use crate::{bvh::Bvh, model::Model, world::World};
 

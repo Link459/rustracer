@@ -1,4 +1,4 @@
-use crate::vec3::Vec3;
+use crate::vec3::{Vec3, VectorExtensions};
 
 pub struct ONB {
     axis: [Vec3; 3],
@@ -6,7 +6,7 @@ pub struct ONB {
 
 impl ONB {
     pub fn new(n: &Vec3) -> Self {
-        let mut axis = [Vec3::ZERO; 3];
+        let mut axis = [Vec3::zero(); 3];
         axis[2] = n.normalize();
         let a = if axis[2].x.abs() > 0.9 {
             Vec3::new(0.0, 1.0, 0.0)

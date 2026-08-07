@@ -22,10 +22,11 @@ use crate::{
     scene::Scene,
     texture::{ChessTexture, ImageTexture, NoiseTexture, SolidColor, TextureStorage},
     utils::load_hdri,
-    vec3::Vec3,
+    vec3::VectorExtensions,
     world::World,
     Float,
 };
+use nalgebra_glm::Vec3;
 
 #[inline]
 pub fn random_world() -> Scene {
@@ -271,7 +272,7 @@ pub fn overlapping() -> Scene {
     let mut materials = MaterialStore::new();
     let earth = ImageTexture::new("assets/earthmap.jpg");
     let earth_surface = materials.add(Lambertian::new(earth));
-    let globe = Sphere::new(Vec3::ZERO, 2.0, earth_surface);
+    let globe = Sphere::new(Vec3::zero(), 2.0, earth_surface);
     world.add(globe);
     let solid = materials.add(Lambertian::new(SolidColor::new(Vec3::new(0.5, 0.3, 0.1))));
     let sphere = Sphere::new(Vec3::new(0.5, 0.5, 0.5), 2.0, solid);
@@ -292,7 +293,7 @@ pub fn earth() -> Scene {
     let mut materials = MaterialStore::new();
     let earth = ImageTexture::new("assets/earthmap.jpg");
     let earth_surface = Lambertian::new(earth);
-    let globe = Sphere::new(Vec3::ZERO, 2.0, materials.add(earth_surface));
+    let globe = Sphere::new(Vec3::zero(), 2.0, materials.add(earth_surface));
     world.add(globe);
 
     let config = RenderSettings::with_aspect_ratio(16.0 / 9.0, 200, 50, 50);
@@ -950,7 +951,12 @@ pub fn cornell_smoke() -> Scene {
     let box1 = RotateY::new(box1, 15.0);
     let box1 = Translate::new(box1, Vec3::new(265.0, 0.0, 295.0));
 
-    world.add(ConstantMedium::new(box1, 0.01, Vec3::ZERO, &mut materials));
+    world.add(ConstantMedium::new(
+        box1,
+        0.01,
+        Vec3::zero(),
+        &mut materials,
+    ));
 
     let box2 = box_of_quads(
         &Vec3::new(0.0, 0.0, 0.0),
@@ -961,7 +967,7 @@ pub fn cornell_smoke() -> Scene {
     let box2 = RotateY::new(box2, -18.0);
     let box2 = Translate::new(box2, Vec3::new(130.0, 0.0, 65.0));
 
-    world.add(ConstantMedium::new(box2, 0.01, Vec3::ONE, &mut materials));
+    world.add(ConstantMedium::new(box2, 0.01, Vec3::one(), &mut materials));
 
     let mut config = RenderSettings::with_aspect_ratio(1.0, 200, 500, 50);
     config.skybox = Skybox::Night;

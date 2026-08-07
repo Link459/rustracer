@@ -7,7 +7,7 @@ use crate::{
     material::MaterialStore,
     ray::Ray,
     render::RenderSettings,
-    vec3::Vec3,
+    vec3::{Vec3, VectorExtensions},
     Float,
 };
 
@@ -40,8 +40,8 @@ where
     }
 
     fn li(&self, ray: Ray, mut _depth: u32) -> Vec3 {
-        let incoming_light = Vec3::ZERO;
-        let _ray_colour = Vec3::ONE;
+        let incoming_light = Vec3::zero();
+        let _ray_colour = Vec3::one();
 
         let max_bounce_count = 50;
         let mut orig = ray.orig;
@@ -62,7 +62,7 @@ where
             };
             dir = scatter.wo;
 
-            let _direct_light = Vec3::ZERO;
+            let _direct_light = Vec3::zero();
 
             if let Some(sampled_light) = self.lights.sample() {
                 let ctx = LightSampleContext {

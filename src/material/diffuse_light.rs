@@ -1,11 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    hittable::HitPayload,
-    material::ScatterPayload,
-    texture::{Texture, TextureStorage},
-    vec3::Vec3,
-    Float,
+    Float, hittable::HitPayload, material::ScatterPayload, texture::{Texture, TextureStorage}, vec3::{Vec3, VectorExtensions}
 };
 
 use super::Material;
@@ -28,7 +24,7 @@ impl Material for DiffuseLight {
 
     fn emitted(&self, _wi: &Vec3, payload: &HitPayload, u: Float, v: Float, p: &Vec3) -> Vec3 {
         if !payload.front_face {
-            return Vec3::ZERO;
+            return Vec3::zero();
         }
         return self.emit.value(u, v, p);
     }

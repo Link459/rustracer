@@ -1,6 +1,7 @@
 use std::{fmt, write};
 
-use crate::{vec3::Vec3, Float};
+use crate::Float;
+use nalgebra_glm::Vec3;
 
 #[derive(Clone, Copy, Debug)]
 pub struct Ray {
@@ -14,7 +15,7 @@ impl Ray {
         return Self { orig, dir, time };
     }
 
-    pub fn new_ray_to(from: Vec3,  to: Vec3, time: Float) -> Self {
+    pub fn new_ray_to(from: Vec3, to: Vec3, time: Float) -> Self {
         let d = to - from;
         return Self::new(from, d, time);
     }

@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{hittable::HitPayload, material::ScatterPayload, ray::Ray, vec3::Vec3, Float};
+use crate::{Float, hittable::HitPayload, material::ScatterPayload, ray::Ray, vec3::{Vec3, VectorExtensions}};
 
 use super::{
     dielectric::Dielectric, isotropic::Isotropic, lambertian::Lambertian, metal::Metal,
@@ -45,7 +45,7 @@ impl Material for MaterialStorage {
     fn emitted(&self, wi: &Vec3, payload: &HitPayload, u: Float, v: Float, p: &Vec3) -> Vec3 {
         match self {
             MaterialStorage::DiffuseLight(ref m) => m.emitted(wi, payload, u, v, p),
-            _ => Vec3::ZERO,
+            _ => Vec3::zero(),
         }
     }
 

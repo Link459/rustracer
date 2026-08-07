@@ -3,7 +3,7 @@ use std::{
     sync::Arc,
 };
 
-use crate::{image::Image, perlin::Perlin, vec3::Vec3, Float};
+use crate::{Float, image::Image, perlin::Perlin, vec3::{Vec3, VectorExtensions}};
 use image::{open, GenericImageView};
 use serde::{
     de::{self, Visitor},
@@ -116,7 +116,9 @@ impl NoiseTexture {
 
 impl Texture for NoiseTexture {
     fn value(&self, _u: Float, _v: Float, p: &Vec3) -> Vec3 {
-        return Vec3::ONE * 0.5 * (1.0 + (self.scale * p.z + 10.0 * self.perlin.turb(p, 7)).sin());
+        return Vec3::one()
+            * 0.5
+            * (1.0 + (self.scale * p.z + 10.0 * self.perlin.turb(p, 7)).sin());
     }
 }
 

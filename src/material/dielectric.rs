@@ -1,7 +1,13 @@
 use rand::RngExt;
 use serde::{Deserialize, Serialize};
 
-use crate::{hittable::HitPayload, material::ScatterPayload, ray::Ray, vec3::Vec3, Float};
+use crate::{
+    hittable::HitPayload,
+    material::ScatterPayload,
+    ray::Ray,
+    vec3::{Vec3, VectorExtensions},
+    Float,
+};
 
 use super::Material;
 
@@ -64,16 +70,16 @@ mod tests {
     use crate::{
         hittable::HitPayload,
         material::{Dielectric, Material},
-        vec3::Vec3,
+        vec3::{Vec3, VectorExtensions},
         Float,
     };
 
     #[test]
     fn dielectric_helmholtz_reciprocity() {
         let material = Dielectric::new(1.5);
-        let payload = HitPayload::new(Vec3::ZERO, Vec3::new(0.0, 1.0, 0.0), 0.0, 0.0, 0.0);
+        let payload = HitPayload::new(Vec3::zero(), Vec3::new(0.0, 1.0, 0.0), 0.0, 0.0, 0.0);
 
-        let wi = -(Vec3::ZERO - Vec3::new(10.0, 10.0, 10.0)).normalize();
+        let wi = -(Vec3::zero() - Vec3::new(10.0, 10.0, 10.0)).normalize();
         let Some(sample1) = material.scatter(&wi, &payload) else {
             panic!();
         };
@@ -89,8 +95,8 @@ mod tests {
         let material = Dielectric::new(1.5);
 
         for i in 0..1000 {
-            let wo = Vec3::from(i as Float / 1000.0);
-            let wi = Vec3::from(1.0 - i as Float / 1000.0);
+            let wo = Vec3::from_value(i as Float / 1000.0);
+            let wi = Vec3::from_value(1.0 - i as Float / 1000.0);
 
             let f = material.f(wi, wo);
             assert!(f.x >= 0.0);
@@ -103,10 +109,10 @@ mod tests {
     fn dielectric_conserving() {
         let material = Dielectric::new(1.5);
 
-        let mut sum = Vec3::ZERO;
+        let mut sum = Vec3::zero();
         for i in 0..1000 {
-            let wo = Vec3::from(i as Float / 1000.0);
-            let wi = Vec3::from(1.0 - i as Float / 1000.0);
+            let wo = Vec3::from_value(i as Float / 1000.0);
+            let wi = Vec3::from_value(1.0 - i as Float / 1000.0);
 
             let f = material.f(wi, wo);
 

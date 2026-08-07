@@ -1,6 +1,11 @@
 use crate::{
-    hittable::Hittable, integrator::Integrator, interval::Interval, material::MaterialStore,
-    ray::Ray, vec3::Vec3, Float,
+    hittable::Hittable,
+    integrator::Integrator,
+    interval::Interval,
+    material::MaterialStore,
+    ray::Ray,
+    vec3::{Vec3, VectorExtensions},
+    Float,
 };
 
 pub struct GBufferIntegrators<'world, W, S> {
@@ -25,7 +30,7 @@ where
     fn pixel(&self, ray: &Ray) -> Vec3 {
         let Some((payload, _material)) = self.world.hit(ray, Interval::new(0.001, Float::INFINITY))
         else {
-            return Vec3::ZERO;
+            return Vec3::zero();
         };
 
         return payload.normal;
@@ -55,7 +60,7 @@ where
         let Some((payload, material_id)) =
             self.world.hit(ray, Interval::new(0.001, Float::INFINITY))
         else {
-            return Vec3::ZERO;
+            return Vec3::zero();
         };
 
         let material = self.materials.get(material_id);

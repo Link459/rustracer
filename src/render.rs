@@ -3,10 +3,7 @@ use std::fmt::{Display, Formatter};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    ray::Ray,
-    texture::{Texture, TextureStorage},
-    vec3::Vec3,
-    Float,
+    Float, ray::Ray, texture::{Texture, TextureStorage}, vec3::{Vec3, VectorExtensions}
 };
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq)]
@@ -43,12 +40,12 @@ impl Display for Skybox {
 pub fn skybox(ray: &Ray) -> Vec3 {
     let unit_dir = ray.dir.normalize();
     let t = 0.5 * (unit_dir.y + 1.0);
-    return (1.0 - t) * Vec3::ONE + t * Vec3::new(0.5, 0.7, 1.0);
+    return (1.0 - t) * Vec3::one() + t * Vec3::new(0.5, 0.7, 1.0);
 }
 
 #[inline(always)]
 pub fn night(_ray: &Ray) -> Vec3 {
-    Vec3::ZERO
+    Vec3::zero()
 }
 
 #[inline(always)]

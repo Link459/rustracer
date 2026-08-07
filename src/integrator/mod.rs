@@ -1,9 +1,9 @@
 pub mod accumulating_integrator;
 pub mod auxiliary_integrator;
+pub mod direct_light_integrator;
+pub mod present_integrator;
 pub mod random_integrator;
 pub mod simple_path_integrator;
-pub mod present_integrator;
-pub mod direct_light_integrator;
 
 pub use auxiliary_integrator::{AlbedoIntegrator, NormalIntegrator};
 pub use simple_path_integrator::SimplePathIntegrator;
@@ -18,7 +18,7 @@ use crate::{
     render::RenderSettings,
     sampler::Sampler,
     settings::Settings,
-    vec3::Vec3,
+    vec3::{Vec3, VectorExtensions},
     Float,
 };
 
@@ -128,7 +128,7 @@ where
         h: u32,
     ) -> Vec3 {
         let mut rng = rand::rng();
-        let mut color = Vec3::ZERO;
+        let mut color = Vec3::zero();
 
         for s_i in 0..camera.sqrt_samples as u64 {
             for s_j in 0..camera.sqrt_samples as u64 {
@@ -156,7 +156,7 @@ where
         h: u32,
     ) -> Vec3 {
         let mut rng = rand::rng();
-        let mut color = Vec3::ZERO;
+        let mut color = Vec3::zero();
 
         let u = (w as Float + rng.random_range(0.0..1.0) as Float) / (config.width - 1) as Float;
         let v = (h as Float + rng.random_range(0.0..1.0) as Float) / (config.height - 1) as Float;

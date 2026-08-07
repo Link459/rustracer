@@ -4,7 +4,7 @@ use crate::{
     present::{PresentProxy, PresentationEvent},
     render::RenderSettings,
     settings::Settings,
-    vec3::Vec3,
+    vec3::{self, Vec3},
     Float,
 };
 use image::{ImageBuffer, Rgb};
@@ -103,7 +103,7 @@ impl Image {
     #[inline(always)]
     pub fn read(&self, index: usize) -> Vec3 {
         let ptr = self.buffer.as_ptr() as *mut Float;
-        let mut color = Vec3::ZERO;
+        let mut color = vec3::ZERO;
         unsafe {
             color.x = ptr::read(ptr.add(index));
             color.y = ptr::read(ptr.add(index + 1));
@@ -113,7 +113,7 @@ impl Image {
     }
 
     pub fn read_ptr(ptr: *const Float, index: usize) -> Vec3 {
-        let mut color = Vec3::ZERO;
+        let mut color = vec3::ZERO;
         unsafe {
             color.x = ptr::read(ptr.add(index));
             color.y = ptr::read(ptr.add(index + 1));

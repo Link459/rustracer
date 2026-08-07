@@ -13,7 +13,7 @@ pub use material_storage::MaterialStorage;
 pub use metal::Metal;
 use serde::{Deserialize, Serialize};
 
-use crate::{hittable::HitPayload, pdf::PDF, ray::Ray, vec3::Vec3, Float};
+use crate::{Float, hittable::HitPayload, pdf::PDF, ray::Ray, vec3::{Vec3, VectorExtensions}};
 
 #[derive(Debug, PartialEq)]
 pub struct ScatterPayload {
@@ -47,8 +47,8 @@ impl ScatterPayload {
 impl Default for ScatterPayload {
     fn default() -> Self {
         return Self {
-            f: Vec3::ZERO,
-            wo: Vec3::ZERO,
+            f: Vec3::zero(),
+            wo: Vec3::zero(),
             pdf: 0.0,
             is_specular: false,
         };
@@ -57,12 +57,12 @@ impl Default for ScatterPayload {
 
 pub trait Material: Send + Sync {
     fn f(&self, _wi: Vec3, _wo: Vec3) -> Vec3 {
-        return Vec3::ZERO;
+        return Vec3::zero();
     }
 
     fn scatter(&self, wi: &Vec3, payload: &HitPayload) -> Option<ScatterPayload>;
     fn emitted(&self, _wi: &Vec3, _payload: &HitPayload, _u: Float, _v: Float, _p: &Vec3) -> Vec3 {
-        return Vec3::ZERO;
+        return Vec3::zero();
     }
 
     fn pdf(&self, _incoming: &Ray, _payload: &HitPayload, _scattered: &Ray) -> Float {

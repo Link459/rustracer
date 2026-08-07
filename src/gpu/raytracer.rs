@@ -5,6 +5,7 @@ use ash::{
 use nalgebra_glm::{Mat4x4, UVec2, Vec2, Vec3};
 
 use crate::{
+    camera::CameraConfig,
     gpu::{
         buffer::Buffer,
         descriptor_set::{DescriptorHandle, DescriptorSet},
@@ -22,6 +23,42 @@ struct Camera {
     my: Vec3,
     mw: Vec3,
     clip_to_world: Mat4x4,
+    origin: Vec3,
+    lower_left_corner: Vec3,
+    horizontal: Vec3,
+    vertical: Vec3,
+}
+
+impl Camera {
+    pub fn new(config: CameraConfig) -> Self {
+        let theta = crate::consts::PI / 180.0 * config.vfov;
+        let viewport_height = 2.0 * (theta / 2.0).tan();
+        let viewport_width = config.aspect_ratio * viewport_height;
+
+        let cw = (config.lookfrom - config.lookat).normalize();
+        let cu = config.vup.cross(&cw).normalize();
+        let cv = cw.cross(&cu);
+        let h = config.focus_dist * viewport_width * cu;
+        let v = config.focus_dist * viewport_height * cv;
+
+        let llc = config.lookfrom - h / 2.0 - v / 2.0 - config.focus_dist * cw;
+
+        let view = nalgebra_glm::look_at_lh(&nalgebra_glm::zero(), &config.lookfrom, &config.vup);
+        let perspective =
+            nalgebra_glm::perspective_lh_zo(config.aspect_ratio, 45.0f32.to_radians(), 0.1, 100.0);
+        let final_mat = perspective * view;
+        let transpose = nalgebra_glm::transpose(&final_mat);
+        return Self {
+            mx: nalgebra_glm::column(&transpose, 0).xyz(),
+            my: nalgebra_glm::column(&transpose, 1).xyz(),
+            mw: nalgebra_glm::column(&transpose, 3).xyz(),
+            clip_to_world: nalgebra_glm::inverse(&final_mat),
+            origin: config.lookfrom,
+            lower_left_corner: llc,
+            horizontal: h,
+            vertical: v,
+        };
+    }
 }
 
 pub struct Raytracer {
@@ -140,23 +177,10 @@ impl Raytracer {
                 .dst_stage_mask(vk::PipelineStageFlags2::COMPUTE_SHADER)
                 .dst_access_mask(vk::AccessFlags2::SHADER_STORAGE_WRITE),
         );
-        let center = nalgebra_glm::vec3(0.0, 0.0, 10.0);
-        let up = nalgebra_glm::vec3(0.0, 1.0, 0.0);
-        let view = nalgebra_glm::look_at_lh(&nalgebra_glm::zero(), &center, &up);
-        let perspective = nalgebra_glm::perspective_lh_zo(
-            self.size.width as Float / self.size.height as Float,
-            45.0f32.to_radians(),
-            0.1,
-            100.0,
-        );
-        let final_mat = perspective * view;
-        let transpose = nalgebra_glm::transpose(&final_mat);
-        let camera = Camera {
-            mx: nalgebra_glm::column(&transpose, 0).xyz(),
-            my: nalgebra_glm::column(&transpose, 1).xyz(),
-            mw: nalgebra_glm::column(&transpose, 3).xyz(),
-            clip_to_world: nalgebra_glm::inverse(&final_mat),
-        };
+
+        let mut cam_config = CameraConfig::default();
+        cam_config.lookfrom = Vec3::new(0.0, 0.0, 1.0);
+        let camera = Camera::new(cam_config);
         self.camera_buffer.map(instance, &[camera])?;
         let camera_address = self.camera_buffer.get_address();
 

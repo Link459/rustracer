@@ -4,10 +4,10 @@ use crate::{
     aabb::AABB,
     hittable::{HitPayload, Hittable},
     interval::Interval,
-    material::{MaterialId},
+    material::MaterialId,
     model::sphere::Sphere,
     ray::Ray,
-    vec3::Vec3,
+    vec3::{Vec3, VectorExtensions},
     Float,
 };
 
@@ -78,7 +78,7 @@ impl Hittable for MovingSphere {
             p,
             u,
             v,
-            normal: Vec3::ZERO,
+            normal: Vec3::zero(),
             front_face: false,
         };
 
@@ -88,9 +88,12 @@ impl Hittable for MovingSphere {
     }
 
     fn bounding_box(&self) -> AABB {
-        let rvec = Vec3::from(self.radius);
-        let box1 = AABB::from((self.center0.x - rvec, self.center0.x + rvec));
-        let box2 = AABB::from((self.center1.y - rvec, self.center1.y + rvec));
+        let rvec = Vec3::from_value(self.radius);
+        let box1 = AABB::from((
+            Vec3::from_value(self.center0.x) - rvec,
+            Vec3::from_value(self.center0.x) + rvec,
+        ));
+        let box2 = AABB::from((Vec3::from_value(self.center1.y) - rvec,Vec3::from_value( self.center1.y )+ rvec));
         return AABB::from((box1, box2));
     }
 }

@@ -2,10 +2,7 @@ use rand::RngExt;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    hittable::{HitSampleContext, Hittable},
-    model::Model,
-    vec3::Vec3,
-    Float,
+    Float, hittable::{HitSampleContext, Hittable}, model::Model, vec3::{Vec3, VectorExtensions}
 };
 
 pub struct LightSampleContext {
@@ -15,7 +12,7 @@ pub struct LightSampleContext {
 
 pub trait Light {
     fn l(&self, _p: Vec3, _n: Vec3, _uv: [Float; 2], _w: Vec3) -> Vec3 {
-        return Vec3::ZERO;
+        return Vec3::zero();
     }
 
     fn sample_li(&self, ctx: &LightSampleContext) -> Option<LightSample>;

@@ -2,14 +2,7 @@ use rand::{ RngExt};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    aabb::AABB,
-    hittable::{HitPayload, Hittable},
-    interval::Interval,
-    material::{Isotropic, MaterialId, MaterialStore},
-    model::Model,
-    ray::Ray,
-    vec3::Vec3,
-    Float,
+    Float, aabb::AABB, hittable::{HitPayload, Hittable}, interval::Interval, material::{Isotropic, MaterialId, MaterialStore}, model::Model, ray::Ray, vec3::{Vec3, VectorExtensions}
 };
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

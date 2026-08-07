@@ -1,13 +1,88 @@
 use core::panic;
+use rand::distr::uniform::SampleRange;
+use rand::rand_core::Rng;
 use rand::RngExt;
-use std::ops::{
-    Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Range, Sub, SubAssign,
-};
-
-use serde::{Deserialize, Serialize};
+use std::ops::Mul;
+use std::range::Range;
 
 use crate::Float;
+pub use nalgebra_glm::Vec3;
 
+pub trait VectorExtensions {
+    fn default_random<T: rand::Rng>(r: &mut T) -> Self;
+    //fn random<T: rand::Rng>(r: &mut T, range: Range<Float>) -> Self;
+    fn random<T: rand::Rng, R: SampleRange<Float> + Clone>(r: &mut T, range: R) -> Self;
+    fn axis(&self, axis: usize) -> Float;
+    fn length_squared(&self) -> Float;
+    fn length(&self) -> Float;
+    fn zero() -> Self;
+    fn one() -> Self;
+    fn reflect(&self, n: &Self) -> Self;
+    fn refract(&self, n: &Self, etai_over_etat: Float) -> Self;
+    fn from_value(x: Float) -> Self;
+}
+
+pub static ZERO: Vec3 = Vec3::new(0.0, 0.0, 0.0);
+impl VectorExtensions for nalgebra_glm::Vec3 {
+    fn default_random<T: rand::Rng>(r: &mut T) -> Vec3 {
+        return Vec3::new(
+            r.random_range(0.0..1.0),
+            r.random_range(0.0..1.0),
+            r.random_range(0.0..1.0),
+        );
+    }
+
+    #[inline(always)]
+    fn random<T: rand::Rng, R: SampleRange<Float> + Clone>(r: &mut T, range: R) -> Vec3 {
+        return Vec3::new(
+            r.random_range(range.clone()),
+            r.random_range(range.clone()),
+            r.random_range(range),
+        );
+    }
+
+    fn axis(&self, axis: usize) -> Float {
+        return match axis {
+            0 => self.x,
+            1 => self.y,
+            2 => self.z,
+            _ => panic!(),
+        };
+    }
+
+    fn reflect(&self, n: &Self) -> Self {
+        return self - 2.0 * Vec3::dot(self, n) * n;
+    }
+
+    fn refract(&self, n: &Self, etai_over_etat: Float) -> Self {
+        let cos_theta = ((-1.0) * self).dot(n).min(1.0);
+        let r_out_perp = etai_over_etat * (self + cos_theta * n);
+        let r_out_parallel = -(1.0 - r_out_perp.length().powi(2)).abs().sqrt() * n;
+        r_out_perp + r_out_parallel
+    }
+
+    fn length_squared(&self) -> Float {
+        return self.x * self.x + self.y * self.y + self.z * self.z;
+    }
+
+    fn length(&self) -> Float {
+        return self.length_squared().sqrt();
+    }
+
+    fn zero() -> Self {
+        return Self::new(0.0, 0.0, 0.0);
+    }
+    fn one() -> Self {
+        return Self::new(1.0, 1.0, 1.0);
+    }
+    fn from_value(x: Float) -> Self {
+        return Self::new(x, x, x);
+    }
+}
+
+
+
+/*#[deprecated]
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Default, Deserialize, Serialize)]
 pub struct Vec3 {
     pub x: Float,
@@ -233,7 +308,7 @@ macro_rules! impl_binary_operations {
         impl<'a> $Operation<Float> for &'a $VectorType {
             type Output = $VectorType;
 
-			#[inline(always)]
+            #[inline(always)]
             fn $op_fn(self, other: Float) -> $VectorType {
                 $VectorType {
                     x: self.x $op_symbol other,
@@ -319,7 +394,7 @@ macro_rules! impl_op_assign {
             }
         }
 
-		impl<'a> $OperationAssign<&'a Float> for $VectorType {
+        impl<'a> $OperationAssign<&'a Float> for $VectorType {
             #[inline(always)]
             fn $op_fn(&mut self, other: &'a Float) {
                 self.x = self.x $op_symbol other;
@@ -328,7 +403,7 @@ macro_rules! impl_op_assign {
             }
         }
 
-		impl $OperationAssign<Float> for $VectorType {
+        impl $OperationAssign<Float> for $VectorType {
             #[inline(always)]
             fn $op_fn(&mut self, other: Float) {
                 *self = *self $op_symbol other
@@ -385,4 +460,4 @@ mod tests {
 
     #[test]
     fn normalizing() {}
-}
+}*/

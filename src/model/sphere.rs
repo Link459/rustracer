@@ -1,4 +1,4 @@
-use rand::{RngExt};
+use rand::RngExt;
 
 use serde::{Deserialize, Serialize};
 
@@ -9,7 +9,7 @@ use crate::{
     material::MaterialId,
     onb::ONB,
     ray::Ray,
-    vec3::Vec3,
+    vec3::{Vec3, VectorExtensions},
     Float,
 };
 
@@ -81,7 +81,7 @@ impl Hittable for Sphere {
 
     #[inline]
     fn bounding_box(&self) -> AABB {
-        let rvec = Vec3::from(self.radius);
+        let rvec = Vec3::from_value(self.radius);
         return AABB::from((self.center - rvec, self.center + rvec));
     }
 
@@ -92,14 +92,16 @@ impl Hittable for Sphere {
             return 0.0;
         };
 
-        let distance_sq = (self.center.x - origin).length_squared();
+        //let distance_sq = (self.center.x - origin).length_squared();
+        let distance_sq = (Vec3::from_value(self.center.x) - origin).length_squared();
         let cos_theta_max = (1.0 - self.radius * self.radius / distance_sq).sqrt();
         let solid_angle = 2.0 * crate::consts::PI * (1.0 - cos_theta_max);
         return 1.0 / solid_angle;
     }
 
     fn random(&self, origin: &Vec3) -> Vec3 {
-        let direction = self.center.x - origin;
+        //let direction = self.center.x - origin;
+        let direction = Vec3::from_value(self.center.x) - origin;
         let distance_squared = direction.length_squared();
         let uvw = ONB::new(&direction);
         return uvw.transform(&random_to_sphere(self.radius, distance_squared));

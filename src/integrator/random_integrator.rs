@@ -58,7 +58,8 @@ where
 
         let f = material.f(wi, wo);
         let fcos = f * wo.dot(&payload.normal).abs();
-        return emitted + fcos * self.li(ray, depth + 1) / (1.0 / (4.0 * crate::consts::PI));
+        let denom = 1.0 / (1.0 / (4.0 * crate::consts::PI));
+        return emitted + fcos.component_mul(&self.li(ray, depth + 1)) * denom;
     }
 }
 

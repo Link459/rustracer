@@ -7,7 +7,7 @@ use crate::{
     pdf::{CosinePDF, PDF},
     ray::Ray,
     texture::{SolidColor, Texture, TextureStorage},
-    vec3::Vec3,
+    vec3::{Vec3, VectorExtensions},
     Float,
 };
 
@@ -38,10 +38,10 @@ impl Material for Lambertian {
     fn f(&self, _wi: Vec3, _wo: Vec3) -> Vec3 {
         //BUG: The same hemisphere check does not work
         /*if !same_hemisphere(wi, wo) {
-            return Vec3::ZERO;
+            return Vec3::zero();
         }*/
 
-        return self.albedo.value(0.0, 0.0, &Vec3::ZERO) / crate::consts::PI;
+        return self.albedo.value(0.0, 0.0, &Vec3::zero()) / crate::consts::PI;
     }
 
     #[inline]
@@ -117,7 +117,7 @@ mod tests {
         hittable::HitPayload,
         material::{Lambertian, Material},
         texture::SolidColor,
-        vec3::Vec3,
+        vec3::{Vec3, VectorExtensions},
         Float,
     };
 
@@ -125,9 +125,9 @@ mod tests {
     fn lambertian_helmholtz_reciprocity() {
         let color = SolidColor::new(Vec3::new(0.3, 0.5, 0.6));
         let metal = Lambertian::new(color);
-        let payload = HitPayload::new(Vec3::ZERO, Vec3::new(0.0, 1.0, 0.0), 0.0, 0.0, 0.0);
+        let payload = HitPayload::new(Vec3::zero(), Vec3::new(0.0, 1.0, 0.0), 0.0, 0.0, 0.0);
 
-        let wi = -(Vec3::ZERO - Vec3::new(10.0, 10.0, 10.0)).normalize();
+        let wi = -(Vec3::zero() - Vec3::new(10.0, 10.0, 10.0)).normalize();
         let Some(sample1) = metal.scatter(&wi, &payload) else {
             panic!();
         };
@@ -144,8 +144,8 @@ mod tests {
         let material = Lambertian::new(color);
 
         for i in 0..1000 {
-            let wo = Vec3::from(i as Float / 1000.0);
-            let wi = Vec3::from(1.0 - i as Float / 1000.0);
+            let wo = Vec3::from_value(i as Float / 1000.0);
+            let wi = Vec3::from_value(1.0 - i as Float / 1000.0);
 
             let f = material.f(wi, wo);
             assert!(f.x >= 0.0);
@@ -159,10 +159,10 @@ mod tests {
         let color = SolidColor::new(Vec3::new(0.3, 0.5, 0.6));
         let material = Lambertian::new(color);
 
-        let mut sum = Vec3::ZERO;
+        let mut sum = Vec3::zero();
         for i in 0..1000 {
-            let wo = Vec3::from(i as Float / 1000.0);
-            let wi = Vec3::from(1.0 - i as Float / 1000.0);
+            let wo = Vec3::from_value(i as Float / 1000.0);
+            let wi = Vec3::from_value(1.0 - i as Float / 1000.0);
 
             let f = material.f(wi, wo);
 

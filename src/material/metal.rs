@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::vec3::Vec3;
+use crate::vec3::{Vec3, VectorExtensions};
 use crate::{consts, material::ScatterPayload};
 
 use crate::hittable::HitPayload;
@@ -52,15 +52,15 @@ mod tests {
     use crate::{
         hittable::HitPayload,
         material::{Material, Metal},
-        vec3::Vec3,
+        vec3::{Vec3, VectorExtensions},
     };
 
     #[test]
     fn metal_helmholtz_reciprocity() {
-        let metal = Metal::new(Vec3::ONE, 0.0);
-        let payload = HitPayload::new(Vec3::ZERO, Vec3::new(0.0, 1.0, 0.0), 0.0, 0.0, 0.0);
+        let metal = Metal::new(Vec3::one(), 0.0);
+        let payload = HitPayload::new(Vec3::zero(), Vec3::new(0.0, 1.0, 0.0), 0.0, 0.0, 0.0);
 
-        let wi = -(Vec3::ZERO - Vec3::new(10.0, 10.0, 10.0)).normalize();
+        let wi = -(Vec3::zero() - Vec3::new(10.0, 10.0, 10.0)).normalize();
         let Some(sample1) = metal.scatter(&wi, &payload) else {
             panic!();
         };

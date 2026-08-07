@@ -1,6 +1,6 @@
 use rand::{ RngExt};
 
-use crate::{vec3::Vec3, Float};
+use crate::{Float, vec3::{Vec3, VectorExtensions}};
 
 const MAX_PERLIN: usize = 256;
 
@@ -20,7 +20,7 @@ impl Default for Perlin {
 
 impl Perlin {
     pub fn new() -> Self {
-        let mut ran_vec = [Vec3::ZERO; MAX_PERLIN];
+        let mut ran_vec = [Vec3::zero(); MAX_PERLIN];
         let mut rng = rand::rng();
         for i in ran_vec.iter_mut().take(MAX_PERLIN) {
             *i = Vec3::random(&mut rng, -1.0..1.0);
@@ -46,7 +46,7 @@ impl Perlin {
         let j = p.y.floor() as usize;
         let k = p.z.floor() as usize;
 
-        let mut c = [[[Vec3::ZERO; 2]; 2]; 2];
+        let mut c = [[[Vec3::zero(); 2]; 2]; 2];
 
         #[allow(clippy::needless_range_loop)]
         for di in 0..2 {

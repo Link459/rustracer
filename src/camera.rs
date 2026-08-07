@@ -2,7 +2,8 @@ use rand::{ RngExt};
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 
-use crate::{interval::Interval, render::RenderSettings, vec3::Vec3, Float};
+use crate::{Float, interval::Interval, render::RenderSettings, vec3::VectorExtensions};
+use nalgebra_glm::Vec3;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CameraConfig {
