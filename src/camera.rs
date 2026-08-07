@@ -1,9 +1,23 @@
-use rand::{ RngExt};
+use rand::RngExt;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 
-use crate::{Float, interval::Interval, render::RenderSettings, vec3::VectorExtensions};
+use crate::{interval::Interval, render::RenderSettings, vec3::VectorExtensions, Float};
 use nalgebra_glm::Vec3;
+
+enum CameraExtent {
+    Extent { width: usize, height: usize },
+    Fov { fov: Float, aspect_ratio: Float },
+}
+
+impl CameraExtent {
+    fn width(&self) {
+        //let theta = crate::consts::PI / 180.0 * config.vfov;
+        //let viewport_height = 2.0 * (theta / 2.0).tan();
+        //let viewport_width = config.aspect_ratio * viewport_height;
+    }
+    fn height(&self) {}
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CameraConfig {

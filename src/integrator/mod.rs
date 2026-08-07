@@ -138,6 +138,7 @@ where
                 let v = (h as Float + rng.random_range(0.0..1.0) as Float)
                     / (config.height - 1) as Float;
 
+                println!("{},{}",u,v);
                 let r = Self::get_ray_stratified(camera, u, v, s_i as Float, s_j as Float);
                 //let r = Self::get_ray(camera, u, v);
                 color += integrator.pixel(&r);

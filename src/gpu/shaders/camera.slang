@@ -12,8 +12,8 @@ struct Camera {
 
 	float3 origin;
 	float3 lower_left_corner;
-	float3 horizontal;
-	float3 vertical;
+	float3 right;
+	float3 up;
 
 	Ray get_ray(float2 uv) {
 		float2 clip_space = float2(uv.x,1.0-uv.y) * 2.0 - 1.0;
@@ -31,9 +31,10 @@ struct Camera {
 	}
 
 	Ray get_ray_o(float2 uv) {
+		uv.y = 1.0 - uv.y;
+		//uv = uv * 2 - 1;
         let dir =
-            normalize(lower_left_corner + uv.x * horizontal + uv.y * vertical - origin);
-
+            normalize(lower_left_corner + uv.x * right + uv.y * up - origin);
        	return Ray(origin,dir,0.0f); 
 	}
 }

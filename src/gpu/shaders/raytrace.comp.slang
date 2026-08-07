@@ -37,7 +37,8 @@ void main(uint3 thread_id : SV_DispatchThreadID,uniform PCData data) {
 	}
 
 	float2 uv = (float2(thread_id.xy) + 0.5) / data.size + data.jitter;
-	Ray ray = data.camera.get_ray(uv);
+	//Ray ray = data.camera.get_ray(uv);
+	Ray ray = data.camera.get_ray_o(uv);
 	//Ray ray = Ray(float3(uv * 2 - 1,0.0),float3(0.0,0.0,1.0),0.0);
 
 	Triangle trongle;
