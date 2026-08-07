@@ -15,6 +15,12 @@ pub struct Vertex {
 }
 
 #[repr(C)]
+#[derive(Clone, Copy)]
+pub struct Triangle {
+    pos: [Vec3; 3],
+}
+
+#[repr(C)]
 pub struct GpuMesh {
     triangles: vk::DeviceAddress,
     indices: vk::DeviceAddress,
@@ -26,11 +32,18 @@ pub struct Mesh {
     vertex_buffer: Buffer<Vertex>,
     indices: Vec<u32>,
     index_buffer: Buffer<u32>,
+    triangle_buffer: Buffer<Triangle>,
     transform_matrix: Mat4x4,
 }
 
 impl Mesh {
     pub fn new(path: &str, instance: &Instance) -> Result<Self> {
+        let load_options = tobj::LoadOptions {
+            ignore_lines: true,
+            ignore_points: true,
+            single_index: true,
+            triangulate: true,
+        };
         let (models, _) = tobj::load_obj(path, &tobj::GPU_LOAD_OPTIONS)?;
         let mut vertices = Vec::new();
         let mut indices = Vec::new();
@@ -75,6 +88,26 @@ impl Mesh {
             }*/
         }
 
+        let mut triangles = Vec::new();
+        for i in 0..indices.len() / 3 {
+            triangles.push(Triangle {
+                pos: [
+                    vertices[indices[i] as usize].pos,
+                    vertices[indices[i + 1] as usize].pos,
+                    vertices[indices[i + 2] as usize].pos,
+                ],
+            });
+        }
+
+        let triangle_buffer = Buffer::new(
+            instance,
+            triangles.len() as u64 * std::mem::size_of::<Triangle>() as u64,
+            vk::BufferUsageFlags::SHADER_DEVICE_ADDRESS,
+            vk::BufferCreateFlags::default(),
+        )?;
+        instance.name("TriangleBuffer", triangle_buffer.get_buffer())?;
+        triangle_buffer.map(&instance, triangles.as_slice())?;
+
         let vertex_buffer = Buffer::new(
             instance,
             vertices.len() as u64 * std::mem::size_of::<Vertex>() as u64,
@@ -96,13 +129,14 @@ impl Mesh {
             vertex_buffer,
             indices,
             index_buffer,
+            triangle_buffer,
             transform_matrix: Mat4x4::zeros(),
         })
     }
 
     pub fn to_gpu_mesh(&self) -> GpuMesh {
         return GpuMesh {
-            triangles: self.vertex_buffer.get_address(),
+            triangles: self.triangle_buffer.get_address(),
             indices: self.index_buffer.get_address(),
             index_count: self.vertices.len() as u32,
         };
@@ -110,7 +144,7 @@ impl Mesh {
 
     pub fn to_geometry(
         &self,
-        device: &Instance,
+        instance: &Instance,
     ) -> (
         vk::AccelerationStructureGeometryKHR<'_>,
         vk::AccelerationStructureBuildRangeInfoKHR,

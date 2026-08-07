@@ -134,7 +134,7 @@ impl GpuApp {
                 &[],
             );
         }
-        self.raytracer.run(&self.instance, cmd_buf);
+        self.raytracer.run(&self.instance, cmd_buf)?;
         self.raytracer.accumulate_pass(&self.instance, cmd_buf);
         self.raytracer
             .copy_to_image(&self.instance, cmd_buf, swapchain_image, self.size);

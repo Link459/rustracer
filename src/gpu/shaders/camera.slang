@@ -11,7 +11,7 @@ struct Camera {
 	float4x4 clip_to_world;
 
 	Ray get_ray(float2 uv) {
-		float2 clip_space = uv * 2.0 - 1.0;
+		float2 clip_space = float2(uv.x,1.0-uv.y) * 2.0 - 1.0;
 
 		float4 point_ndc = float4(clip_space,0.0f,1.0f);
 		//float4 point_world = mul(point_ndc,clip_to_world);

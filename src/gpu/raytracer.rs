@@ -1,4 +1,7 @@
-use ash::vk::{self};
+use ash::{
+    prelude::VkResult,
+    vk::{self},
+};
 use nalgebra_glm::{Mat4x4, UVec2, Vec2, Vec3};
 
 use crate::{
@@ -98,7 +101,7 @@ impl Raytracer {
             vk::BufferUsageFlags::SHADER_DEVICE_ADDRESS,
             vk::BufferCreateFlags::empty(),
         )?;
-        let mesh = Mesh::new("assets/cube.obj", instance)?;
+        let mesh = Mesh::new("assets/triangle.obj", instance)?;
         return Ok(Self {
             raytrace_pipeline,
             accumulate_pipeline,
@@ -123,7 +126,11 @@ impl Raytracer {
         return jitter;
     }
 
-    pub fn run(&mut self, instance: &instance::Instance, cmd_buf: vk::CommandBuffer) {
+    pub fn run(
+        &mut self,
+        instance: &instance::Instance,
+        cmd_buf: vk::CommandBuffer,
+    ) -> VkResult<()> {
         instance.image_barrier(
             cmd_buf,
             vk::ImageMemoryBarrier2::default()
@@ -133,14 +140,14 @@ impl Raytracer {
                 .dst_stage_mask(vk::PipelineStageFlags2::COMPUTE_SHADER)
                 .dst_access_mask(vk::AccessFlags2::SHADER_STORAGE_WRITE),
         );
-        let center = nalgebra_glm::vec3(0.0, 0.0, 1.0);
+        let center = nalgebra_glm::vec3(0.0, 0.0, 10.0);
         let up = nalgebra_glm::vec3(0.0, 1.0, 0.0);
         let view = nalgebra_glm::look_at_lh(&nalgebra_glm::zero(), &center, &up);
         let perspective = nalgebra_glm::perspective_lh_zo(
             self.size.width as Float / self.size.height as Float,
             45.0f32.to_radians(),
             0.1,
-            1000.0,
+            100.0,
         );
         let final_mat = perspective * view;
         let transpose = nalgebra_glm::transpose(&final_mat);
@@ -150,7 +157,7 @@ impl Raytracer {
             mw: nalgebra_glm::column(&transpose, 3).xyz(),
             clip_to_world: nalgebra_glm::inverse(&final_mat),
         };
-        self.camera_buffer.map(instance, &[camera]);
+        self.camera_buffer.map(instance, &[camera])?;
         let camera_address = self.camera_buffer.get_address();
 
         let jitter = self.jitter();
@@ -175,6 +182,7 @@ impl Raytracer {
             //instance.cmd_dispatch(cmd_buf, self.size.width, self.size.height, 1);
             instance.cmd_dispatch(cmd_buf, workgroup_count_x, workgroup_count_y, 1);
         };
+        return Ok(());
     }
 
     pub fn accumulate_pass(&self, instance: &instance::Instance, cmd_buf: vk::CommandBuffer) {
