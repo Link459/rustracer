@@ -3,6 +3,7 @@ use ash::{
     vk::{self},
 };
 use nalgebra_glm::{Mat4x4, UVec2, Vec2, Vec3};
+use winit::keyboard::Key;
 
 use crate::{
     camera::CameraConfig,
@@ -40,7 +41,7 @@ impl Camera {
         let right = config.vup.cross(&forward).normalize() * viewport_width;
         let up = viewport_height * up;
 
-        let llc = origin - 0.5 * right  - 0.5 * up + config.focus_dist * forward;
+        let llc = origin - 0.5 * right - 0.5 * up + config.focus_dist * forward;
 
         let view = nalgebra_glm::look_at_lh(&nalgebra_glm::zero(), &origin, &config.vup);
         let perspective = nalgebra_glm::perspective_lh_zo(
@@ -70,6 +71,8 @@ pub struct Raytracer {
     main_target: GpuImage,
     accumulate_target: GpuImage,
     camera_buffer: Buffer<Camera>,
+    camera_config: CameraConfig,
+    clear_accumulation: bool,
     size: vk::Extent2D,
     halton_index: u32,
     frame: u32,
@@ -91,6 +94,7 @@ struct AccumulatePushConstants {
     accum: DescriptorHandle,
     size: UVec2,
     frame: u32,
+    clear: bool,
 }
 
 fn halton(mut index: u32, base: u32) -> f32 {
@@ -143,6 +147,12 @@ impl Raytracer {
         )?;
         instance.name("CameraBuffer", camera_buffer.get_buffer())?;
         let mesh = Mesh::new("assets/triangle.obj", instance)?;
+
+        let mut camera_config = CameraConfig::default();
+        camera_config.lookfrom = Vec3::new(0.2, 0.0, 1.0);
+        camera_config.vfov = 45.0;
+        camera_config.aspect_ratio = size.width as Float / size.height as Float;
+        camera_config.focus_dist = 1.0;
         return Ok(Self {
             raytrace_pipeline,
             accumulate_pipeline,
@@ -150,6 +160,8 @@ impl Raytracer {
             camera_buffer,
             main_target: image,
             accumulate_target: accumulate_image,
+            clear_accumulation: true,
+            camera_config,
             halton_index: 0,
             frame: 0,
             mesh,
@@ -182,12 +194,7 @@ impl Raytracer {
                 .dst_access_mask(vk::AccessFlags2::SHADER_STORAGE_WRITE),
         );
 
-        let mut cam_config = CameraConfig::default();
-        cam_config.lookfrom = Vec3::new(0.2, 0.0, 1.0);
-        cam_config.vfov = 45.0;
-        cam_config.aspect_ratio = self.size.width as Float / self.size.height as Float;
-        cam_config.focus_dist = 1.0;
-        let camera = Camera::new(cam_config);
+        let camera = Camera::new(self.camera_config.clone());
         self.camera_buffer.map(instance, &[camera])?;
         let camera_address = self.camera_buffer.get_address();
 
@@ -216,7 +223,7 @@ impl Raytracer {
         return Ok(());
     }
 
-    pub fn accumulate_pass(&self, instance: &instance::Instance, cmd_buf: vk::CommandBuffer) {
+    pub fn accumulate_pass(&mut self, instance: &instance::Instance, cmd_buf: vk::CommandBuffer) {
         static mut FIRST_TIME: bool = true;
 
         let mut old_layout = vk::ImageLayout::GENERAL;
@@ -257,12 +264,16 @@ impl Raytracer {
         let workgroup_count_y = 1 + ((self.size.height - 1) / 16);
 
         let size = UVec2::new(self.size.width, self.size.height);
+        println!("before {}", self.clear_accumulation);
         let pc = AccumulatePushConstants {
             frame: self.frame,
             src: self.main_target.handle,
             accum: self.accumulate_target.handle,
             size,
+            clear: self.clear_accumulation,
         };
+        self.clear_accumulation = false;
+        println!("after {}", self.clear_accumulation);
         unsafe {
             instance.cmd_bind_pipeline(
                 cmd_buf,
@@ -341,5 +352,28 @@ impl Raytracer {
             instance.destroy_pipeline(self.raytrace_pipeline, None);
             instance.destroy_pipeline(self.accumulate_pipeline, None);
         };
+    }
+
+    pub fn handle_key_presses(&mut self, event: winit::event::KeyEvent) {
+        const MOVE_SPEED: Float = 0.03;
+        match event.logical_key.as_ref() {
+            Key::Character("w") => {
+                self.camera_config.lookfrom.z -= MOVE_SPEED;
+                self.clear_accumulation = true;
+            }
+            Key::Character("s") => {
+                self.camera_config.lookfrom.z += MOVE_SPEED;
+                self.clear_accumulation = true;
+            }
+            Key::Character("a") => {
+                self.camera_config.lookfrom.x -= MOVE_SPEED;
+                self.clear_accumulation = true;
+            }
+            Key::Character("d") => {
+                self.camera_config.lookfrom.x += MOVE_SPEED;
+                self.clear_accumulation = true;
+            }
+            _ => {}
+        }
     }
 }

@@ -3,6 +3,7 @@ struct PCData {
 	RWTexture2D.Handle accum;
 	uint2 size;
 	uint frame;
+	bool clear;
 };
 
 [shader("compute")]
@@ -12,6 +13,11 @@ void main(uint3 thread_id : SV_DispatchThreadID, uniform PCData data) {
 		return;
 	}
 	float4 current_color = data.src.Load(thread_id.xy);
+	printf("%d\n",data.clear);
+	if(data.clear) {
+		data.accum.Store(thread_id.xy,current_color);
+		return;
+	}
 	float4 prev_color = data.accum.Load(thread_id.xy);
 
     float weight = 1.0 / (data.frame + 1);

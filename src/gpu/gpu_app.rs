@@ -1,6 +1,7 @@
 use super::descriptor_set::DescriptorSet;
-use crate::gpu::{
-    instance::Instance, raytracer::Raytracer, swapchain::Swapchain, FRAMES_IN_FLIGHT,
+use crate::{
+    camera::CameraConfig,
+    gpu::{instance::Instance, raytracer::Raytracer, swapchain::Swapchain, FRAMES_IN_FLIGHT},
 };
 use ash::vk::{self, CommandBufferLevel};
 use winit::{
@@ -8,6 +9,7 @@ use winit::{
     dpi::LogicalPosition,
     event::WindowEvent,
     event_loop::{ActiveEventLoop, EventLoop},
+    keyboard::Key,
     raw_window_handle::HasDisplayHandle,
     window::Window,
 };
@@ -53,7 +55,6 @@ impl GpuApp {
         };
         let size = vk::Extent2D::default().width(width).height(height);
         let raytracer = Raytracer::new(&instance, &mut descriptor_set, size)?;
-
         return Ok(GpuApp {
             window: None,
             width,
@@ -234,6 +235,16 @@ impl ApplicationHandler for GpuApp {
         event: WindowEvent,
     ) {
         match event {
+            WindowEvent::KeyboardInput {
+                device_id: _,
+                event,
+                is_synthetic: _,
+            } => {
+                if !event.state.is_pressed() {
+                    return;
+                }
+                self.raytracer.handle_key_presses(event);
+            }
             WindowEvent::Destroyed => {}
             WindowEvent::CloseRequested => {
                 self.destroy();
